@@ -9,6 +9,9 @@ This README is centered around the main experiment launcher in `src/yimei/jss/gp
 - how to switch between methods,
 - and which runtime arguments are being passed to ECJ.
 
+> [!NOTE]
+> This repository is intended as a research-oriented GP platform for DFJSS, helping users reproduce, understand, and extend the published methods in this project.
+
 ---
 
 ## 1. Repository purpose
@@ -91,7 +94,7 @@ You can replace the parameter file with any method listed in the table above.
 
 ---
 
-## 6. Important runtime arguments
+## 5. Important runtime arguments
 
 The main arguments visible in `GPMain.java` are:
 
@@ -135,7 +138,7 @@ This appears in the legacy code path, but the experiments documented in this REA
 
 ---
 
-## 7. Notes for DFJSS experiments
+## 6. Notes for DFJSS experiments
 
 Several comments in `GPMain.java` indicate additional simulation settings that should be checked before reproducing some papers.
 
@@ -155,7 +158,7 @@ Researchers reproducing published results should verify these settings in the si
 
 ---
 
-## 8. Scope of this repository
+## 7. Scope of this repository
 
 This repository and the papers listed below are focused on DFJSS rather than static JSS.
 
@@ -163,7 +166,7 @@ If you are primarily interested in static JSS or static FJSS experiments, please
 
 ---
 
-## 9. Output files
+## 8. Output files
 
 The most common outputs are:
 
@@ -175,7 +178,7 @@ These outputs are usually written to the project root unless redirected in the p
 
 ---
 
-## 10. Recommended workflow for researchers
+## 9. Recommended workflow for researchers
 
 1. Start from `GPMain.java` to identify the published method you want.
 2. Confirm the associated parameter file from the table above.
@@ -186,7 +189,7 @@ These outputs are usually written to the project root unless redirected in the p
 
 ---
 
-## 11. Publications represented in this repository
+## 10. Publications represented in this repository
 
 ### Ensemble GP
 
@@ -220,11 +223,13 @@ Xu M, Mei Y, Zhang F, et al. (2025). Pareto set learning through genetic program
 
 Xu, M., Zhang, F., Mei, Y., & Zhang, M. (2022). Genetic programming with multi-case fitness for dynamic flexible job shop scheduling. In *2022 IEEE Congress on Evolutionary Computation (CEC)* (pp. 1-8).
 
-If this code is useful for your research, please consider citing the relevant papers above. Good luck with your research!
+> [!IMPORTANT]
+> **If this code is useful for your research, please consider citing the relevant papers above.**  
+> 🌟 Good luck with your research!
 
 ---
 
-## 12. Contact and acknowledgement
+## 11. Contact and acknowledgement
 
 This codebase builds on the original JSS/GP framework developed by Yi Mei and collaborators, with additional algorithm implementations and experiment configurations for subsequent DFJSS research.
 
@@ -232,7 +237,7 @@ For ECJ-specific details, consult the official ECJ documentation. For DFJSS pape
 
 ---
 
-## 13. Method-to-paper mapping
+## 12. Method-to-paper mapping
 
 The following dynamic methods are explicitly listed in `GPMain.java`.
 
