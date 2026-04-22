@@ -70,29 +70,7 @@ Key switches in `GPMain.java`:
 
 ---
 
-## 4. Method-to-paper mapping
-
-The following dynamic methods are explicitly listed in `GPMain.java`.
-
-| Method in `GPMain.java` | Parameter file | Paper / purpose |
-|---|---|---|
-| ensembleGP | `src/mengxu/algorithm/multicaseEnsemble/ensembleContribution/multipletreegp-dynamicEnsembleContributionCrossover.params` | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming for dynamic flexible job shop scheduling: Evolution with single individuals and ensembles” |
-| GP with lexicase selection | `src/mengxu/algorithm/lexicaseselection/multipletreegp-dynamicOneInstanceMultiCase.params` | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming with lexicase selection for large-scale dynamic flexible job shop scheduling” |
-| NSGPII with semantic diversity and semantic similarity | `src/mengxu/algorithm/multiobjective/phenotypeNSGPII/improvedCompareOne/multipletreegp-dynamic-NSGA2-no-environmental-selection-phenotypeBreeding-improved.params` | Xu et al., 2023, *AI 2023*, “A semantic genetic programming approach to evolving heuristics for multi-objective dynamic scheduling” |
-| MOGPD | `src/mengxu/algorithm/multiobjective/multipletreegp-dynamic-MOEADmap.params` | Xu et al., 2023, *GECCO Companion*, “Multi-objective genetic programming based on decomposition on evolving scheduling heuristics for dynamic scheduling” |
-| NSGPII | `src/mengxu/algorithm/multiobjective/multipletreegp-dynamic-NSGA2-no-environmental-selection.params` | Multi-objective baseline method |
-| GP with diverse partner selection | `src/mengxu/algorithm/diversepartnerselection/multipletreegp-dynamicDPS.params` | Xu et al., 2022, *GECCO Companion*, “Genetic programming with diverse partner selection for dynamic flexible job shop scheduling” |
-| GP with cluster selection | `src/mengxu/algorithm/clusterselection/multiplecasecluster/multipletreegp-dynamicMultiCaseCluster.params` | Xu et al., 2022, *CEC*, “Genetic Programming with Cluster Selection for Dynamic Flexible Job Shop Scheduling” |
-| Pareto set learning GP | `/src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params` | Xu et al., 2025, *IEEE Transactions on Evolutionary Computation*, “Pareto set learning through genetic programming for multi-objective dynamic scheduling” |
-| GP with multi-case fitness | `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params` | Xu et al., 2022, *CEC*, “Genetic programming with multi-case fitness for dynamic flexible job shop scheduling” |
-
-> In the current `GPMain.java`, the active line points to the multi-case fitness configuration:
->
-> `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params`
-
----
-
-## 5. How to run a method from `GPMain.java`
+## 4. How to run a method from `GPMain.java`
 
 For dynamic experiments, `GPMain.java` works by:
 
@@ -101,24 +79,13 @@ For dynamic experiments, `GPMain.java` works by:
 3. appending `-p` overrides such as seed and output file name,
 4. then calling `GPRun.main(...)`.
 
-### Option A: run through the IDE
+### Run through the IDE
 
 1. Open the project as a Java/IntelliJ project.
 2. Ensure `src/` is configured as a source root and `libraries/` is added as dependencies.
 3. Open `src/yimei/jss/gp/GPMain.java`.
 4. In the dynamic section, comment/uncomment the desired parameter-file line.
 5. Run the `main` method of `GPMain`.
-
-### Option B: run directly with `GPRun`
-
-If you do not want to edit `GPMain.java`, run the desired parameter file directly using `GPRun`:
-
-```bash
-java yimei.jss.gp.GPRun \
-  -file src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params \
-  -p seed.0=0 \
-  -p stat.file=job.0.out.stat
-```
 
 You can replace the parameter file with any method listed in the table above.
 
@@ -168,7 +135,7 @@ This appears in the legacy code path, but the experiments documented in this REA
 
 ---
 
-## 7. Notes for dynamic DFJSS experiments
+## 7. Notes for DFJSS experiments
 
 Several comments in `GPMain.java` indicate additional simulation settings that should be checked before reproducing some papers.
 
@@ -253,6 +220,8 @@ Xu M, Mei Y, Zhang F, et al. (2025). Pareto set learning through genetic program
 
 Xu, M., Zhang, F., Mei, Y., & Zhang, M. (2022). Genetic programming with multi-case fitness for dynamic flexible job shop scheduling. In *2022 IEEE Congress on Evolutionary Computation (CEC)* (pp. 1-8).
 
+If this code is useful for your research, please consider citing the relevant papers above. Good luck with your research!
+
 ---
 
 ## 12. Contact and acknowledgement
@@ -260,3 +229,27 @@ Xu, M., Zhang, F., Mei, Y., & Zhang, M. (2022). Genetic programming with multi-c
 This codebase builds on the original JSS/GP framework developed by Yi Mei and collaborators, with additional algorithm implementations and experiment configurations for subsequent DFJSS research.
 
 For ECJ-specific details, consult the official ECJ documentation. For DFJSS paper reproduction, use the parameter files listed above as the primary starting point. For static JSS-related work, please use the original Yi Mei codebase.
+
+---
+
+## 13. Method-to-paper mapping
+
+The following dynamic methods are explicitly listed in `GPMain.java`.
+
+> Most parameter files and algorithm codes are located under `src/mengxu/algorithm/`.
+
+| Method in `GPMain.java` | Related paper / purpose | Parameter file |
+|---|---|---|
+| ensembleGP | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming for dynamic flexible job shop scheduling: Evolution with single individuals and ensembles” | `src/mengxu/algorithm/multicaseEnsemble/ensembleContribution/multipletreegp-dynamicEnsembleContributionCrossover.params` |
+| GP with lexicase selection | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming with lexicase selection for large-scale dynamic flexible job shop scheduling” | `src/mengxu/algorithm/lexicaseselection/multipletreegp-dynamicOneInstanceMultiCase.params` |
+| NSGPII with semantic diversity and semantic similarity | Xu et al., 2023, *AI 2023*, “A semantic genetic programming approach to evolving heuristics for multi-objective dynamic scheduling” | `src/mengxu/algorithm/multiobjective/phenotypeNSGPII/improvedCompareOne/multipletreegp-dynamic-NSGA2-no-environmental-selection-phenotypeBreeding-improved.params` |
+| MOGPD | Xu et al., 2023, *GECCO Companion*, “Multi-objective genetic programming based on decomposition on evolving scheduling heuristics for dynamic scheduling” | `src/mengxu/algorithm/multiobjective/multipletreegp-dynamic-MOEADmap.params` |
+| NSGPII | Multi-objective baseline method | `src/mengxu/algorithm/multiobjective/multipletreegp-dynamic-NSGA2-no-environmental-selection.params` |
+| GP with diverse partner selection | Xu et al., 2022, *GECCO Companion*, “Genetic programming with diverse partner selection for dynamic flexible job shop scheduling” | `src/mengxu/algorithm/diversepartnerselection/multipletreegp-dynamicDPS.params` |
+| GP with cluster selection | Xu et al., 2022, *CEC*, “Genetic Programming with Cluster Selection for Dynamic Flexible Job Shop Scheduling” | `src/mengxu/algorithm/clusterselection/multiplecasecluster/multipletreegp-dynamicMultiCaseCluster.params` |
+| Pareto set learning GP | Xu et al., 2025, *IEEE Transactions on Evolutionary Computation*, “Pareto set learning through genetic programming for multi-objective dynamic scheduling” | `/src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params` |
+| GP with multi-case fitness | Xu et al., 2022, *CEC*, “Genetic programming with multi-case fitness for dynamic flexible job shop scheduling” | `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params` |
+
+> In the current `GPMain.java`, the active line points to the multi-case fitness configuration:
+>
+> `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params`
