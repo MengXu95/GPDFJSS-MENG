@@ -1,0 +1,94 @@
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0.9
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i]);
+        rotate seed = false
+
+
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD and similar results with NSGAII with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i]);
+        rotate seed = false
+
+        Pareto Front of Subpopulation 19
+        Objective 0: [625.4715712446864, 625.4715712446864, 625.4715712446864, 625.4715712446864, 625.4715712446864, 638.4846327125965, 638.4846327125965, 638.4846327125965, 638.4846327125965, 639.3608804363259, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 641.7599214316282, 646.0876001369916]
+        Objective 1: [1171.9102666142571, 1171.9102666142571, 1171.9102666142571, 1171.9102666142571, 1171.9102666142571, 1054.5456787816365, 1054.5456787816365, 1054.5456787816365, 1054.5456787816365, 1027.7982824936043, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 994.913384599131, 991.2819153529708]
+
+
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD and similar results with NSGAII with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i])/(nadirPoint[i] - idealPoint[i]);
+        rotate seed = false
+
+        Pareto Front of Subpopulation 19
+        Objective 0: [616.7590804548324, 629.8452336475168, 629.8452336475168, 629.8452336475168, 629.8452336475168, 629.8452336475168, 637.2232665148808, 637.2232665148808, 637.2232665148808, 637.2232665148808, 637.2232665148808, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 639.4864476832569, 655.2204761856143]
+        Objective 1: [1269.6562870259368, 1201.8436387959955, 1201.8436387959955, 1201.8436387959955, 1201.8436387959955, 1201.8436387959955, 1045.7810272811112, 1045.7810272811112, 1045.7810272811112, 1045.7810272811112, 1045.7810272811112, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 973.4671855355555, 970.5618252444547]
+
+
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD and similar results with NSGAII with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i])/(nadirPoint[i] - idealPoint[i]);
+        rotate seed = true
+
+        Pareto Front of Subpopulation 19
+        Objective 0: [619.9070394857376, 619.9070394857376, 634.3992635882908, 634.3992635882908]
+        Objective 1: [1137.826016462648, 1137.826016462648, 913.2302853894362, 913.2302853894362]
+
+
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD and similar results with NSGAII with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i]) * biasBalanceForObjectives[i];
+        rotate seed = true
+        useBiasBalance = true
+
+        Pareto Front of Subpopulation 19
+        Objective 0: [619.9070394857376, 619.9070394857376, 634.3992635882908, 634.3992635882908]
+        Objective 1: [1137.826016462648, 1137.826016462648, 913.2302853894362, 913.2302853894362]
+
+
+
+This version with matching strategy, no normalisation, and the following parameters can obtain better results than traditional MOEAD and similar results with NSGAII with popsize 200 and generation 20
+of a single run.
+    Parameters:
+        tchebycheff = false
+        numNeighbours = 10
+        neighborhoodSelectionProbability = 0
+        maximumNumberOfReplacedSolutions = 1
+        objectives: mean-flowtime, max-tardiness
+        double diff = Math.abs(fit.getObjectives()[i] - idealPoint[i]) * biasBalanceForObjectives[i] / (nadirPoint[i] - idealPoint[i]);
+        rotate seed = true
+        useBiasBalance = true
+
+        Pareto Front of Subpopulation 19
+        Objective 0: [614.7226473499711, 614.7226473499711, 614.7226473499711, 619.7120176192764]
+        Objective 1: [1033.7316961722026, 1033.7316961722026, 1033.7316961722026, 905.648494516252]
+        //very good results!

@@ -1,0 +1,11 @@
+out/
+.idea/
+.settings/
+test/
+*.csv
+*.stat
+*.pdf
+*.zip
+*.png
+.Rproj.user
+venv/

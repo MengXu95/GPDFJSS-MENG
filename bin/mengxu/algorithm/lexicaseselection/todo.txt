@@ -1,0 +1,15 @@
+Advice from Dr. Fangfang
+
+each generation 5 instances
+
+for every generation rotate seed or not rotate seed.
+
+same evaluation times
+
+baseline: 1024 individuals
+
+(done submit to grid) multi-instance LS: 8 instances 128 individuals (rotate seed)
+multi-instance LS: 8 instances 128 individuals (not rorate seed)
+
+--------------------------------------------------
+(done submit to grid) Check if is the mean maxFlowtime of 10 cases is the reason why the result is good.
