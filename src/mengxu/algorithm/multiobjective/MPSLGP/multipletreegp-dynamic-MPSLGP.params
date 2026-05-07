@@ -353,6 +353,6 @@ use-brood-recombination = true
 compare-criteria = HV
 # IGD, GD
 
-use-multi-criteria-selection = false
+use-multi-criteria-selection = true
 
 
