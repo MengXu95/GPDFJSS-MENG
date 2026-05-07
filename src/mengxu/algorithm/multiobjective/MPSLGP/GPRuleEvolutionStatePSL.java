@@ -17,6 +17,7 @@ import yimei.jss.jobshop.WorkCenter;
 import yimei.jss.niching.PhenoCharacterisation;
 import yimei.jss.niching.RoutingPhenoCharacterisation;
 import yimei.jss.niching.SequencingPhenoCharacterisation;
+import yimei.jss.niching.phenotypicForSurrogateV1;
 import yimei.jss.ruleoptimisation.RuleOptimizationProblem;
 import yimei.jss.simulation.DecisionSituation;
 import yimei.jss.simulation.RoutingDecisionSituation;
@@ -45,16 +46,20 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	 * Read the file to specify the terminals.
 	 */
 	ArrayList<ArrayList<Double>> storeGenDiversities = new ArrayList<>();
+	List<DiversityRecord> storeTaskGenDiversities = new ArrayList<>();
 	public List<List<CustomerPoint>> cluster = new ArrayList<>();
 
 	public List<Integer> parentIndex = new ArrayList<>();
+	public List<Integer> parentTaskIndex = new ArrayList<>();
 	public List<List<Integer>> allGenerationParentIndex = new ArrayList<>();
+	public List<List<Integer>> allGenerationParentTaskIndex = new ArrayList<>();
 	public double[] minFitnessGen;
 	public double[] maxFitnessGen;
 
 	//add 2021.11.3
 	public List<double[]> objective0 = new ArrayList<>();
 	public List<double[]> objective1 = new ArrayList<>();
+	public List<int[]> objectiveTaskIndex = new ArrayList<>();
 
 	public Archive externalArchive = new Archive(); //add by mengxu 2022.09.02
 	public PhenoCharacterisation[] phenoCharacterisation = new PhenoCharacterisation[2];
@@ -87,6 +92,37 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	public double taskInheritanceProbability;
 
 	public int transferStartGeneration;
+
+	private static class DiversityRecord {
+		String scope;
+		int taskIndex;
+		double generation;
+		double genotypeDiversity;
+		double phenotypeDiversity;
+		double entropyDiversity;
+		double pseudoIsomorphsDiversity;
+		double editOneDiversity;
+		double editTwoDiversity;
+		double pcDiversity;
+		double parentSelectionDiversity;
+
+		DiversityRecord(String scope, int taskIndex, double generation, double genotypeDiversity,
+						 double phenotypeDiversity, double entropyDiversity, double pseudoIsomorphsDiversity,
+						 double editOneDiversity, double editTwoDiversity, double pcDiversity,
+						 double parentSelectionDiversity) {
+			this.scope = scope;
+			this.taskIndex = taskIndex;
+			this.generation = generation;
+			this.genotypeDiversity = genotypeDiversity;
+			this.phenotypeDiversity = phenotypeDiversity;
+			this.entropyDiversity = entropyDiversity;
+			this.pseudoIsomorphsDiversity = pseudoIsomorphsDiversity;
+			this.editOneDiversity = editOneDiversity;
+			this.editTwoDiversity = editTwoDiversity;
+			this.pcDiversity = pcDiversity;
+			this.parentSelectionDiversity = parentSelectionDiversity;
+		}
+	}
 
 
 	@Override
@@ -184,6 +220,16 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		if (individual != null && individual.fitness instanceof PSLMultiObjectiveFitness) {
 			((PSLMultiObjectiveFitness) individual.fitness).setTaskIndex(taskIndex);
 		}
+	}
+
+	public void recordSelectedParent(int parentIndex) {
+		this.parentIndex.add(parentIndex);
+		Individual[] individuals = this.population.subpops[0].individuals;
+		int taskIndex = -1;
+		if (parentIndex >= 0 && parentIndex < individuals.length) {
+			taskIndex = getTaskIndex(individuals[parentIndex]);
+		}
+		this.parentTaskIndex.add(taskIndex);
 	}
 
 	public void initialMaxTerminals(){
@@ -405,72 +451,29 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	      //// here, after this we evaluate the population
 //	    statistics.postEvaluationStatistics(this); //log the best individual
 
-		//modified by mengxu. Measure diversity. 2021.04.15-------------------------
-		Individual[] individuals = this.population.subpops[0].individuals;
-		GenotypeDiversity genoD = new GenotypeDiversity();
-		double genoDvalue = (double)genoD.genotypeDiversity(individuals) / individuals.length;
-//		System.out.println("Genotype diversity: " + genoDvalue);
-		PhenotypeDiversity phenoD = new PhenotypeDiversity(); //todo: this should be modified for multi-objective GP
-		double phenoDvalue = (double)phenoD.phenotypeDiversity(individuals) / individuals.length;
-//		System.out.println("Phenotype diversity: " + phenoDvalue);
-		EntropyDiversity entroD = new EntropyDiversity();
-		double entroDvalue = entroD.entropyDiversity(individuals);
-//		System.out.println("Entropy diversity: " + entroDvalue);
-		PseudoIsomorphsDiversity pseIsoD = new PseudoIsomorphsDiversity();
-		double pseIsoDvalue = (double)pseIsoD.pseudoIsomorphsDiversity(individuals) / individuals.length;
-//		System.out.println("Pseudo isomorphs diversity: " + pseIsoDvalue);
-		EditDistanceDiversityV1 edit1D = new EditDistanceDiversityV1();
-		double edit1Dvalue = edit1D.editDistanceDiversityV1(individuals, bestIndi(0));//todo: need modified.
-//		System.out.println("Edit 1 diversity: " + edit1Dvalue);
-		EditDistanceDiversityV2 edit2D = new EditDistanceDiversityV2();
-		double edit2Dvalue = edit2D.editDistanceDiversityV2(individuals, bestIndi(0));//todo: need modified.
-//		System.out.println("Edit 2 diversity: " + edit2Dvalue);
-
-
-		//-------------------------------------------------------------------
-
-//		//calculate the pc of each individual in each subpop and do cluster--------------
-//		PhenoCharacterisation[] phenoCharacterisation = new PhenoCharacterisation[2];
-//		//dynamic simulation
-//		phenoCharacterisation[0] =
-//					SequencingPhenoCharacterisation.defaultPhenoCharacterisation();
-//		phenoCharacterisation[1] =
-//					RoutingPhenoCharacterisation.defaultPhenoCharacterisation();
-//		double[][][] indsCharListsMultiTree = phenotypicForSurrogateV1.phenotypicPopulationFixedDecisions(this, phenoCharacterisation, true); //3. calculate the phenotypic characteristic
-		//get the fitness for training model
-//		double[][] fitnessesForModel = new double[this.population.subpops.length][this.population.subpops[0].individuals.length];
-//		for(int subpop = 0; subpop < this.population.subpops.length; subpop++) {
-//			for (int ind = 0; ind < this.population.subpops[subpop].individuals.length; ind++) {
-//				fitnessesForModel[subpop][ind] = this.population.subpops[subpop].individuals[ind].fitness.fitness();
-//			}
-//		}
-//		PhenotypicCharacteristicDiversity pcD = new PhenotypicCharacteristicDiversity();
-//		double pcDvalue = (double)pcD.phenotypicCharacteristicDiversity(indsCharListsMultiTree[0]) / individuals.length;
-//		System.out.println("PC diversity: " + pcDvalue);
-
 		if(generation != 0){
 			List<Integer> parentIndexCopy = new ArrayList<>(parentIndex);
 			allGenerationParentIndex.add(parentIndexCopy);
+			List<Integer> parentTaskIndexCopy = new ArrayList<>(parentTaskIndex);
+			allGenerationParentTaskIndex.add(parentTaskIndexCopy);
 		}
-		ParentIndexDiversity parentIndexD = new ParentIndexDiversity();
-		double parentIndexDvalue = (double)parentIndexD.parentIndexDiversity(parentIndex) / individuals.length;
-//		System.out.println("ParentIndex diversity: " + parentIndexDvalue);
+		Individual[] individuals = this.population.subpops[0].individuals;
+		double[][][] pcBySubpop = phenotypicForSurrogateV1.phenotypicPopulationFixedDecisions(this, phenoCharacterisation, true);
+		recordDiversityForPopulation("ALL", -1, individuals, pcBySubpop[0], parentIndex, bestIndi(0));
+		for (int task = 0; task < Math.max(1, numTasks); task++) {
+			Individual[] taskIndividuals = individualsForTask(task);
+			double[][] taskPc = pcForTask(pcBySubpop[0], task);
+			List<Integer> taskParentIndex = parentIndicesForTask(task);
+			recordDiversityForPopulation("TASK", task, taskIndividuals, taskPc, taskParentIndex, bestIndividualForTask(task));
+		}
 		parentIndex.clear();
-
-		//modified by mengxu. save diversities.
-		ArrayList<Double> diversities = new ArrayList<>();
-		diversities.add((double)generation);
-		diversities.add(genoDvalue);
-		diversities.add(phenoDvalue);
-		diversities.add(entroDvalue);
-		diversities.add(pseIsoDvalue);
-		diversities.add(edit1Dvalue);
-		diversities.add(edit2Dvalue);
-		diversities.add(0.0);
-//		diversities.add(pcDvalue);
-		diversities.add(parentIndexDvalue);
-		storeGenDiversities.add(diversities);
-		System.out.println("Genotype diversity: " + genoDvalue);
+		parentTaskIndex.clear();
+		if (!storeTaskGenDiversities.isEmpty()) {
+			DiversityRecord latest = storeTaskGenDiversities.get(storeTaskGenDiversities.size() - Math.max(1, numTasks) - 1);
+			System.out.println("Genotype diversity: " + latest.genotypeDiversity);
+			System.out.println("Entropy diversity: " + latest.entropyDiversity);
+			System.out.println("PC diversity: " + latest.pcDiversity);
+		}
 
 
 		int popSize = population.subpops[0].individuals.length;
@@ -481,8 +484,13 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			obj0[i] = fit.objectives[0];
 			obj1[i] = fit.objectives[1];
 		}
+		int[] taskIndexByIndividual = new int[popSize];
+		for(int i=0; i < popSize; i++){
+			taskIndexByIndividual[i] = getTaskIndex(population.subpops[0].individuals[i]);
+		}
 		objective0.add(obj0);
 		objective1.add(obj1);
+		objectiveTaskIndex.add(taskIndexByIndividual);
 
 
 
@@ -737,18 +745,137 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		return allDiverseIndividual;
 	}
 
+	private Individual[] individualsForTask(int taskIndex) {
+		List<Individual> taskIndividuals = new ArrayList<>();
+		for (Individual individual : population.subpops[0].individuals) {
+			if (getTaskIndex(individual) == taskIndex) {
+				taskIndividuals.add(individual);
+			}
+		}
+		return taskIndividuals.toArray(new Individual[0]);
+	}
+
+	private double[][] pcForTask(double[][] pcByIndividual, int taskIndex) {
+		List<double[]> taskPc = new ArrayList<>();
+		Individual[] individuals = population.subpops[0].individuals;
+		for (int i = 0; i < individuals.length && i < pcByIndividual.length; i++) {
+			if (getTaskIndex(individuals[i]) == taskIndex) {
+				taskPc.add(pcByIndividual[i]);
+			}
+		}
+		return taskPc.toArray(new double[0][]);
+	}
+
+	private List<Integer> parentIndicesForTask(int taskIndex) {
+		List<Integer> taskParentIndex = new ArrayList<>();
+		for (int i = 0; i < parentIndex.size() && i < parentTaskIndex.size(); i++) {
+			if (parentTaskIndex.get(i) == taskIndex) {
+				taskParentIndex.add(parentIndex.get(i));
+			}
+		}
+		return taskParentIndex;
+	}
+
+	private Individual bestIndividualForTask(int taskIndex) {
+		Individual best = null;
+		for (Individual individual : population.subpops[0].individuals) {
+			if (getTaskIndex(individual) != taskIndex) {
+				continue;
+			}
+			if (best == null || individual.fitness.betterThan(best.fitness)) {
+				best = individual;
+			}
+		}
+		return best;
+	}
+
+	private void recordDiversityForPopulation(String scope, int taskIndex, Individual[] individuals,
+										  double[][] pcByIndividual, List<Integer> selectedParentIndex,
+										  Individual bestIndividual) {
+		if (individuals.length == 0) {
+			storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, generation, 0.0, 0.0, 0.0, 0.0,
+					0.0, 0.0, 0.0, 0.0));
+			return;
+		}
+
+		GenotypeDiversity genotypeDiversity = new GenotypeDiversity();
+		double genotypeDiversityValue = (double) genotypeDiversity.genotypeDiversity(individuals) / individuals.length;
+		PhenotypeDiversity phenotypeDiversity = new PhenotypeDiversity();
+		double phenotypeDiversityValue = (double) phenotypeDiversity.phenotypeDiversity(individuals) / individuals.length;
+		double entropyDiversityValue = fitnessEntropyDiversity(individuals);
+		PseudoIsomorphsDiversity pseudoIsomorphsDiversity = new PseudoIsomorphsDiversity();
+		double pseudoIsomorphsDiversityValue = (double) pseudoIsomorphsDiversity.pseudoIsomorphsDiversity(individuals) / individuals.length;
+		double editOneDiversityValue = 0.0;
+		double editTwoDiversityValue = 0.0;
+		if (bestIndividual != null) {
+			EditDistanceDiversityV1 editOneDiversity = new EditDistanceDiversityV1();
+			editOneDiversityValue = editOneDiversity.editDistanceDiversityV1(individuals, bestIndividual);
+			EditDistanceDiversityV2 editTwoDiversity = new EditDistanceDiversityV2();
+			editTwoDiversityValue = editTwoDiversity.editDistanceDiversityV2(individuals, bestIndividual);
+		}
+		PhenotypicCharacteristicDiversity pcDiversity = new PhenotypicCharacteristicDiversity();
+		double pcDiversityValue = pcByIndividual.length == 0 ? 0.0 :
+				(double) pcDiversity.phenotypicCharacteristicDiversity(pcByIndividual) / pcByIndividual.length;
+		ParentIndexDiversity parentIndexDiversity = new ParentIndexDiversity();
+		double parentIndexDiversityValue = selectedParentIndex.isEmpty() ? 0.0 :
+				(double) parentIndexDiversity.parentIndexDiversity(selectedParentIndex) / selectedParentIndex.size();
+
+		storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, generation, genotypeDiversityValue,
+				phenotypeDiversityValue, entropyDiversityValue, pseudoIsomorphsDiversityValue,
+				editOneDiversityValue, editTwoDiversityValue, pcDiversityValue, parentIndexDiversityValue));
+		if ("ALL".equals(scope)) {
+			ArrayList<Double> diversities = new ArrayList<>();
+			diversities.add((double) generation);
+			diversities.add(genotypeDiversityValue);
+			diversities.add(phenotypeDiversityValue);
+			diversities.add(entropyDiversityValue);
+			diversities.add(pseudoIsomorphsDiversityValue);
+			diversities.add(editOneDiversityValue);
+			diversities.add(editTwoDiversityValue);
+			diversities.add(pcDiversityValue);
+			diversities.add(parentIndexDiversityValue);
+			storeGenDiversities.add(diversities);
+		}
+	}
+
+	private double fitnessEntropyDiversity(Individual[] individuals) {
+		Map<String, Integer> counts = new HashMap<>();
+		for (Individual individual : individuals) {
+			String key = fitnessKey(individual);
+			counts.put(key, counts.getOrDefault(key, 0) + 1);
+		}
+		double entropy = 0.0;
+		for (Integer count : counts.values()) {
+			double proportion = (double) count / individuals.length;
+			entropy += proportion * Math.log(proportion);
+		}
+		return -entropy;
+	}
+
+	private String fitnessKey(Individual individual) {
+		if (individual.fitness instanceof MultiObjectiveFitness) {
+			double[] objectives = ((MultiObjectiveFitness) individual.fitness).getObjectives();
+			StringBuilder key = new StringBuilder();
+			for (double objective : objectives) {
+				key.append(Math.round(objective * 10000000000.0)).append('|');
+			}
+			return key.toString();
+		}
+		return String.valueOf(Math.round(individual.fitness.fitness() * 10000000000.0));
+	}
+
 	//2021.2.15 modified by mengxu
 	public void writeDiversityToFile(){
 		File diversities = new File("job." + jobSeed + ".diversities.csv"); //successedTransfer[i][j]: task j makes a successful transfer for task i.
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(diversities));
-			writer.write("Gen, Geno, Pheno, Entropy, PseIso, Edit 1, Edit 2, PC, ParentSelection");
+			writer.write("Gen,Scope,Task,Geno,Pheno,Entropy,PseIso,Edit 1,Edit 2,PC,ParentSelection");
 			writer.newLine();
-			for (int ind = 0; ind < storeGenDiversities.size(); ind++) {
-				ArrayList<Double> ref = storeGenDiversities.get(ind);
-				writer.write(ref.get(0) + "," + ref.get(1) + "," + ref.get(2)
-						+ "," + ref.get(3) + "," + ref.get(4) + "," + ref.get(5)
-						+ "," + ref.get(6) + "," + ref.get(7) + "," + ref.get(8));
+			for (DiversityRecord ref : storeTaskGenDiversities) {
+				writer.write(ref.generation + "," + ref.scope + "," + ref.taskIndex + "," + ref.genotypeDiversity
+						+ "," + ref.phenotypeDiversity + "," + ref.entropyDiversity + ","
+						+ ref.pseudoIsomorphsDiversity + "," + ref.editOneDiversity + ","
+						+ ref.editTwoDiversity + "," + ref.pcDiversity + "," + ref.parentSelectionDiversity);
 				writer.newLine();
 			}
 
@@ -763,18 +890,16 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		File selectParentIndex = new File("job." + jobSeed + ".selectParentIndex.csv"); //successedTransfer[i][j]: task j makes a successful transfer for task i.
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(selectParentIndex));
+			writer.write("Gen,SelectionOrder,ParentIndex,ParentTask");
+			writer.newLine();
 			for (int gen = 0; gen < allGenerationParentIndex.size(); gen++) {
 				List<Integer> ref = allGenerationParentIndex.get(gen);
-				writer.write((gen+1) + ",");
-				for(int i=0; i< ref.size()-1; i++){
-					if(i==ref.size()-2){
-						writer.write(ref.get(i) + "," + ref.get(i+1));
-					}
-					else{
-						writer.write(ref.get(i) + ",");
-					}
+				List<Integer> taskRef = gen < allGenerationParentTaskIndex.size() ? allGenerationParentTaskIndex.get(gen) : new ArrayList<Integer>();
+				for(int i=0; i< ref.size(); i++){
+					int taskIndex = i < taskRef.size() ? taskRef.get(i) : -1;
+					writer.write((gen+1) + "," + i + "," + ref.get(i) + "," + taskIndex);
+					writer.newLine();
 				}
-				writer.newLine();
 			}
 
 			writer.close();
@@ -789,17 +914,18 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		File obj0Fitness = new File("job." + jobSeed + ".obj0fitness.csv"); //successedTransfer[i][j]: task j makes a successful transfer for task i.
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(obj0Fitness));
-			writer.write("Gen"+ "," + "Index" + "," + "Fitness");
+			writer.write("Gen"+ "," + "Index" + "," + "Task" + "," + "Fitness");
 			writer.newLine();
 			for (int gen = 0; gen < numGenerations; gen++) {
 				double[] ref = objective0.get(gen);
+				int[] taskRef = objectiveTaskIndex.get(gen);
 //				writer.write("gen"+ gen + ",");
 				for(int i=0; i< ref.length; i++){
 					if(ref[i] >= Double.POSITIVE_INFINITY || ref[i] >= Double.MAX_VALUE){
 						continue;
 					}
 					else{
-						writer.write("gen"+ gen + "," + i + "," + ref[i]);
+						writer.write("gen"+ gen + "," + i + "," + taskRef[i] + "," + ref[i]);
 						writer.newLine();
 					}
 
@@ -821,17 +947,18 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		File obj1Fitness = new File("job." + jobSeed + ".obj1fitness.csv"); //successedTransfer[i][j]: task j makes a successful transfer for task i.
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(obj1Fitness));
-			writer.write("Gen"+ "," + "Index" + "," + "Fitness");
+			writer.write("Gen"+ "," + "Index" + "," + "Task" + "," + "Fitness");
 			writer.newLine();
 			for (int gen = 0; gen < numGenerations; gen++) {
 				double[] ref = objective1.get(gen);
+				int[] taskRef = objectiveTaskIndex.get(gen);
 //				writer.write("gen"+ gen + ",");
 				for(int i=0; i< ref.length; i++){
 					if(ref[i] >= Double.POSITIVE_INFINITY || ref[i] >= Double.MAX_VALUE){
 						continue;
 					}
 					else{
-						writer.write("gen"+ gen + "," + i + "," + ref[i]);
+						writer.write("gen"+ gen + "," + i + "," + taskRef[i] + "," + ref[i]);
 						writer.newLine();
 					}
 //					if(i==ref.length-2){

@@ -65,7 +65,7 @@ public class PSLParentSelection extends TournamentSelection {
 			best = produceMOEAD(start, subpopulation, state, thread);
 		}
 		if(state instanceof GPRuleEvolutionStatePSL){
-			((GPRuleEvolutionStatePSL)state).parentIndex.add(best);
+			((GPRuleEvolutionStatePSL)state).recordSelectedParent(best);
 		}
 		return best;
 	}
@@ -97,7 +97,7 @@ public class PSLParentSelection extends TournamentSelection {
 
 			//store the selected parent index in order to calculate the parent selection diversity!
 		if(state instanceof GPRuleEvolutionStatePSL){
-			((GPRuleEvolutionStatePSL)state).parentIndex.add(best);
+				((GPRuleEvolutionStatePSL)state).recordSelectedParent(best);
 		}
 		return best;
 	}
