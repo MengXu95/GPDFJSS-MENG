@@ -74,6 +74,175 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
     /** The pareto front log */
     public int frontLog = 0;  // stdout by default
 
+    private int taskIndexOf(Individual ind) {
+        if (ind != null && ind.fitness instanceof PSLMultiObjectiveFitness) {
+            return ((PSLMultiObjectiveFitness) ind.fitness).getTaskIndex();
+        }
+        return -1;
+    }
+
+    private void printTaskAnnotatedIndividual(EvolutionState state, Individual ind, int log) {
+        state.output.println("MPSLGP Task: " + taskIndexOf(ind), log);
+        ind.printIndividualForHumans(state, log);
+    }
+
+    private void printIndividualInTaskGroup(EvolutionState state, Individual ind, int log) {
+        ind.printIndividualForHumans(state, log);
+    }
+
+    private String frontLineWithTask(Individual ind) {
+        MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
+        double[] objectives = mof.getObjectives();
+        StringBuilder line = new StringBuilder();
+        line.append(taskIndexOf(ind));
+        for (int f = 0; f < objectives.length; f++) {
+            line.append(' ').append(objectives[f]);
+        }
+        return line.toString();
+    }
+
+    private boolean useTaskAwareOutput(EvolutionState state) {
+        return state instanceof GPRuleEvolutionStatePSL && ((GPRuleEvolutionStatePSL) state).numTasks > 1;
+    }
+
+    private int numTasks(EvolutionState state) {
+        if (state instanceof GPRuleEvolutionStatePSL) {
+            return Math.max(1, ((GPRuleEvolutionStatePSL) state).numTasks);
+        }
+        return 1;
+    }
+
+    private Individual[] individualsForTask(EvolutionState state, int taskIndex) {
+        List<Individual> individuals = new ArrayList<>();
+        for (int subpop = 0; subpop < state.population.subpops.length; subpop++) {
+            for (Individual ind : state.population.subpops[subpop].individuals) {
+                if (ind != null && taskIndexOf(ind) == taskIndex) {
+                    individuals.add(ind);
+                }
+            }
+        }
+        return individuals.toArray(new Individual[0]);
+    }
+
+    private Object[] paretoFrontForTask(EvolutionState state, int taskIndex) {
+        Individual[] individuals = individualsForTask(state, taskIndex);
+        if (individuals.length == 0) {
+            return new Object[0];
+        }
+        MultiObjectiveFitness typicalFitness = (MultiObjectiveFitness) individuals[0].fitness;
+        ArrayList front = typicalFitness.partitionIntoParetoFront(individuals, null, null);
+        Object[] sortedFront = front.toArray();
+        sortByObjective0(sortedFront);
+        return sortedFront;
+    }
+
+    private void sortByObjective0(Object[] individuals) {
+        QuickSort.qsort(individuals, new SortComparator()
+        {
+            public boolean lt(Object a, Object b)
+            {
+                return (((MultiObjectiveFitness) (((Individual) a).fitness)).getObjective(0) <
+                        (((MultiObjectiveFitness) ((Individual) b).fitness)).getObjective(0));
+            }
+
+            public boolean gt(Object a, Object b)
+            {
+                return (((MultiObjectiveFitness) (((Individual) a).fitness)).getObjective(0) >
+                        ((MultiObjectiveFitness) (((Individual) b).fitness)).getObjective(0));
+            }
+        });
+    }
+
+    private void sortByTaskFitness(Individual[] individuals) {
+        QuickSort.qsort(individuals, new SortComparator()
+        {
+            public boolean lt(Object a, Object b)
+            {
+                return ((Individual) a).fitness.betterThan(((Individual) b).fitness);
+            }
+
+            public boolean gt(Object a, Object b)
+            {
+                return ((Individual) b).fitness.betterThan(((Individual) a).fitness);
+            }
+        });
+    }
+
+    private Individual[] topIndividualsForTask(EvolutionState state, int taskIndex, int topN, boolean amongParetoFront) {
+        Individual[] candidates;
+        if (amongParetoFront) {
+            Object[] front = paretoFrontForTask(state, taskIndex);
+            candidates = new Individual[front.length];
+            for (int i = 0; i < front.length; i++) {
+                candidates[i] = (Individual) front[i];
+            }
+        }
+        else {
+            candidates = individualsForTask(state, taskIndex);
+        }
+        if (candidates.length == 0) {
+            return candidates;
+        }
+        sortByTaskFitness(candidates);
+        int length = Math.min(topN, candidates.length);
+        Individual[] topIndividuals = new Individual[length];
+        System.arraycopy(candidates, 0, topIndividuals, 0, length);
+        return topIndividuals;
+    }
+
+    private void postEvaluationStatisticsByTask(final EvolutionState state) {
+        boolean amongParetoFront = ((GPRuleEvolutionStatePSL)state).topNFromParetoFront;
+        if (doGeneration) state.output.println("\nGeneration: " + state.generation,statisticslog);
+        if (doGeneration) state.output.println("Best Individual by MPSLGP Task:",statisticslog);
+        for (int task = 0; task < numTasks(state); task++) {
+            Individual[] topIndividuals = topIndividualsForTask(state, task, 1, amongParetoFront);
+            if (topIndividuals.length == 0) {
+                if (doGeneration) state.output.println("MPSLGP Task " + task + ": no individuals", statisticslog);
+                if (doMessage && !silentPrint) state.output.message("MPSLGP task " + task + " has no individuals in this generation.");
+                continue;
+            }
+            Individual best = topIndividuals[0];
+            if (doGeneration) state.output.println("MPSLGP Task " + task + ":",statisticslog);
+                if (doGeneration) printIndividualInTaskGroup(state, best, statisticslog);
+            if (doMessage && !silentPrint) state.output.message("MPSLGP task " + task + " best fitness of generation" +
+                    (best.evaluated ? " " : " (evaluated flag not set): ") +
+                    best.fitness.fitnessToStringForHumans());
+        }
+    }
+
+    private void printTaskGroupedTopN(EvolutionState state, boolean printOutput) {
+        if (!printOutput) {
+            return;
+        }
+        int topN = ((GPRuleEvolutionStatePSL) state).outputTopN;
+        boolean amongParetoFront = ((GPRuleEvolutionStatePSL) state).topNFromParetoFront;
+        state.output.println("\nTop N individuals by MPSLGP Task:",statisticslog);
+        for (int task = 0; task < numTasks(state); task++) {
+            Individual[] topIndividuals = topIndividualsForTask(state, task, topN, amongParetoFront);
+            state.output.println("\nMPSLGP Task " + task + " Top " + topIndividuals.length + " individuals:", statisticslog);
+            for (Individual ind : topIndividuals) {
+                printIndividualInTaskGroup(state, ind, statisticslog);
+            }
+        }
+    }
+
+    private void printTaskGroupedParetoFronts(EvolutionState state, boolean printOutput) {
+        for (int task = 0; task < numTasks(state); task++) {
+            Object[] sortedFront = paretoFrontForTask(state, task);
+            if (printOutput) {
+                state.output.println("\n\nPareto Front for MPSLGP Task " + task, statisticslog);
+                for (Object element : sortedFront) {
+                    printIndividualInTaskGroup(state, (Individual) element, statisticslog);
+                }
+            }
+            if (!silentFront) {
+                for (Object element : sortedFront) {
+                    state.output.println(frontLineWithTask((Individual) element), frontLog);
+                }
+            }
+        }
+    }
+
     public void setup(final EvolutionState state, final Parameter base)
         {
         super.setup(state,base);
@@ -111,6 +280,10 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
         boolean warned = false;
         public void postEvaluationStatistics(final EvolutionState state)
         {
+            if (useTaskAwareOutput(state)) {
+                postEvaluationStatisticsByTask(state);
+                return;
+            }
             boolean amongParetoFront = ((GPRuleEvolutionStatePSL)state).topNFromParetoFront;
             if(amongParetoFront){
                 int numTopN = ((GPRuleEvolutionStatePSL)state).outputTopN;
@@ -153,8 +326,9 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 for(int x=0;x<state.population.subpops.length;x++)
                 {
                     if (doGeneration) state.output.println("Subpopulation " + x + ":",statisticslog);
-                    if (doGeneration) best_i[x].printIndividualForHumans(state,statisticslog);
+                        if (doGeneration) printTaskAnnotatedIndividual(state, best_i[x], statisticslog);
                     if (doMessage && !silentPrint) state.output.message("Subpop " + x + " best fitness of generation" +
+                            " [task " + taskIndexOf(best_i[x]) + "]" +
                             (best_i[x].evaluated ? " " : " (evaluated flag not set): ") +
                             best_i[x].fitness.fitnessToStringForHumans());
 
@@ -205,8 +379,9 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 for(int x=0;x<state.population.subpops.length;x++)
                 {
                     if (doGeneration) state.output.println("Subpopulation " + x + ":",statisticslog);
-                    if (doGeneration) best_i[x].printIndividualForHumans(state,statisticslog);
+                        if (doGeneration) printTaskAnnotatedIndividual(state, best_i[x], statisticslog);
                     if (doMessage && !silentPrint) state.output.message("Subpop " + x + " best fitness of generation" +
+                            " [task " + taskIndexOf(best_i[x]) + "]" +
                             (best_i[x].evaluated ? " " : " (evaluated flag not set): ") +
                             best_i[x].fitness.fitnessToStringForHumans());
 
@@ -227,6 +402,12 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
     public void finalStatistics(final EvolutionState state, final int result)
         {
         bypassFinalStatistics(state, result);  // just call super.super.finalStatistics(...)
+
+        if (useTaskAwareOutput(state)) {
+            if (doFinal) state.output.println("\n\n\n PARETO FRONTS BY MPSLGP TASK", statisticslog);
+            printTaskGroupedParetoFronts(state, doFinal);
+            return;
+        }
         
         //fzhang 15.11.2018  output seed information in out.stat
     /*    Parameter p;
@@ -271,7 +452,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 // print out front to statistics log
                 if (doFinal)
                     for (int i = 0; i < sortedFront.length; i++)
-                        ((Individual)(sortedFront[i])).printIndividualForHumans(state, statisticslog);
+                        printTaskAnnotatedIndividual(state, (Individual)(sortedFront[i]), statisticslog);
 
                 // write short version of front out to disk
                 if (!silentFront)
@@ -281,13 +462,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     for (int i = 0; i < sortedFront.length; i++)
                     {
                         Individual ind = (Individual)(sortedFront[i]);
-                        MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                        double[] objectives = mof.getObjectives();
-
-                        String line = "";
-                        for (int f = 0; f < objectives.length; f++)
-                            line += (objectives[f] + " ");
-                        state.output.println(line, frontLog);
+                        state.output.println(frontLineWithTask(ind), frontLog);
                     }
                 }
             }
@@ -337,7 +512,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 // print out front to statistics log
                 if (doFinal)
                     for (int i = 0; i < nonDominatedIndsFromAllSubpops.size(); i++)
-                        nonDominatedIndsFromAllSubpops.get(i).printIndividualForHumans(state, statisticslog);
+                        printTaskAnnotatedIndividual(state, nonDominatedIndsFromAllSubpops.get(i), statisticslog);
 
 
                 // write short version of front out to disk
@@ -349,13 +524,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     for (int i = 0; i < nonDominatedIndsFromAllSubpops.size(); i++)
                     {
                         Individual ind = nonDominatedIndsFromAllSubpops.get(i);
-                        MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                        double[] objectives = mof.getObjectives();
-
-                        String line = "";
-                        for (int f = 0; f < objectives.length; f++)
-                            line += (objectives[f] + " ");
-                        state.output.println(line, frontLog);
+                        state.output.println(frontLineWithTask(ind), frontLog);
                     }
                 }
             }
@@ -390,7 +559,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     // print out front to statistics log
                     if (doFinal)
                         for (int i = 0; i < sortedFront.length; i++)
-                            ((Individual)(sortedFront[i])).printIndividualForHumans(state, statisticslog);
+                            printTaskAnnotatedIndividual(state, (Individual)(sortedFront[i]), statisticslog);
 
                     // write short version of front out to disk
                     if (!silentFront)
@@ -400,13 +569,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                         for (int i = 0; i < sortedFront.length; i++)
                         {
                             Individual ind = (Individual)(sortedFront[i]);
-                            MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                            double[] objectives = mof.getObjectives();
-
-                            String line = "";
-                            for (int f = 0; f < objectives.length; f++)
-                                line += (objectives[f] + " ");
-                            state.output.println(line, frontLog);
+                            state.output.println(frontLineWithTask(ind), frontLog);
                         }
                     }
                 }
@@ -421,6 +584,12 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
         public void middleStatistics(final EvolutionState state, final int result)
         {
             bypassFinalStatistics(state, result);  // just call super.super.finalStatistics(...)
+
+            if (useTaskAwareOutput(state)) {
+                if (doMiddle) state.output.println("\n\n\n PARETO FRONTS BY MPSLGP TASK", statisticslog);
+                printTaskGroupedParetoFronts(state, doMiddle);
+                return;
+            }
 
             //fzhang 15.11.2018  output seed information in out.stat
     /*    Parameter p;
@@ -464,7 +633,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 // print out front to statistics log
                 if (doMiddle)
                     for (int i = 0; i < sortedFront.length; i++)
-                        ((Individual)(sortedFront[i])).printIndividualForHumans(state, statisticslog);
+                        printTaskAnnotatedIndividual(state, (Individual)(sortedFront[i]), statisticslog);
 
                 // write short version of front out to disk
                 if (!silentFront)
@@ -474,13 +643,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     for (int i = 0; i < sortedFront.length; i++)
                     {
                         Individual ind = (Individual)(sortedFront[i]);
-                        MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                        double[] objectives = mof.getObjectives();
-
-                        String line = "";
-                        for (int f = 0; f < objectives.length; f++)
-                            line += (objectives[f] + " ");
-                        state.output.println(line, frontLog);
+                        state.output.println(frontLineWithTask(ind), frontLog);
                     }
                 }
             }
@@ -530,7 +693,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 // print out front to statistics log
                 if (doMiddle)
                     for (int i = 0; i < nonDominatedIndsFromAllSubpops.size(); i++)
-                        nonDominatedIndsFromAllSubpops.get(i).printIndividualForHumans(state, statisticslog);
+                        printTaskAnnotatedIndividual(state, nonDominatedIndsFromAllSubpops.get(i), statisticslog);
 
 
                 // write short version of front out to disk
@@ -542,13 +705,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     for (int i = 0; i < nonDominatedIndsFromAllSubpops.size(); i++)
                     {
                         Individual ind = nonDominatedIndsFromAllSubpops.get(i);
-                        MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                        double[] objectives = mof.getObjectives();
-
-                        String line = "";
-                        for (int f = 0; f < objectives.length; f++)
-                            line += (objectives[f] + " ");
-                        state.output.println(line, frontLog);
+                        state.output.println(frontLineWithTask(ind), frontLog);
                     }
                 }
             }
@@ -582,7 +739,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                     // print out front to statistics log
                     if (doMiddle)
                         for (int i = 0; i < sortedFront.length; i++)
-                            ((Individual)(sortedFront[i])).printIndividualForHumans(state, statisticslog);
+                            printTaskAnnotatedIndividual(state, (Individual)(sortedFront[i]), statisticslog);
 
                     // write short version of front out to disk
                     if (!silentFront)
@@ -592,13 +749,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                         for (int i = 0; i < sortedFront.length; i++)
                         {
                             Individual ind = (Individual)(sortedFront[i]);
-                            MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                            double[] objectives = mof.getObjectives();
-
-                            String line = "";
-                            for (int f = 0; f < objectives.length; f++)
-                                line += (objectives[f] + " ");
-                            state.output.println(line, frontLog);
+                            state.output.println(frontLineWithTask(ind), frontLog);
                         }
                     }
                 }
@@ -682,7 +833,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
             if (doMiddle)
                 state.output.println("\n\nPareto Front of Subpopulation 0", statisticslog);
                 for (int i = 0; i < externalArchive.getArchive().size(); i++)
-                    ((Individual)(externalArchive.getArchive().get(i))).printIndividualForHumans(state, statisticslog);
+                    printTaskAnnotatedIndividual(state, (Individual)(externalArchive.getArchive().get(i)), statisticslog);
 
             // write short version of front out to disk
             if (!silentFront)
@@ -692,13 +843,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                 for (int i = 0; i < externalArchive.getArchive().size(); i++)
                 {
                     Individual ind = (Individual)(externalArchive.getArchive().get(i));
-                    MultiObjectiveFitness mof = (MultiObjectiveFitness) (ind.fitness);
-                    double[] objectives = mof.getObjectives();
-
-                    String line = "";
-                    for (int f = 0; f < objectives.length; f++)
-                        line += (objectives[f] + " ");
-                    state.output.println(line, frontLog);
+                    state.output.println(frontLineWithTask(ind), frontLog);
                 }
             }
         }
@@ -707,6 +852,10 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
          calling super.finalStatistics(...) */
         protected void bypassFinalStatistics(EvolutionState state, int result)
         {
+            if (useTaskAwareOutput(state)) {
+                printTaskGroupedTopN(state, doFinal);
+                return;
+            }
             // for now we just print the best fitness
             //sort pop based on PSL fitness
             boolean amongParetoFront = ((GPRuleEvolutionStatePSL)state).topNFromParetoFront;
@@ -720,7 +869,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                         if(((GPRuleEvolutionStatePSL)state).outputTopN > 1){
 //                        if (doFinal) state.output.println("\nTop N individuals:",statisticslog);
                             for(int i=0; i<((GPRuleEvolutionStatePSL)state).outputTopN ; i++){
-                                if (doFinal) sortedParetoFront[i].printIndividualForHumans(state,statisticslog);
+                                if (doFinal) printTaskAnnotatedIndividual(state, sortedParetoFront[i], statisticslog);
                             }
                         }
                     }
@@ -747,7 +896,7 @@ public class PSLMultiObjectiveStatisticsTopN extends SimpleStatistics
                         if(((GPRuleEvolutionStatePSL)state).outputTopN > 1){
 //                        if (doFinal) state.output.println("\nTop N individuals:",statisticslog);
                             for(int i=0; i<((GPRuleEvolutionStatePSL)state).outputTopN; i++){
-                                if (doFinal) state.population.subpops[x].individuals[i].printIndividualForHumans(state,statisticslog);
+                                if (doFinal) printTaskAnnotatedIndividual(state, state.population.subpops[x].individuals[i], statisticslog);
                             }
                         }
                     }
