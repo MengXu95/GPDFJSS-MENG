@@ -96,6 +96,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	private static class DiversityRecord {
 		String scope;
 		int taskIndex;
+		int individualCount;
 		double generation;
 		double genotypeDiversity;
 		double phenotypeDiversity;
@@ -106,12 +107,13 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		double pcDiversity;
 		double parentSelectionDiversity;
 
-		DiversityRecord(String scope, int taskIndex, double generation, double genotypeDiversity,
+		DiversityRecord(String scope, int taskIndex, int individualCount, double generation, double genotypeDiversity,
 						 double phenotypeDiversity, double entropyDiversity, double pseudoIsomorphsDiversity,
 						 double editOneDiversity, double editTwoDiversity, double pcDiversity,
 						 double parentSelectionDiversity) {
 			this.scope = scope;
 			this.taskIndex = taskIndex;
+			this.individualCount = individualCount;
 			this.generation = generation;
 			this.genotypeDiversity = genotypeDiversity;
 			this.phenotypeDiversity = phenotypeDiversity;
@@ -793,7 +795,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 										  double[][] pcByIndividual, List<Integer> selectedParentIndex,
 										  Individual bestIndividual) {
 		if (individuals.length == 0) {
-			storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, generation, 0.0, 0.0, 0.0, 0.0,
+			storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, 0, generation, 0.0, 0.0, 0.0, 0.0,
 					0.0, 0.0, 0.0, 0.0));
 			return;
 		}
@@ -820,7 +822,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		double parentIndexDiversityValue = selectedParentIndex.isEmpty() ? 0.0 :
 				(double) parentIndexDiversity.parentIndexDiversity(selectedParentIndex) / selectedParentIndex.size();
 
-		storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, generation, genotypeDiversityValue,
+		storeTaskGenDiversities.add(new DiversityRecord(scope, taskIndex, individuals.length, generation, genotypeDiversityValue,
 				phenotypeDiversityValue, entropyDiversityValue, pseudoIsomorphsDiversityValue,
 				editOneDiversityValue, editTwoDiversityValue, pcDiversityValue, parentIndexDiversityValue));
 		if ("ALL".equals(scope)) {
@@ -869,10 +871,10 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		File diversities = new File("job." + jobSeed + ".diversities.csv"); //successedTransfer[i][j]: task j makes a successful transfer for task i.
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(diversities));
-			writer.write("Gen,Scope,Task,Geno,Pheno,Entropy,PseIso,Edit 1,Edit 2,PC,ParentSelection");
+			writer.write("Gen,Scope,Task,Size,Geno,Pheno,Entropy,PseIso,Edit 1,Edit 2,PC,ParentSelection");
 			writer.newLine();
 			for (DiversityRecord ref : storeTaskGenDiversities) {
-				writer.write(ref.generation + "," + ref.scope + "," + ref.taskIndex + "," + ref.genotypeDiversity
+				writer.write(ref.generation + "," + ref.scope + "," + ref.taskIndex + "," + ref.individualCount + "," + ref.genotypeDiversity
 						+ "," + ref.phenotypeDiversity + "," + ref.entropyDiversity + ","
 						+ ref.pseudoIsomorphsDiversity + "," + ref.editOneDiversity + ","
 						+ ref.editTwoDiversity + "," + ref.pcDiversity + "," + ref.parentSelectionDiversity);
