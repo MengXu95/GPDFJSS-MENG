@@ -140,6 +140,33 @@ public enum JobShopAttribute {
         return lookup.get(name);
     }
 
+    private static double preferenceValue(EvolutionState state, int objectiveIndex, double scale) {
+        if (state instanceof GPRuleEvolutionStatePSL) {
+            return scale * ((PSLInitializer) state.initializer).weights[((GPRuleEvolutionStatePSL) state).evaluatePreferenceIndex][objectiveIndex];
+        }
+        if (state instanceof mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) {
+            mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL mpslgpState =
+                    (mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) state;
+            mengxu.algorithm.multiobjective.MPSLGP.PSLInitializer mpslgpInitializer =
+                    (mengxu.algorithm.multiobjective.MPSLGP.PSLInitializer) state.initializer;
+            return scale * mpslgpInitializer.weights[mpslgpState.evaluatePreferenceIndex][objectiveIndex];
+        }
+        System.err.println("Preference terminal is only defined for PSLGP or MPSLGP states.");
+        System.exit(1);
+        return 0;
+    }
+
+    private static double maxTerminalValue(EvolutionState state, String key) {
+        Double value = null;
+        if (state instanceof mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) {
+            value = ((mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) state).maxTerminals.get(key);
+        }
+        else if (state instanceof GPRuleEvolutionStatePSL) {
+            value = ((GPRuleEvolutionStatePSL) state).maxTerminals.get(key);
+        }
+        return value == null ? 1 : value;
+    }
+
     public double value(OperationOption op, WorkCenter workCenter, SystemState systemState
     		) {
         double value = -1;
@@ -318,6 +345,13 @@ public enum JobShopAttribute {
                     value = ((HeterogeneousSimulation)systemState.getSimulation()).getWorkCenterTranserTime(fromWorkCenterID, workCenter.getId());
                     break;
                 }
+
+            case Preference_One:
+                value = 100;
+                break;
+            case Preference_Two:
+                value = 100;
+                break;
             	 
            default:
                 System.err.println("Undefined attribute " + name);
@@ -509,10 +543,10 @@ public enum JobShopAttribute {
 
                 //meng xu 2024.3.11 for Pareto set learning
             case Preference_One:
-                value = 100*((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][0];
+                value = preferenceValue(state, 0, 100);
                 break;
             case Preference_Two:
-                value = 100*((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][1];
+                value = preferenceValue(state, 1, 100);
                 break;
 
             default:
@@ -699,6 +733,13 @@ public enum JobShopAttribute {
                 }
                 break;
 
+            case Preference_One:
+                value = preferenceValue(state, 0, 100);
+                break;
+            case Preference_Two:
+                value = preferenceValue(state, 1, 100);
+                break;
+
             default:
                 System.err.println("Undefined attribute " + name);
                 System.exit(1);
@@ -713,19 +754,19 @@ public enum JobShopAttribute {
     ) {
         double value = -1;
 
-        double maxNumOpsInQueue = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("NUM_OPS_IN_QUEUE");
-        double maxWorkInQueue = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("WORK_IN_QUEUE");
-        double maxMachineWaitingTime = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("MACHINE_WAITING_TIME");
-        double maxProcTime = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("PROC_TIME");
-        double maxNextProcTime = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("NEXT_PROC_TIME");
-        double maxOpWaitingTime = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("OP_WAITING_TIME");
-        double maxWorkRemaining = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("WORK_REMAINING");
-        double maxNumOpsRemaining = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("NUM_OPS_REMAINING");
-        double maxWeight = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("WEIGHT");
-        double maxTimeInSystem = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("TIME_IN_SYSTEM");
-        double maxRelativeDueDate = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("RELATIVE_DUE_DATE");
-        double maxSlack = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("SLACK");
-        double maxTransferTime = ((GPRuleEvolutionStatePSL)state).maxTerminals.get("TRANSFER_TIME");
+        double maxNumOpsInQueue = maxTerminalValue(state, "NUM_OPS_IN_QUEUE");
+        double maxWorkInQueue = maxTerminalValue(state, "WORK_IN_QUEUE");
+        double maxMachineWaitingTime = maxTerminalValue(state, "MACHINE_WAITING_TIME");
+        double maxProcTime = maxTerminalValue(state, "PROC_TIME");
+        double maxNextProcTime = maxTerminalValue(state, "NEXT_PROC_TIME");
+        double maxOpWaitingTime = maxTerminalValue(state, "OP_WAITING_TIME");
+        double maxWorkRemaining = maxTerminalValue(state, "WORK_REMAINING");
+        double maxNumOpsRemaining = maxTerminalValue(state, "NUM_OPS_REMAINING");
+        double maxWeight = maxTerminalValue(state, "WEIGHT");
+        double maxTimeInSystem = maxTerminalValue(state, "TIME_IN_SYSTEM");
+        double maxRelativeDueDate = maxTerminalValue(state, "RELATIVE_DUE_DATE");
+        double maxSlack = maxTerminalValue(state, "SLACK");
+        double maxTransferTime = maxTerminalValue(state, "TRANSFER_TIME");
 
         if(maxNumOpsInQueue == 0){
             maxNumOpsInQueue = 1;
@@ -824,10 +865,10 @@ public enum JobShopAttribute {
                     break;
                 }
             case Preference_One:
-                value = ((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][0];
+                value = preferenceValue(state, 0, 1);
                 break;
             case Preference_Two:
-                value = ((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][1];
+                value = preferenceValue(state, 1, 1);
                 break;
 
             default:
@@ -1020,11 +1061,11 @@ public enum JobShopAttribute {
 
                 //meng xu 2024.3.11 for Pareto set learning
             case Preference_One:
-                value = ((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][0];
+                value = preferenceValue(state, 0, 1);
                 return value;
 //                break;
             case Preference_Two:
-                value = ((PSLInitializer)state.initializer).weights[((GPRuleEvolutionStatePSL)state).evaluatePreferenceIndex][1];
+                value = preferenceValue(state, 1, 1);
                 return value;
 //                break;
 
