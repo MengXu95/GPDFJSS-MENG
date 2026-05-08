@@ -224,6 +224,117 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		}
 	}
 
+	public void balanceTaskDistributionForSurvival(int subpop, int targetSize) {
+		if (numTasks <= 1 || population == null || population.subpops == null || subpop >= population.subpops.length) {
+			return;
+		}
+		Individual[] sortedIndividuals = population.subpops[subpop].individuals;
+		if (sortedIndividuals == null || sortedIndividuals.length <= targetSize) {
+			return;
+		}
+
+		int[] available = taskCounts(sortedIndividuals);
+		int[] desired = balancedTaskTargets(available, targetSize);
+		int[] selected = new int[Math.max(1, numTasks)];
+		boolean[] keep = new boolean[sortedIndividuals.length];
+		int keepSize = 0;
+
+		for (int i = 0; i < sortedIndividuals.length && keepSize < targetSize; i++) {
+			int task = getTaskIndex(sortedIndividuals[i]);
+			if (task >= 0 && task < selected.length && selected[task] < desired[task]) {
+				keep[i] = true;
+				selected[task]++;
+				keepSize++;
+			}
+		}
+
+		for (int i = 0; i < sortedIndividuals.length && keepSize < targetSize; i++) {
+			if (!keep[i]) {
+				keep[i] = true;
+				keepSize++;
+			}
+		}
+
+		Individual[] balancedIndividuals = new Individual[sortedIndividuals.length];
+		int index = 0;
+		for (int i = 0; i < sortedIndividuals.length; i++) {
+			if (keep[i]) {
+				balancedIndividuals[index++] = sortedIndividuals[i];
+			}
+		}
+		for (int i = 0; i < sortedIndividuals.length; i++) {
+			if (!keep[i]) {
+				balancedIndividuals[index++] = sortedIndividuals[i];
+			}
+		}
+		population.subpops[subpop].individuals = balancedIndividuals;
+
+		int[] survivorCounts = new int[Math.max(1, numTasks)];
+		for (int i = 0; i < Math.min(targetSize, balancedIndividuals.length); i++) {
+			int task = getTaskIndex(balancedIndividuals[i]);
+			if (task >= 0 && task < survivorCounts.length) {
+				survivorCounts[task]++;
+			}
+		}
+		System.out.println("MPSLGP task-balanced survival counts: " + taskCountsToString(survivorCounts));
+	}
+
+	private int[] taskCounts(Individual[] individuals) {
+		int[] counts = new int[Math.max(1, numTasks)];
+		for (Individual individual : individuals) {
+			int task = getTaskIndex(individual);
+			if (task >= 0 && task < counts.length) {
+				counts[task]++;
+			}
+		}
+		return counts;
+	}
+
+	private int[] balancedTaskTargets(int[] available, int targetSize) {
+		int tasks = Math.max(1, numTasks);
+		int[] desired = new int[tasks];
+		int base = targetSize / tasks;
+		int remainder = targetSize % tasks;
+		int shortage = 0;
+		for (int task = 0; task < tasks; task++) {
+			desired[task] = base + (task < remainder ? 1 : 0);
+			if (available[task] < desired[task]) {
+				shortage += desired[task] - available[task];
+				desired[task] = available[task];
+			}
+		}
+
+		while (shortage > 0) {
+			int bestTask = -1;
+			int bestSurplus = 0;
+			for (int task = 0; task < tasks; task++) {
+				int surplus = available[task] - desired[task];
+				if (surplus > bestSurplus) {
+					bestSurplus = surplus;
+					bestTask = task;
+				}
+			}
+			if (bestTask < 0) {
+				break;
+			}
+			desired[bestTask]++;
+			shortage--;
+		}
+		return desired;
+	}
+
+	private String taskCountsToString(int[] counts) {
+		StringBuilder builder = new StringBuilder("[");
+		for (int task = 0; task < counts.length; task++) {
+			if (task > 0) {
+				builder.append(", ");
+			}
+			builder.append("task ").append(task).append("=").append(counts[task]);
+		}
+		builder.append("]");
+		return builder.toString();
+	}
+
 	public void recordSelectedParent(int parentIndex) {
 		this.parentIndex.add(parentIndex);
 		Individual[] individuals = this.population.subpops[0].individuals;

@@ -470,6 +470,9 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
         for(int subpop=0; subpop<state.population.subpops.length; subpop++){
             if (originalPopSize[subpop] < state.population.subpops[subpop].individuals.length)  // let's resize!
             {
+                if (state instanceof GPRuleEvolutionStatePSL) {
+                    ((GPRuleEvolutionStatePSL) state).balanceTaskDistributionForSurvival(subpop, originalPopSize[subpop]);
+                }
                 state.output.message("Subpop " + subpop + " reduced " + state.population.subpops[subpop].individuals.length + " -> " + originalPopSize[subpop]);
                 state.population.subpops[subpop].resize(originalPopSize[subpop]);
             }
