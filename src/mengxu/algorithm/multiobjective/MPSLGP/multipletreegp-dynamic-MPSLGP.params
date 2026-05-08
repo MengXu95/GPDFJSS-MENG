@@ -40,13 +40,13 @@ eval.num-shuffled = 0
 stat.do-generation = true
 stat.do-message = true
 
-generations = 7
+generations = 20
 quit-on-run-complete = true
 
 pop = ec.Population
 pop.subpops = 1
 pop.subpop.0 = ec.Subpopulation
-pop.subpop.0.size =	100
+pop.subpop.0.size =	200
 
 breed.elite.0 = 10
 
@@ -54,9 +54,14 @@ breed.elite.0 = 10
 # MPSLGP task-indexed peer transfer
 # ==============================
 mpslgp.num-tasks = 2
-mpslgp.transfer-probability = 0.30
-mpslgp.task-inheritance-probability = 0.50
+mpslgp.transfer-probability = 0.0
+mpslgp.task-inheritance-probability = 1.0
 mpslgp.transfer-start-generation = 1
+
+# mpslgp.num-tasks = 2
+# mpslgp.transfer-probability = 0.30
+# mpslgp.task-inheritance-probability = 0.50
+# mpslgp.transfer-start-generation = 1
 
 # ==============================
 # GP general parameters
