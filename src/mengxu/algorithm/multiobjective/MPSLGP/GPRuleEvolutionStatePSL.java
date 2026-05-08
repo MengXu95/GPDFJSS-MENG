@@ -60,6 +60,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	public List<double[]> objective0 = new ArrayList<>();
 	public List<double[]> objective1 = new ArrayList<>();
 	public List<int[]> objectiveTaskIndex = new ArrayList<>();
+	public List<TopMetricRecord> topMetricRecords = new ArrayList<>();
 
 	public Archive externalArchive = new Archive(); //add by mengxu 2022.09.02
 	public PhenoCharacterisation[] phenoCharacterisation = new PhenoCharacterisation[2];
@@ -123,6 +124,29 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			this.editTwoDiversity = editTwoDiversity;
 			this.pcDiversity = pcDiversity;
 			this.parentSelectionDiversity = parentSelectionDiversity;
+		}
+	}
+
+	private static class TopMetricRecord {
+		double generation;
+		int taskIndex;
+		int rank;
+		int individualIndex;
+		String metricName;
+		double metricValue;
+		double pslFitness;
+		double preferenceDiversity;
+
+		TopMetricRecord(double generation, int taskIndex, int rank, int individualIndex, String metricName,
+						double metricValue, double pslFitness, double preferenceDiversity) {
+			this.generation = generation;
+			this.taskIndex = taskIndex;
+			this.rank = rank;
+			this.individualIndex = individualIndex;
+			this.metricName = metricName;
+			this.metricValue = metricValue;
+			this.pslFitness = pslFitness;
+			this.preferenceDiversity = preferenceDiversity;
 		}
 	}
 
@@ -604,6 +628,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		objective0.add(obj0);
 		objective1.add(obj1);
 		objectiveTaskIndex.add(taskIndexByIndividual);
+		recordTopMetricForTasks(5);
 
 
 
@@ -625,6 +650,10 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		// SHOULD WE QUIT?
 	    if (evaluator.runComplete(this) && quitOnRunComplete)
 	        {
+			writeDiversityToFile();
+			writeSelectParentIndexToFile();
+			writeEachObjToFile();
+			writeTopMetricToFile();
 	        output.message("Found Ideal Individual");
 	        return R_SUCCESS;
 	        }
@@ -635,6 +664,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			writeDiversityToFile();//modified by mengxu	2021.04.15
 			writeSelectParentIndexToFile();
 			writeEachObjToFile();
+			writeTopMetricToFile();
 //			writeEnsembleToFile();//modified by mengxu 2021.05.08
 			return R_FAILURE;
 	        }
@@ -902,6 +932,132 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		return best;
 	}
 
+	private void recordTopMetricForTasks(int topN) {
+		String metricName = currentMetricName();
+		if (metricName == null) {
+			return;
+		}
+		System.out.println("MPSLGP top " + topN + " " + metricName + " by task at generation " + generation + ":");
+		for (int task = 0; task < Math.max(1, numTasks); task++) {
+			TopMetricCandidate[] topCandidates = topMetricCandidatesForTask(task, topN, metricName);
+			if (topCandidates.length == 0) {
+				System.out.println("  Task " + task + ": no individuals");
+				continue;
+			}
+			StringBuilder line = new StringBuilder("  Task ").append(task).append(": ");
+			for (int rank = 0; rank < topCandidates.length; rank++) {
+				TopMetricCandidate candidate = topCandidates[rank];
+				ClearingPSLMultiObjectiveFitness fitness = (ClearingPSLMultiObjectiveFitness) candidate.individual.fitness;
+				topMetricRecords.add(new TopMetricRecord(generation, task, rank + 1, candidate.individualIndex,
+						metricName, candidate.metricValue, fitness.getPSLFitness(), fitness.getPreferenceDiversity()));
+				if (rank > 0) {
+					line.append("; ");
+				}
+				line.append("#").append(rank + 1)
+						.append(" ind=").append(candidate.individualIndex)
+						.append(" ").append(metricName).append("=").append(candidate.metricValue);
+			}
+			System.out.println(line);
+		}
+	}
+
+	private static class TopMetricCandidate {
+		Individual individual;
+		int individualIndex;
+		double metricValue;
+
+		TopMetricCandidate(Individual individual, int individualIndex, double metricValue) {
+			this.individual = individual;
+			this.individualIndex = individualIndex;
+			this.metricValue = metricValue;
+		}
+	}
+
+	private TopMetricCandidate[] topMetricCandidatesForTask(int taskIndex, int topN, String metricName) {
+		List<TopMetricCandidate> candidates = new ArrayList<>();
+		Individual[] individuals = population.subpops[0].individuals;
+		for (int individualIndex = 0; individualIndex < individuals.length; individualIndex++) {
+			Individual individual = individuals[individualIndex];
+			if (getTaskIndex(individual) != taskIndex || !(individual.fitness instanceof ClearingPSLMultiObjectiveFitness)) {
+				continue;
+			}
+			double metricValue = metricValue((ClearingPSLMultiObjectiveFitness) individual.fitness, metricName);
+			if (isValidMetricValue(metricValue, metricName)) {
+				candidates.add(new TopMetricCandidate(individual, individualIndex, metricValue));
+			}
+		}
+		TopMetricCandidate[] sortedCandidates = candidates.toArray(new TopMetricCandidate[0]);
+		QuickSort.qsort(sortedCandidates, new SortComparator() {
+			public boolean lt(Object first, Object second) {
+				return betterMetric((TopMetricCandidate) first, (TopMetricCandidate) second, metricName);
+			}
+
+			public boolean gt(Object first, Object second) {
+				return betterMetric((TopMetricCandidate) second, (TopMetricCandidate) first, metricName);
+			}
+		});
+		int length = Math.min(topN, sortedCandidates.length);
+		TopMetricCandidate[] topCandidates = new TopMetricCandidate[length];
+		System.arraycopy(sortedCandidates, 0, topCandidates, 0, length);
+		return topCandidates;
+	}
+
+	private boolean betterMetric(TopMetricCandidate first, TopMetricCandidate second, String metricName) {
+		if ("HV".equals(metricName)) {
+			if (first.metricValue != second.metricValue) {
+				return first.metricValue > second.metricValue;
+			}
+		}
+		else {
+			if (first.metricValue != second.metricValue) {
+				return first.metricValue < second.metricValue;
+			}
+		}
+		return first.individual.fitness.betterThan(second.individual.fitness);
+	}
+
+	private String currentMetricName() {
+		if (population == null || population.subpops == null || population.subpops.length == 0 ||
+				population.subpops[0].individuals.length == 0 ||
+				!(population.subpops[0].individuals[0].fitness instanceof ClearingPSLMultiObjectiveFitness)) {
+			return null;
+		}
+		String compareCriteria = ((ClearingPSLMultiObjectiveFitness) population.subpops[0].individuals[0].fitness).compareCriteria;
+		if ("HV".equals(compareCriteria) || "HV_noRank".equals(compareCriteria)) {
+			return "HV";
+		}
+		if ("IGD".equals(compareCriteria) || "IGD_noRank".equals(compareCriteria)) {
+			return "IGD";
+		}
+		if ("GD".equals(compareCriteria) || "GD_noRank".equals(compareCriteria)) {
+			return "GD";
+		}
+		return null;
+	}
+
+	private double metricValue(ClearingPSLMultiObjectiveFitness fitness, String metricName) {
+		if ("HV".equals(metricName)) {
+			return fitness.getHVvalue();
+		}
+		if ("IGD".equals(metricName)) {
+			return fitness.getIGDvalue();
+		}
+		if ("GD".equals(metricName)) {
+			return fitness.getGDvalue();
+		}
+		return Double.NaN;
+	}
+
+	private boolean isValidMetricValue(double metricValue, String metricName) {
+		if (Double.isNaN(metricValue)) {
+			return false;
+		}
+		if ("HV".equals(metricName)) {
+			return metricValue > Double.NEGATIVE_INFINITY;
+		}
+		return metricValue < Double.POSITIVE_INFINITY && metricValue < Double.MAX_VALUE;
+	}
+
 	private void recordDiversityForPopulation(String scope, int taskIndex, Individual[] individuals,
 										  double[][] pcByIndividual, List<Integer> selectedParentIndex,
 										  Individual bestIndividual) {
@@ -1029,7 +1185,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(obj0Fitness));
 			writer.write("Gen"+ "," + "Index" + "," + "Task" + "," + "Fitness");
 			writer.newLine();
-			for (int gen = 0; gen < numGenerations; gen++) {
+			for (int gen = 0; gen < objective0.size(); gen++) {
 				double[] ref = objective0.get(gen);
 				int[] taskRef = objectiveTaskIndex.get(gen);
 //				writer.write("gen"+ gen + ",");
@@ -1062,7 +1218,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(obj1Fitness));
 			writer.write("Gen"+ "," + "Index" + "," + "Task" + "," + "Fitness");
 			writer.newLine();
-			for (int gen = 0; gen < numGenerations; gen++) {
+			for (int gen = 0; gen < objective1.size(); gen++) {
 				double[] ref = objective1.get(gen);
 				int[] taskRef = objectiveTaskIndex.get(gen);
 //				writer.write("gen"+ gen + ",");
@@ -1089,6 +1245,24 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			e.printStackTrace();
 		}
 
+	}
+
+	public void writeTopMetricToFile(){
+		File topMetricFile = new File("job." + jobSeed + ".top5metric.csv");
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter(topMetricFile));
+			writer.write("Gen,Task,Rank,IndividualIndex,Metric,Value,PSLFitness,PreferenceDiversity");
+			writer.newLine();
+			for (TopMetricRecord record : topMetricRecords) {
+				writer.write(record.generation + "," + record.taskIndex + "," + record.rank + ","
+						+ record.individualIndex + "," + record.metricName + "," + record.metricValue + ","
+						+ record.pslFitness + "," + record.preferenceDiversity);
+				writer.newLine();
+			}
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	//add 2021.10.08
