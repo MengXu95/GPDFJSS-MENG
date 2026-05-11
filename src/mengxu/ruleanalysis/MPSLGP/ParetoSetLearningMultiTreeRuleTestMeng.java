@@ -1351,7 +1351,7 @@ public class ParetoSetLearningMultiTreeRuleTestMeng {
 			int topN = 5; // add by mengxu 2024.5.21
 
 //			multipletreeruleTest.writeEachRunToCSV(curRun-1, topN);
-			multipletreeruleTest.writeEachRunToCSV(curRun-1, topN,true);
+			multipletreeruleTest.writeEachRunToCSV(curRun-1, topN,false);
 
 			//original
 //			multipletreeruleTest.writeToCSV();
