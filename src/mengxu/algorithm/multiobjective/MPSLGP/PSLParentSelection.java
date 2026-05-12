@@ -22,12 +22,15 @@ public class PSLParentSelection extends TournamentSelection {
 		int n=INDS_PRODUCED;
 		if (n<min) n = min;
 		if (n>max) n = max;
-		if (n == 2 && state instanceof GPRuleEvolutionStatePSL
-				&& ((GPRuleEvolutionStatePSL) state).usePeerTaskTransfer()
-				&& state.random[thread].nextDouble() < ((GPRuleEvolutionStatePSL) state).transferProbability) {
+		if (n == 2 && state instanceof GPRuleEvolutionStatePSL) {
+			GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;
 			int firstIndex = produceMOEAD(start, subpopulation, state, thread);
-			int firstTask = ((GPRuleEvolutionStatePSL) state).getTaskIndex(state.population.subpops[subpopulation].individuals[firstIndex]);
-			int secondIndex = produceMOEADFromDifferentTask(start, subpopulation, state, thread, firstTask);
+			int firstTask = mpslgpState.getTaskIndex(state.population.subpops[subpopulation].individuals[firstIndex]);
+			boolean usePeerTaskTransfer = mpslgpState.usePeerTaskTransfer()
+					&& state.random[thread].nextDouble() < mpslgpState.transferProbability;
+			int secondIndex = usePeerTaskTransfer
+					? produceMOEADFromDifferentTask(start, subpopulation, state, thread, firstTask, firstIndex)
+					: produceMOEADFromSameTask(start, subpopulation, state, thread, firstTask, firstIndex);
 			inds[start] = state.population.subpops[subpopulation].individuals[firstIndex];
 			inds[start + 1] = state.population.subpops[subpopulation].individuals[secondIndex];
 			return n;
@@ -48,7 +51,7 @@ public class PSLParentSelection extends TournamentSelection {
 	}
 
 	public int produceMOEADFromDifferentTask(final int start, final int subpopulation, final EvolutionState state,
-										  final int thread, final int excludedTask) {
+										  final int thread, final int excludedTask, final int fallbackIndex) {
 		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
 		int best = -1;
 		int s = getTournamentSizeToUse(state.random[thread]);
@@ -62,12 +65,65 @@ public class PSLParentSelection extends TournamentSelection {
 			}
 		}
 		if (best < 0) {
-			best = produceMOEAD(start, subpopulation, state, thread);
+			best = bestIndividualFromDifferentTask(start, subpopulation, state, thread, excludedTask, fallbackIndex);
 		}
 		if(state instanceof GPRuleEvolutionStatePSL){
 			((GPRuleEvolutionStatePSL)state).recordSelectedParent(best);
 		}
 		return best;
+	}
+
+	public int produceMOEADFromSameTask(final int start, final int subpopulation, final EvolutionState state,
+									  final int thread, final int requiredTask, final int fallbackIndex) {
+		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
+		int best = -1;
+		int tournamentSize = getTournamentSizeToUse(state.random[thread]);
+		for (int trial = 0; trial < tournamentSize; trial++) {
+			int candidateIndex = getRandomIndividual(start, subpopulation, state, thread);
+			if (((GPRuleEvolutionStatePSL) state).getTaskIndex(oldinds[candidateIndex]) != requiredTask) {
+				continue;
+			}
+			if (best < 0 || betterThan(start, oldinds[candidateIndex], oldinds[best], subpopulation, state, thread)) {
+				best = candidateIndex;
+			}
+		}
+		if (best < 0) {
+			best = bestIndividualFromTask(start, subpopulation, state, thread, requiredTask, fallbackIndex);
+		}
+		if(state instanceof GPRuleEvolutionStatePSL){
+			((GPRuleEvolutionStatePSL)state).recordSelectedParent(best);
+		}
+		return best;
+	}
+
+	private int bestIndividualFromTask(final int start, final int subpopulation, final EvolutionState state,
+									 final int thread, final int requiredTask, final int fallbackIndex) {
+		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
+		int best = -1;
+		for (int candidateIndex = 0; candidateIndex < oldinds.length; candidateIndex++) {
+			if (((GPRuleEvolutionStatePSL) state).getTaskIndex(oldinds[candidateIndex]) != requiredTask) {
+				continue;
+			}
+			if (best < 0 || betterThan(start, oldinds[candidateIndex], oldinds[best], subpopulation, state, thread)) {
+				best = candidateIndex;
+			}
+		}
+		return best >= 0 ? best : fallbackIndex;
+	}
+
+	private int bestIndividualFromDifferentTask(final int start, final int subpopulation, final EvolutionState state,
+										  final int thread, final int excludedTask, final int fallbackIndex) {
+		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
+		int best = -1;
+		for (int candidateIndex = 0; candidateIndex < oldinds.length; candidateIndex++) {
+			if (((GPRuleEvolutionStatePSL) state).getTaskIndex(oldinds[candidateIndex]) == excludedTask) {
+				continue;
+			}
+			if (best < 0 || betterThan(start, oldinds[candidateIndex], oldinds[best], subpopulation, state, thread)) {
+				best = candidateIndex;
+			}
+		}
+		return best >= 0 ? best : fallbackIndex;
 	}
 
 

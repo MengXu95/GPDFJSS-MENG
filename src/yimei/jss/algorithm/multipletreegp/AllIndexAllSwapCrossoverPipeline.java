@@ -25,6 +25,7 @@ import mengxu.algorithm.multiobjective.MOEADarchive.GPRuleEvolutionStateMOEADarc
 import mengxu.algorithm.multiobjective.MOEADepsilonC.GPRuleEvolutionStateMOEADeC;
 import mengxu.algorithm.multiobjective.MOEADm2m.GPRuleEvolutionStateMOEADm2m;
 import mengxu.algorithm.multiobjective.MOEADmap.GPRuleEvolutionStateMOEADmap;
+import mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.semanticTournamentSelection.GPRuleEvolutionStateMCSTS;
 
 /**
@@ -209,6 +210,11 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
             j1.trees = new GPTree[parents[0].trees.length];
             if (n-(q-start)>=2 && !tossSecondParent) j2.trees = new GPTree[parents[1].trees.length];
 
+            int parent0ContributionToJ1 = 0;
+            int parent1ContributionToJ1 = 0;
+            int parent0ContributionToJ2 = 0;
+            int parent1ContributionToJ2 = 0;
+
             // at this point, p1 or p2, or both, may be null.
             // If not, swap one in.  Else just copy the parent.
 
@@ -216,6 +222,8 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
                 {
                 if (x==t1 && res1)  // we've got a tree with a kicking cross position!
                     {
+                    parent0ContributionToJ1 += treeNodeCount((GPIndividual) parents[0], x) - subtreeNodeCount(p1);
+                    parent1ContributionToJ1 += subtreeNodeCount(p2);
                     j1.trees[x] = (GPTree)(parents[0].trees[x].lightClone());
                     j1.trees[x].owner = j1;
                     j1.trees[x].child = parents[0].trees[x].child.cloneReplacing(p2,p1); //p2 new, p1 old
@@ -227,6 +235,7 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
                     {
                 	 //modified by fzhang 7.6.2018  randomly choose one tree to do crossover. According to the setting, must be point crossover.
                 	//after that, swap the other tree. 
+                	    parent1ContributionToJ1 += treeNodeCount((GPIndividual) parents[1], x);
                		    j1.trees[x] = (GPTree)(parents[1].trees[x].lightClone());
                         j1.trees[x].owner = j1;
                         j1.trees[x].child = (GPNode)(parents[1].trees[x].child.clone());
@@ -239,6 +248,8 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
 				for (int x = 0; x < j2.trees.length; x++) {
 					if (x == t2 && res2) // we've got a tree with a kicking cross position!
 					{
+                        parent1ContributionToJ2 += treeNodeCount((GPIndividual) parents[1], x) - subtreeNodeCount(p2);
+                        parent0ContributionToJ2 += subtreeNodeCount(p1);
 						j2.trees[x] = (GPTree) (parents[1].trees[x].lightClone());
 						j2.trees[x].owner = j2;
 						j2.trees[x].child = parents[1].trees[x].child.cloneReplacing(p1, p2);
@@ -247,6 +258,7 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
 						j2.evaluated = false;
 					} // it's changed
 					else {
+                            parent0ContributionToJ2 += treeNodeCount((GPIndividual) parents[0], x);
 							j2.trees[x] = (GPTree) (parents[0].trees[x].lightClone());
 							j2.trees[x].owner = j2;
 							j2.trees[x].child = (GPNode) (parents[0].trees[x].child.clone());
@@ -254,6 +266,13 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
 							j2.trees[x].child.argposition = 0;
 					}
 				}
+
+        setMPSLGPOffspringTaskIndex(state, j1, (GPIndividual) parents[0], parent0ContributionToJ1,
+            (GPIndividual) parents[1], parent1ContributionToJ1);
+        if (j2 != null) {
+        setMPSLGPOffspringTaskIndex(state, j2, (GPIndividual) parents[1], parent1ContributionToJ2,
+            (GPIndividual) parents[0], parent0ContributionToJ2);
+        }
 
             // add the individuals to the population
 
@@ -376,5 +395,24 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
             }
         return n;
         }
+
+    private int treeNodeCount(GPIndividual individual, int treeIndex) {
+        return individual.trees[treeIndex].child.numNodes(GPNode.NODESEARCH_ALL);
+    }
+
+    private int subtreeNodeCount(GPNode node) {
+        return node == null ? 0 : node.numNodes(GPNode.NODESEARCH_ALL);
+    }
+
+    private void setMPSLGPOffspringTaskIndex(EvolutionState state, GPIndividual child,
+                                             GPIndividual primaryParent, int primaryContribution,
+                                             GPIndividual secondaryParent, int secondaryContribution) {
+        if (!(state instanceof GPRuleEvolutionStatePSL)) {
+            return;
+        }
+        GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;
+        GPIndividual taskParent = primaryContribution >= secondaryContribution ? primaryParent : secondaryParent;
+        mpslgpState.setTaskIndex(child, mpslgpState.getTaskIndex(taskParent));
+    }
 
 }
