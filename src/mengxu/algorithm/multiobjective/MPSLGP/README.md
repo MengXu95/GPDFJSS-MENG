@@ -30,6 +30,6 @@ mpslgp.transfer-no-improvement-penalty = 0.05
 
 When `normalisation = 1`, MPSLGP evaluators use the paper baseline-ratio protocol under rotating training seeds. The denominator is recomputed on the current scheduling set with the manual rule pairing FCFS/WSPT/EDD/WATC for Fmax/WFmax/Tmax/WTmax and WIQ routing. No generation-dependent scaling coefficient is applied.
 
-Adaptive-transfer diagnostics are written to `job.<seed>.adaptiveTransfer.csv` with task pair, preference region, transfer count, region improvement, utility, and probability columns.
+Adaptive-transfer diagnostics are written to `job.<seed>.transferContribution.csv`. Each row records a receiving task, contributing task, and preference region at a generation, including transfer count, contribution, transfer probability before and after the utility update, utility before and after the update, raw region improvement, task population share, survival component, and negative-transfer penalty. These fields support later heatmaps and ablations for whether transfer succeeds because of task relatedness, preference-region fit, or simply high transfer frequency.
 
 The original `mengxu.algorithm.multiobjective.ParetoSetLearning` package is not modified by this implementation.
