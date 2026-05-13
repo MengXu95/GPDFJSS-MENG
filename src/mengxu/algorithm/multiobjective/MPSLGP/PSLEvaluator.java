@@ -58,11 +58,7 @@ public class PSLEvaluator extends SimpleEvaluator{
 
         if (!(this instanceof KNNsurrogateClearingPSLEvaluator) && !(this instanceof surrogateClearingPSLEvaluatorPreOpposite) && !(this instanceof KNNsurrogateClearingPSLEvaluatorbasedonHV)){
             if(((PSLInitializer)state.initializer).normalisation == 1){//add by mengxu 2022.10.02
-                SimpleProblemForm prob = (SimpleProblemForm) (state.evaluator.p_problem.clone());
-                AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem)prob).getEvaluationModel();
-                SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel)evaluationModel).getSchedulingSet();
-                curSchedulingSet.lowerBoundsFromBenchmarkRule(evaluationModel.getObjectives());
-                ((PSLInitializer)state.initializer).curSchedulingSetObjectiveLowerBoundMtx = curSchedulingSet.getObjectiveLowerBoundMtx();
+                updatePaperManualRuleLowerBounds(state);
             }
             else if(((PSLInitializer)state.initializer).normalisation == 2){//add by mengxu 2022.10.06
                 RealMatrix adaptLowerBoundMtx = new Array2DRowRealMatrix(((PSLInitializer)state.initializer).numObjectives, 1);
@@ -129,6 +125,31 @@ public class PSLEvaluator extends SimpleEvaluator{
                 }
             }
             ((Problem) problem).finishEvaluating(state, 0);
+        }
+    }
+
+    protected void updatePaperManualRuleLowerBounds(final EvolutionState state) {
+        PSLInitializer initializer = (PSLInitializer) state.initializer;
+        if (mpslgpProblems == null) {
+            SimpleProblemForm prob = (SimpleProblemForm) (state.evaluator.p_problem.clone());
+            AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem)prob).getEvaluationModel();
+            SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel)evaluationModel).getSchedulingSet();
+            curSchedulingSet.lowerBoundsFromMPSLGPPaperBenchmarkRule(evaluationModel.getObjectives());
+            initializer.curSchedulingSetObjectiveLowerBoundMtx = curSchedulingSet.getObjectiveLowerBoundMtx();
+            initializer.taskSchedulingSetObjectiveLowerBoundMtx = null;
+            return;
+        }
+
+        initializer.taskSchedulingSetObjectiveLowerBoundMtx = new RealMatrix[mpslgpProblems.length];
+        for (int task = 0; task < mpslgpProblems.length; task++) {
+            SimpleProblemForm problem = (SimpleProblemForm) mpslgpProblems[task].clone();
+            AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem)problem).getEvaluationModel();
+            SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel)evaluationModel).getSchedulingSet();
+            curSchedulingSet.lowerBoundsFromMPSLGPPaperBenchmarkRule(evaluationModel.getObjectives());
+            initializer.taskSchedulingSetObjectiveLowerBoundMtx[task] = curSchedulingSet.getObjectiveLowerBoundMtx();
+            if (task == 0) {
+                initializer.curSchedulingSetObjectiveLowerBoundMtx = initializer.taskSchedulingSetObjectiveLowerBoundMtx[task];
+            }
         }
     }
 

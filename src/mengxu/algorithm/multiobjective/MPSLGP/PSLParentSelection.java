@@ -26,11 +26,31 @@ public class PSLParentSelection extends TournamentSelection {
 			GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;
 			int firstIndex = produceMOEAD(start, subpopulation, state, thread);
 			int firstTask = mpslgpState.getTaskIndex(state.population.subpops[subpopulation].individuals[firstIndex]);
-			boolean usePeerTaskTransfer = mpslgpState.usePeerTaskTransfer()
-					&& state.random[thread].nextDouble() < mpslgpState.transferProbability;
-			int secondIndex = usePeerTaskTransfer
-					? produceMOEADFromDifferentTask(start, subpopulation, state, thread, firstTask, firstIndex)
-					: produceMOEADFromSameTask(start, subpopulation, state, thread, firstTask, firstIndex);
+			int preferenceRegion = mpslgpState.preferenceRegionForSubproblem(state.generation);
+			boolean usePeerTaskTransfer = false;
+			int donorTask = -1;
+			if (mpslgpState.useAdaptiveTransfer()) {
+				double transferProbability = mpslgpState.adaptiveTransferProbability(firstTask, preferenceRegion);
+				usePeerTaskTransfer = state.random[thread].nextDouble() < transferProbability;
+				if (usePeerTaskTransfer) {
+					donorTask = mpslgpState.selectAdaptiveDonorTask(firstTask, preferenceRegion, thread);
+				}
+			}
+			else {
+				usePeerTaskTransfer = mpslgpState.usePeerTaskTransfer()
+						&& state.random[thread].nextDouble() < mpslgpState.transferProbability;
+			}
+			int secondIndex;
+			if (usePeerTaskTransfer && donorTask >= 0) {
+				secondIndex = produceMOEADFromTask(start, subpopulation, state, thread, donorTask, firstIndex);
+				mpslgpState.recordTransferEvent(firstTask, donorTask, preferenceRegion);
+			}
+			else if (usePeerTaskTransfer) {
+				secondIndex = produceMOEADFromDifferentTask(start, subpopulation, state, thread, firstTask, firstIndex);
+			}
+			else {
+				secondIndex = produceMOEADFromSameTask(start, subpopulation, state, thread, firstTask, firstIndex);
+			}
 			inds[start] = state.population.subpops[subpopulation].individuals[firstIndex];
 			inds[start + 1] = state.population.subpops[subpopulation].individuals[secondIndex];
 			return n;
@@ -94,6 +114,11 @@ public class PSLParentSelection extends TournamentSelection {
 			((GPRuleEvolutionStatePSL)state).recordSelectedParent(best);
 		}
 		return best;
+	}
+
+	public int produceMOEADFromTask(final int start, final int subpopulation, final EvolutionState state,
+								 final int thread, final int requiredTask, final int fallbackIndex) {
+		return produceMOEADFromSameTask(start, subpopulation, state, thread, requiredTask, fallbackIndex);
 	}
 
 	private int bestIndividualFromTask(final int start, final int subpopulation, final EvolutionState state,

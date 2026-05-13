@@ -4,6 +4,12 @@ import mengxu.complexsimulation.HeterogeneousSimulation;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import yimei.jss.rule.AbstractRule;
+import yimei.jss.rule.RuleType;
+import yimei.jss.rule.operation.basic.EDD;
+import yimei.jss.rule.operation.basic.FCFS;
+import yimei.jss.rule.operation.weighted.WATC;
+import yimei.jss.rule.operation.weighted.WSPT;
+import yimei.jss.rule.workcenter.basic.WIQ;
 import yimei.jss.simulation.DynamicSimulation;
 import yimei.jss.simulation.Simulation;
 
@@ -126,6 +132,49 @@ public class SchedulingSet {
                 simulation.reset();
             }
 
+        }
+    }
+
+    public void lowerBoundsFromMPSLGPPaperBenchmarkRule(List<Objective> objectives) {
+        for (int i = 0; i < objectives.size(); i++) {
+            Objective objective = objectives.get(i);
+            AbstractRule benchmarkSeqRule = mpslgpPaperSequencingRule(objective);
+            AbstractRule benchmarkRoutingRule = new WIQ(RuleType.ROUTING);
+
+            int col = 0;
+            for (int j = 0; j < simulations.size(); j++) {
+                Simulation simulation = simulations.get(j);
+                simulation.setSequencingRule(benchmarkSeqRule);
+                simulation.setRoutingRule(benchmarkRoutingRule);
+                simulation.rerun();
+
+                double value = simulation.objectiveValue(objective);
+                objectiveLowerBoundMtx.setEntry(i, col, value);
+                col++;
+
+                for (int k = 1; k < replications.get(j); k++) {
+                    simulation.rerun();
+                    value = simulation.objectiveValue(objective);
+                    objectiveLowerBoundMtx.setEntry(i, col, value);
+                    col++;
+                }
+                simulation.reset();
+            }
+        }
+    }
+
+    private AbstractRule mpslgpPaperSequencingRule(Objective objective) {
+        switch (objective) {
+            case MAX_FLOWTIME:
+                return new FCFS(RuleType.SEQUENCING);
+            case MAX_WEIGHTED_FLOWTIME:
+                return new WSPT(RuleType.SEQUENCING);
+            case MAX_TARDINESS:
+                return new EDD(RuleType.SEQUENCING);
+            case MAX_WEIGHTED_TARDINESS:
+                return new WATC(RuleType.SEQUENCING);
+            default:
+                return objective.benchmarkSequencingRule();
         }
     }
 

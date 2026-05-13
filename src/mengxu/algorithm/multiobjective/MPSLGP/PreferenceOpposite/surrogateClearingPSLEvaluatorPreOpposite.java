@@ -82,11 +82,7 @@ public class surrogateClearingPSLEvaluatorPreOpposite extends PSLEvaluator {
             }
 
             if (((PSLInitializerPreOpposite) state.initializer).normalisation == 1) {//add by mengxu 2022.10.02
-                SimpleProblemForm prob = (SimpleProblemForm) (state.evaluator.p_problem.clone());
-                AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem) prob).getEvaluationModel();
-                SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel) evaluationModel).getSchedulingSet();
-                curSchedulingSet.lowerBoundsFromBenchmarkRule(evaluationModel.getObjectives());
-                ((PSLInitializerPreOpposite) state.initializer).curSchedulingSetObjectiveLowerBoundMtx = curSchedulingSet.getObjectiveLowerBoundMtx();
+                updatePaperManualRuleLowerBounds(state);
             } else if (((PSLInitializerPreOpposite) state.initializer).normalisation == 2) {//add by mengxu 2022.10.06
                 RealMatrix adaptLowerBoundMtx = new Array2DRowRealMatrix(((PSLInitializerPreOpposite) state.initializer).numObjectives, 1);
 

@@ -35,6 +35,8 @@ public class PSLInitializer extends GPInitializer {
 
 	public RealMatrix curSchedulingSetObjectiveLowerBoundMtx;// add by mengxu 2022.10.02
 
+	public RealMatrix[] taskSchedulingSetObjectiveLowerBoundMtx;
+
 
 	public void setup(final EvolutionState state, final Parameter base) {
 		super.setup(state, base);
@@ -81,6 +83,22 @@ public class PSLInitializer extends GPInitializer {
 		}
 	}
 
+	public double objectiveLowerBoundForFitness(MultiObjectiveFitness fit, int objectiveIndex) {
+		RealMatrix lowerBoundMtx = curSchedulingSetObjectiveLowerBoundMtx;
+		if (fit instanceof PSLMultiObjectiveFitness && taskSchedulingSetObjectiveLowerBoundMtx != null) {
+			int taskIndex = ((PSLMultiObjectiveFitness) fit).getTaskIndex();
+			if (taskIndex >= 0 && taskIndex < taskSchedulingSetObjectiveLowerBoundMtx.length
+					&& taskSchedulingSetObjectiveLowerBoundMtx[taskIndex] != null) {
+				lowerBoundMtx = taskSchedulingSetObjectiveLowerBoundMtx[taskIndex];
+			}
+		}
+		double denominator = lowerBoundMtx == null ? 1.0 : lowerBoundMtx.getEntry(objectiveIndex, 0);
+		if (Math.abs(denominator) < 1.0e-12) {
+			return 1.0e-12;
+		}
+		return denominator;
+	}
+
 
 	public double calculateTchebycheffScore(MultiObjectiveFitness fit, int problemIndex) {
 		double[] problemWeights = weights[problemIndex];
@@ -92,10 +110,12 @@ public class PSLInitializer extends GPInitializer {
 			//todo: need to change 2 parts if do normalisation similar to this
 			double diff = 0;
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - idealPoint[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				double lowerBound = objectiveLowerBoundForFitness(fit, i);
+				diff = fit.getObjectives()[i]/lowerBound - idealPoint[i]/lowerBound;
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - idealPoint[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				double lowerBound = objectiveLowerBoundForFitness(fit, i);
+				diff = fit.getObjectives()[i]/lowerBound - idealPoint[i]/lowerBound;
 			}
 			else if(normalisation == 3){//add by mengxu 2024.3.19
 				if(nadirPoint[i] == idealPoint[i]){
@@ -205,10 +225,12 @@ public class PSLInitializer extends GPInitializer {
 			//todo: need to change 2 parts if do normalisation similar to this
 			double diff = 0;
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - (idealPoint[i]-varepsilon[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				double lowerBound = objectiveLowerBoundForFitness(fit, i);
+				diff = fit.getObjectives()[i]/lowerBound - (idealPoint[i]-varepsilon[i])/lowerBound;
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - (idealPoint[i]-varepsilon[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				double lowerBound = objectiveLowerBoundForFitness(fit, i);
+				diff = fit.getObjectives()[i]/lowerBound - (idealPoint[i]-varepsilon[i])/lowerBound;
 			}
 			else if(normalisation == 3){//add by mengxu 2024.3.19
 				if(nadirPoint[i] == idealPoint[i]){
@@ -250,10 +272,10 @@ public class PSLInitializer extends GPInitializer {
 			//todo: need to change 2 parts if do normalisation similar to this
 			double value = 0;
 			if (normalisation == 1) {//add by mengxu 2022.10.02
-				value = fit.getObjectives()[i] / curSchedulingSetObjectiveLowerBoundMtx.getEntry(i, 0);
+				value = fit.getObjectives()[i] / objectiveLowerBoundForFitness(fit, i);
 			}
 			else if (normalisation == 2) {//add by mengxu 2022.10.02
-				value = fit.getObjectives()[i] / curSchedulingSetObjectiveLowerBoundMtx.getEntry(i, 0);
+				value = fit.getObjectives()[i] / objectiveLowerBoundForFitness(fit, i);
 			}
 			else if (normalisation == 3) {//add by mengxu 2024.3.19
 				if(nadirPoint[i] == idealPoint[i]){
@@ -478,10 +500,10 @@ public class PSLInitializer extends GPInitializer {
 		MultiObjectiveFitness fit = (MultiObjectiveFitness) ind.fitness;
 		for(int i = 0; i < numObjectives; i++){
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0)) * problemWeights[i];
+				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i)) * problemWeights[i];
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0)) * problemWeights[i];
+				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i)) * problemWeights[i];
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
@@ -508,10 +530,10 @@ public class PSLInitializer extends GPInitializer {
 		d1 = abs(d1)/nl;
 		for(int i = 0; i < numObjectives; i++){
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - d1 * (problemWeights[i] / nl), 2.0);
+				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i) - d1 * (problemWeights[i] / nl), 2.0);
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - d1 * (problemWeights[i] / nl), 2.0);
+				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i) - d1 * (problemWeights[i] / nl), 2.0);
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
@@ -555,10 +577,10 @@ public class PSLInitializer extends GPInitializer {
 		double[] problemWeights = weights[problemIndex];
 		for(int i = 0; i < numObjectives; i++){
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0)) * problemWeights[i];
+				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i)) * problemWeights[i];
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0)) * problemWeights[i];
+				d1 += ((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i)) * problemWeights[i];
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
@@ -585,10 +607,10 @@ public class PSLInitializer extends GPInitializer {
 		d1 = abs(d1)/nl;
 		for(int i = 0; i < numObjectives; i++){
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - d1 * (problemWeights[i] / nl), 2.0);
+				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i) - d1 * (problemWeights[i] / nl), 2.0);
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0) - d1 * (problemWeights[i] / nl), 2.0);
+				d2 += pow((fit.getObjectives()[i] - this.idealPoint[i])/objectiveLowerBoundForFitness(fit, i) - d1 * (problemWeights[i] / nl), 2.0);
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
@@ -632,10 +654,10 @@ public class PSLInitializer extends GPInitializer {
 		for(int i = 0; i < numObjectives; i++){
 			double diff = 0;
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				diff = fit.getObjectives()[i]/objectiveLowerBoundForFitness(fit, i);
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				diff = fit.getObjectives()[i]/objectiveLowerBoundForFitness(fit, i);
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
@@ -675,10 +697,10 @@ public class PSLInitializer extends GPInitializer {
 		for(int i = 0; i < numObjectives; i++){
 			double diff = 0;
 			if(normalisation == 1){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				diff = fit.getObjectives()[i]/objectiveLowerBoundForFitness(fit, i);
 			}
 			else if(normalisation == 2){//add by mengxu 2022.10.02
-				diff = fit.getObjectives()[i]/curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
+				diff = fit.getObjectives()[i]/objectiveLowerBoundForFitness(fit, i);
 			}
 			else if(normalisation == 3){//add by mengxu 2022.10.02
 				if(nadirPoint[i] == idealPoint[i]){
