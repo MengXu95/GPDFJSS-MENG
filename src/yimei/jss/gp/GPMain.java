@@ -37,7 +37,8 @@ public class GPMain {
         //Pareto set learning GP
 //            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params");
         //Multitask Pareto set learning GP - 2026.5.7
-            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP.params");
+//            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP.params");
+        gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params");
         //GP with multi-case fitness -- need to set useLS = true; and warmupSame = true; in Simulation.java
 //        gpRunArgs.add("./src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params");
 

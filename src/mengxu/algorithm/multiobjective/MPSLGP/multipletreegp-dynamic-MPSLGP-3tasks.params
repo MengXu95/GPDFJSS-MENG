@@ -53,39 +53,27 @@ breed.elite.0 = 10
 # ==============================
 # MPSLGP paper-version task-indexed adaptive transfer
 # ==============================
-# mpslgp.num-tasks = 2
+# Activate only one block at a time when running experiments.
+
+# 1. No Transfer Baseline ===================
+# mpslgp.num-tasks = 3
+# mpslgp.transfer-probability = 0.0
+# mpslgp.transfer-start-generation = 999999
+# mpslgp.adaptive-transfer = false
+# mpslgp.preference-regions = 5
+# mpslgp.max-transfer-probability = 0.0
+
+# 2. Fixed Transfer Baseline ===================
+# mpslgp.num-tasks = 3
 # mpslgp.transfer-probability = 0.8
-# mpslgp.task-inheritance-probability = 1.0  # seems do not use
 # mpslgp.transfer-start-generation = 5
 # mpslgp.adaptive-transfer = false
 # mpslgp.preference-regions = 5
-# mpslgp.adaptive-transfer-learning-rate = 0.1
-# mpslgp.adaptive-transfer-temperature = 0.5
-# mpslgp.min-transfer-probability = 0.0
 # mpslgp.max-transfer-probability = 0.8
-# mpslgp.transfer-improvement-weight = 1.0
-# mpslgp.transfer-survival-weight = 0.1
-# mpslgp.transfer-no-improvement-penalty = 0.05
-# mpslgp.no-transfer-utility = 0.0
 
-# 1. No Transfer Baseline ===================
-mpslgp.num-tasks = 2
-mpslgp.transfer-probability = 0.0
-mpslgp.transfer-start-generation = 999999
-mpslgp.adaptive-transfer = false
-mpslgp.preference-regions = 5
-mpslgp.max-transfer-probability = 0.0
-
-# 2. Fixed Transfer Baseline ===================
-mpslgp.num-tasks = 2
-mpslgp.transfer-probability = 0.8
-mpslgp.transfer-start-generation = 5
-mpslgp.adaptive-transfer = false
-mpslgp.preference-regions = 5
-mpslgp.max-transfer-probability = 0.8
 
 # 3. Proposed Adaptive-Gated Transfer ===================
-mpslgp.num-tasks = 2
+mpslgp.num-tasks = 3
 mpslgp.transfer-probability = 0.8
 mpslgp.transfer-start-generation = 5
 mpslgp.adaptive-transfer = true
@@ -98,7 +86,6 @@ mpslgp.transfer-improvement-weight = 1.0
 mpslgp.transfer-survival-weight = 0.1
 mpslgp.transfer-no-improvement-penalty = 0.05
 mpslgp.no-transfer-utility = 0.0
-
 
 
 # ==============================
@@ -317,7 +304,7 @@ eval.problem.eval-model.sim-models.0.num-machines = 10
 eval.problem.eval-model.rotate-sim-seed = true
 eval.problem.eval-model.sim-models.0.due-date-factor = 1.5
 
-# Task 0: related MO-DFJSS task under medium-high utilization.
+# Task 0: related MO-DFJSS task under medium utilization.
 eval.problem.0 = yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem
 eval.problem.0.data = yimei.jss.gp.data.DoubleData
 eval.problem.0.eval-model = mengxu.complexsimulation.ruleevaluation.MultipleTreeMultipleRuleHeterogeneousEvaluationModel
@@ -333,7 +320,7 @@ eval.problem.0.eval-model.sim-models.0.num-machines = 10
 eval.problem.0.eval-model.rotate-sim-seed = true
 eval.problem.0.eval-model.sim-models.0.due-date-factor = 1.5
 
-# Task 1: peer task with the same objective pair and adjacent utilization.
+# Task 1: related MO-DFJSS task under medium-high utilization.
 eval.problem.1 = yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem
 eval.problem.1.data = yimei.jss.gp.data.DoubleData
 eval.problem.1.eval-model = mengxu.complexsimulation.ruleevaluation.MultipleTreeMultipleRuleHeterogeneousEvaluationModel
@@ -348,6 +335,22 @@ eval.problem.1.eval-model.sim-models.0.replications = 1
 eval.problem.1.eval-model.sim-models.0.num-machines = 10
 eval.problem.1.eval-model.rotate-sim-seed = true
 eval.problem.1.eval-model.sim-models.0.due-date-factor = 1.5
+
+# Task 2: additional peer task under high utilization.
+eval.problem.2 = yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem
+eval.problem.2.data = yimei.jss.gp.data.DoubleData
+eval.problem.2.eval-model = mengxu.complexsimulation.ruleevaluation.MultipleTreeMultipleRuleHeterogeneousEvaluationModel
+eval.problem.2.eval-model.objectives = 2
+eval.problem.2.eval-model.objectives.0 = max-weighted-flowtime
+eval.problem.2.eval-model.objectives.1 = max-tardiness
+eval.problem.2.eval-model.sim-models = 1
+eval.problem.2.eval-model.sim-models.0.util-level = 0.80
+eval.problem.2.eval-model.sim-models.0.num-jobs = 5000
+eval.problem.2.eval-model.sim-models.0.warmup-jobs = 1000
+eval.problem.2.eval-model.sim-models.0.replications = 1
+eval.problem.2.eval-model.sim-models.0.num-machines = 10
+eval.problem.2.eval-model.rotate-sim-seed = true
+eval.problem.2.eval-model.sim-models.0.due-date-factor = 1.5
 terminals-from = relative_with_preference
 #only suitable for numPreference=1
 
@@ -397,5 +400,4 @@ compare-criteria = HV
 # IGD, GD
 
 use-multi-criteria-selection = true
-
 
