@@ -1,0 +1,11 @@
+# Shared-reference HV screening from printed final Pareto fronts.
+# Replace the log paths with your 2-task training console-output files.
+
+generation = 50
+reference-padding = 0.01
+out = shared-reference-hv-2tasks.csv
+num-tasks = 2
+
+method.no-transfer = logs/2tasks-no-transfer.log
+method.fixed-transfer = logs/2tasks-fixed-transfer.log
+method.adaptive-gated = logs/2tasks-adaptive-gated.log
