@@ -66,7 +66,7 @@ breed.elite.0 = 10
 # 2. Fixed Transfer Baseline ===================
 # mpslgp.num-tasks = 3
 # mpslgp.transfer-probability = 0.8
-# mpslgp.transfer-start-generation = 5
+# mpslgp.transfer-start-generation = 15
 # mpslgp.adaptive-transfer = false
 # mpslgp.preference-regions = 5
 # mpslgp.max-transfer-probability = 0.8
@@ -75,17 +75,18 @@ breed.elite.0 = 10
 # 3. Proposed Adaptive-Gated Transfer ===================
 mpslgp.num-tasks = 3
 mpslgp.transfer-probability = 0.8
-mpslgp.transfer-start-generation = 5
+mpslgp.transfer-start-generation = 15
 mpslgp.adaptive-transfer = true
 mpslgp.preference-regions = 5
 mpslgp.adaptive-transfer-learning-rate = 0.1
-mpslgp.adaptive-transfer-temperature = 0.5
+mpslgp.adaptive-transfer-temperature = 1.0
 mpslgp.min-transfer-probability = 0.0
 mpslgp.max-transfer-probability = 0.8
+mpslgp.scale-transfer-budget-by-donor-count = true
 mpslgp.transfer-improvement-weight = 1.0
 mpslgp.transfer-survival-weight = 0.1
-mpslgp.transfer-no-improvement-penalty = 0.05
-mpslgp.no-transfer-utility = 0.0
+mpslgp.transfer-no-improvement-penalty = 0.10
+mpslgp.no-transfer-utility = 0.10
 
 
 # ==============================

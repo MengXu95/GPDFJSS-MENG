@@ -106,6 +106,8 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	public double maxAdaptiveTransferProbability;
 
+	public boolean scaleTransferBudgetByDonorCount;
+
 	public double transferImprovementWeight;
 
 	public double transferSurvivalWeight;
@@ -303,6 +305,9 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		this.maxAdaptiveTransferProbability = state.parameters.getDoubleWithDefault(maxAdaptiveTransferProbabilityParam, null,
 				this.transferProbability);
 
+		Parameter scaleTransferBudgetByDonorCountParam = new Parameter("mpslgp.scale-transfer-budget-by-donor-count");
+		this.scaleTransferBudgetByDonorCount = state.parameters.getBoolean(scaleTransferBudgetByDonorCountParam, null, false);
+
 		Parameter transferImprovementWeightParam = new Parameter("mpslgp.transfer-improvement-weight");
 		this.transferImprovementWeight = state.parameters.getDoubleWithDefault(transferImprovementWeightParam, null, 1.0);
 
@@ -407,7 +412,11 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	}
 
 	private double boundedMaxTransferProbability() {
-		return Math.max(0.0, Math.min(1.0, maxAdaptiveTransferProbability));
+		double transferBudget = maxAdaptiveTransferProbability;
+		if (scaleTransferBudgetByDonorCount && numTasks > 2) {
+			transferBudget /= Math.max(1, numTasks - 1);
+		}
+		return Math.max(0.0, Math.min(1.0, transferBudget));
 	}
 
 	private double[] donorSoftmaxWeights(int receivingTask, int region) {

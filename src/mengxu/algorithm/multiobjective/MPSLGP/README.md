@@ -23,6 +23,7 @@ mpslgp.adaptive-transfer-learning-rate = 0.1
 mpslgp.adaptive-transfer-temperature = 0.5
 mpslgp.min-transfer-probability = 0.0
 mpslgp.max-transfer-probability = 0.8
+mpslgp.scale-transfer-budget-by-donor-count = false
 mpslgp.transfer-improvement-weight = 1.0
 mpslgp.transfer-survival-weight = 0.1
 mpslgp.transfer-no-improvement-penalty = 0.05
@@ -31,7 +32,7 @@ mpslgp.no-transfer-utility = 0.0
 
 When `normalisation = 1`, MPSLGP evaluators use the paper baseline-ratio protocol under rotating training seeds. The denominator is recomputed on the current scheduling set with the manual rule pairing FCFS/WSPT/EDD/WATC for Fmax/WFmax/Tmax/WTmax and WIQ routing. No generation-dependent scaling coefficient is applied.
 
-Adaptive transfer uses a no-transfer baseline utility in the softmax decision. This prevents two-task experiments from degenerating into a fixed always-one-donor distribution: positive contribution increases the task-region transfer probability, while negative contribution decreases it toward same-task selection. In adaptive mode, `mpslgp.max-transfer-probability` is the transfer budget; `mpslgp.transfer-probability` is used by the fixed-transfer baseline.
+Adaptive transfer uses a no-transfer baseline utility in the softmax decision. This prevents two-task experiments from degenerating into a fixed always-one-donor distribution: positive contribution increases the task-region transfer probability, while negative contribution decreases it toward same-task selection. In adaptive mode, `mpslgp.max-transfer-probability` is the transfer budget; `mpslgp.transfer-probability` is used by the fixed-transfer baseline. When `mpslgp.scale-transfer-budget-by-donor-count = true`, the adaptive transfer budget is divided by `mpslgp.num-tasks - 1`, making three-or-more-task runs more conservative without adding validation evaluations or training time.
 
 Adaptive-transfer diagnostics are written to `job.<seed>.transferContribution.csv`. Each row records a receiving task, contributing task, and preference region at a generation, including transfer count, contribution, pairwise and total transfer probability before and after the utility update, no-transfer probability, utility before and after the update, raw region improvement, task population share, survival component, and negative-transfer penalty. These fields support later heatmaps and ablations for whether transfer succeeds because of task relatedness, preference-region fit, or simply high transfer frequency.
 
