@@ -15,7 +15,8 @@ Important parameters:
 ```properties
 mpslgp.num-tasks = 2
 mpslgp.transfer-probability = 0.80
-mpslgp.task-inheritance-probability = 1.00
+mpslgp.contribution-aware-task-inheritance = true
+mpslgp.donor-task-inheritance-threshold = 0.65
 mpslgp.transfer-start-generation = 5
 mpslgp.adaptive-transfer = true
 mpslgp.preference-regions = 5
@@ -31,6 +32,10 @@ mpslgp.no-transfer-utility = 0.0
 ```
 
 When `normalisation = 1`, MPSLGP evaluators use the paper baseline-ratio protocol under rotating training seeds. The denominator is recomputed on the current scheduling set with the manual rule pairing FCFS/WSPT/EDD/WATC for Fmax/WFmax/Tmax/WTmax and WIQ routing. No generation-dependent scaling coefficient is applied.
+
+The active MPSLGP params use `yimei.jss.algorithm.multipletreegp.OneTreeCrossoverPipeline`. It performs subtree crossover on one selected GP tree only and keeps the unselected tree from the primary parent. The previous `AllIndexAllSwapCrossoverPipeline` is retained for ablation experiments where the unselected tree is swapped wholesale.
+
+When `mpslgp.contribution-aware-task-inheritance = true`, crossover offspring inherit the primary parent's task by default. If the secondary parent's GP-node contribution reaches `mpslgp.donor-task-inheritance-threshold`, the offspring inherits the secondary parent's task instead. This keeps task identity tied to dominant genetic contribution without forcing every small transferred subtree to change the receiving task label.
 
 Adaptive transfer uses a no-transfer baseline utility in the softmax decision. This prevents two-task experiments from degenerating into a fixed always-one-donor distribution: positive contribution increases the task-region transfer probability, while negative contribution decreases it toward same-task selection. In adaptive mode, `mpslgp.max-transfer-probability` is the transfer budget; `mpslgp.transfer-probability` is used by the fixed-transfer baseline. When `mpslgp.scale-transfer-budget-by-donor-count = true`, the adaptive transfer budget is divided by `mpslgp.num-tasks - 1`, making three-or-more-task runs more conservative without adding validation evaluations or training time.
 

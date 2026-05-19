@@ -411,8 +411,8 @@ public class AllIndexAllSwapCrossoverPipeline extends CrossoverPipeline {
             return;
         }
         GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;
-        GPIndividual taskParent = primaryContribution >= secondaryContribution ? primaryParent : secondaryParent;
-        mpslgpState.setTaskIndex(child, mpslgpState.getTaskIndex(taskParent));
+        mpslgpState.setOffspringTaskIndexByContribution(child, primaryParent, primaryContribution,
+            secondaryParent, secondaryContribution);
     }
 
 }

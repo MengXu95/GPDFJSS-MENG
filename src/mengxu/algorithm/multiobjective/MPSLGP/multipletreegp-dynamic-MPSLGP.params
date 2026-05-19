@@ -55,7 +55,8 @@ breed.elite.0 = 10
 # ==============================
 # mpslgp.num-tasks = 2
 # mpslgp.transfer-probability = 0.8
-# mpslgp.task-inheritance-probability = 1.0  # seems do not use
+# mpslgp.contribution-aware-task-inheritance = true
+# mpslgp.donor-task-inheritance-threshold = 0.65
 # mpslgp.transfer-start-generation = 5
 # mpslgp.adaptive-transfer = false
 # mpslgp.preference-regions = 5
@@ -72,6 +73,8 @@ breed.elite.0 = 10
 # 1. No Transfer Baseline ===================
 mpslgp.num-tasks = 2
 mpslgp.transfer-probability = 0.0
+mpslgp.contribution-aware-task-inheritance = true
+mpslgp.donor-task-inheritance-threshold = 0.65
 mpslgp.transfer-start-generation = 999999
 mpslgp.adaptive-transfer = false
 mpslgp.preference-regions = 5
@@ -80,6 +83,8 @@ mpslgp.max-transfer-probability = 0.0
 # 2. Fixed Transfer Baseline ===================
 mpslgp.num-tasks = 2
 mpslgp.transfer-probability = 0.8
+mpslgp.contribution-aware-task-inheritance = true
+mpslgp.donor-task-inheritance-threshold = 0.65
 mpslgp.transfer-start-generation = 5
 mpslgp.adaptive-transfer = false
 mpslgp.preference-regions = 5
@@ -88,6 +93,8 @@ mpslgp.max-transfer-probability = 0.8
 # 3. Proposed Adaptive-Gated Transfer ===================
 mpslgp.num-tasks = 2
 mpslgp.transfer-probability = 0.8
+mpslgp.contribution-aware-task-inheritance = true
+mpslgp.donor-task-inheritance-threshold = 0.65
 mpslgp.transfer-start-generation = 10
 mpslgp.adaptive-transfer = true
 mpslgp.preference-regions = 5
@@ -139,11 +146,12 @@ pop.subpop.0.species.pipe.generate-max = false
 pop.subpop.0.species.pipe.num-sources = 3
 
 #=========================change the crossover====================
-# for multitree, use the AllindexCrossoverPipeline
+# for multitree, use one-tree crossover without swapping the unselected tree
 #pop.subpop.0.species.pipe.source.0 = ec.gp.koza.CrossoverPipeline
 
-# one tree subtree crossover and the other swap, this is the best one
-pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.AllIndexAllSwapCrossoverPipeline
+# one tree subtree crossover; keep the unselected tree from the primary parent
+#pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.AllIndexAllSwapCrossoverPipeline
+pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.OneTreeCrossoverPipeline
 
 pop.subpop.0.species.pipe.source.0.prob = 0.80
 pop.subpop.0.species.pipe.source.1 = ec.gp.koza.MutationPipeline

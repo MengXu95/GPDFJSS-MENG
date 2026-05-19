@@ -92,6 +92,10 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	public double taskInheritanceProbability;
 
+	public boolean contributionAwareTaskInheritance;
+
+	public double donorTaskInheritanceThreshold;
+
 	public int transferStartGeneration;
 
 	public boolean adaptiveTransfer;
@@ -281,6 +285,13 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 		Parameter taskInheritanceProbabilityParam = new Parameter("mpslgp.task-inheritance-probability");
 		this.taskInheritanceProbability = state.parameters.getDoubleWithDefault(taskInheritanceProbabilityParam, null, 0.5);
+
+		Parameter contributionAwareTaskInheritanceParam = new Parameter("mpslgp.contribution-aware-task-inheritance");
+		this.contributionAwareTaskInheritance = state.parameters.getBoolean(contributionAwareTaskInheritanceParam, null, false);
+
+		Parameter donorTaskInheritanceThresholdParam = new Parameter("mpslgp.donor-task-inheritance-threshold");
+		this.donorTaskInheritanceThreshold = Math.max(0.0, Math.min(1.0,
+				state.parameters.getDoubleWithDefault(donorTaskInheritanceThresholdParam, null, 0.65)));
 
 		Parameter transferStartGenerationParam = new Parameter("mpslgp.transfer-start-generation");
 		this.transferStartGeneration = state.parameters.getIntWithDefault(transferStartGenerationParam, null, 1);
@@ -679,6 +690,24 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		if (individual != null && individual.fitness instanceof PSLMultiObjectiveFitness) {
 			((PSLMultiObjectiveFitness) individual.fitness).setTaskIndex(taskIndex);
 		}
+	}
+
+	public void setOffspringTaskIndexByContribution(Individual child, Individual primaryParent, int primaryContribution,
+											  Individual secondaryParent, int secondaryContribution) {
+		if (child == null || primaryParent == null || secondaryParent == null) {
+			return;
+		}
+		int inheritedTask = getTaskIndex(primaryParent);
+		if (contributionAwareTaskInheritance) {
+			int totalContribution = Math.max(0, primaryContribution) + Math.max(0, secondaryContribution);
+			if (totalContribution > 0) {
+				double secondaryShare = (double) Math.max(0, secondaryContribution) / totalContribution;
+				if (secondaryShare >= donorTaskInheritanceThreshold) {
+					inheritedTask = getTaskIndex(secondaryParent);
+				}
+			}
+		}
+		setTaskIndex(child, inheritedTask);
 	}
 
 	public void balanceTaskDistributionForSurvival(int subpop, int targetSize) {
