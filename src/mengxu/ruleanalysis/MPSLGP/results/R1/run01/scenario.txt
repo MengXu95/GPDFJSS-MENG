@@ -1,0 +1,5 @@
+Scenario: R1
+Description: Related two-task, adjacent utilization, Fmax-WTmax
+Run: 1
+Task 0: max-flowtime, max-weighted-tardiness, util=0.7
+Task 1: max-flowtime, max-weighted-tardiness, util=0.75

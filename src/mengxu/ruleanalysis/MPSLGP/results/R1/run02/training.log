@@ -1,0 +1,1332 @@
+
+| ECJ
+| An evolutionary computation system (version 23)
+| By Sean Luke
+| Contributors: L. Panait, G. Balan, S. Paus, Z. Skolicki, R. Kicinger,
+|               E. Popovici, K. Sullivan, J. Harrison, J. Bassett, R. Hubley,
+|               A. Desai, A. Chircop, J. Compton, W. Haddon, S. Donnelly,
+|               B. Jamil, J. Zelibor, E. Kangas, F. Abidi, H. Mooers,
+|               J. O'Beirne, L. Manzoni, K. Talukder, and J. McDermott
+| URL: http://cs.gmu.edu/~eclab/projects/ecj/
+| Mail: ecj-help@cs.gmu.edu
+|       (better: join ECJ-INTEREST at URL above)
+| Date: June 15, 2015
+| Current Java: 26.0.1 / OpenJDK 64-Bit Server VM-26.0.1+8-34
+| Required Minimum Java: 1.5
+
+
+Threads:  breed/1 eval/1
+Seed: 2 
+Job: 0
+Setting up
+Processing GP Types
+Processing GP Node Constraints
+Processing GP Function Sets
+No GPFunctionSet specified, assuming the default class: ec.gp.GPFunctionSet for gp.fs.0
+Processing GP Tree Constraints
+WARNING:
+You're using elitism with NSGA2Breeder, which is not permitted and will be ignored.  However the reevaluate-elites parameter *will* bre recognized by NSGAEvaluator.
+PARAMETER: breed.elite.0
+Initializing Generation 0
+ideal points: [1573.2803205184362, 3272.5969403835597]
+nadir points: [2289.4727886579494, 4033.409221563197]
+max objectives: [203179.6831211636, 791348.6185821609]
+min objectives: [1748.0892450204847, 3636.2188226483995]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=632.869845, min=0.000000, average=0.632870, max=0.999483}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=8.426361, min=0.000000, average=0.008426, max=0.107883}
+Genotype diversity: 0.999
+Entropy diversity: 4.403823592544724
+PC diversity: 0.879
+MPSLGP top 5 HV by task at generation 0:
+  Task 0: #1 ind=2 HV=0.998769048996224; #2 ind=5 HV=0.9987192650796142; #3 ind=3 HV=0.9984430475320507; #4 ind=56 HV=0.9984269362563795; #5 ind=7 HV=0.9982347066195393
+  Task 1: #1 ind=0 HV=0.9994833071134424; #2 ind=36 HV=0.9992466540583756; #3 ind=6 HV=0.9983504008926355; #4 ind=8 HV=0.9982230662423529; #5 ind=9 HV=0.9980990388317942
+MPSLGP task 0 best fitness of generation Fitness: [1801.8417178803356 4376.238922075136]
+MPSLGP task 1 best fitness of generation Fitness: [1748.0892450204847 4033.409221563197]
+
+Pareto Front of Subpopulation 0
+Objective 0: [1748.0892450204847, 2289.4727886579494]
+Objective 1: [4033.409221563197, 3636.2188226483995]
+2
+duration: 35.0
+Generation 0 elapsed 35.0 seconds.
+Generation 1
+Preselection cleared number: 1889
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1285.7850995858382, 2749.0304008919047]
+nadir points: [1734.9474955116384, 3288.110290332348]
+max objectives: [203988.14865987908, 790217.1264873695]
+min objectives: [1428.6501106509313, 3054.4782232132275]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=961.433545, min=0.000000, average=0.961434, max=0.999816}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=9.417140, min=0.000000, average=0.009417, max=0.121129}
+Genotype diversity: 1.0
+Entropy diversity: 6.769455153218919
+PC diversity: 0.937
+MPSLGP top 5 HV by task at generation 1:
+  Task 0: #1 ind=6 HV=0.9991293973422932; #2 ind=234 HV=0.998245643604182; #3 ind=27 HV=0.997239216456478; #4 ind=36 HV=0.9968833251453739; #5 ind=37 HV=0.9966568688924015
+  Task 1: #1 ind=4 HV=0.9998163617471252; #2 ind=0 HV=0.9997935666467184; #3 ind=1 HV=0.9996942557995148; #4 ind=2 HV=0.9996754393496583; #5 ind=7 HV=0.9996570324462432
+MPSLGP task 0 best fitness of generation Fitness: [1510.3185542213905 3388.390444884426]
+MPSLGP task 1 best fitness of generation Fitness: [1428.6501106509313 3288.110290332348]
+
+Pareto Front of Subpopulation 1
+Objective 0: [1428.6501106509313, 1458.4213797229168, 1488.008525889716, 1734.9474955116384]
+Objective 1: [3288.110290332348, 3169.7043281322694, 3074.4111513848184, 3054.4782232132275]
+2
+duration: 67.0
+Generation 1 elapsed 67.0 seconds.
+Generation 2
+Preselection cleared number: 1990
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1297.023106086938, 2384.778863093967]
+nadir points: [2410.125757266418, 3124.547138164169]
+max objectives: [102993.56622277581, 292322.9908566993]
+min objectives: [1441.1367845410423, 2649.75429232663]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=958.298009, min=0.000000, average=0.958298, max=0.998682}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=9.680157, min=0.000000, average=0.009680, max=0.104559}
+Genotype diversity: 1.0
+Entropy diversity: 6.753159418959069
+PC diversity: 0.911
+MPSLGP top 5 HV by task at generation 2:
+  Task 0: #1 ind=1 HV=0.9983447163310291; #2 ind=4 HV=0.9980200260603457; #3 ind=11 HV=0.9964888824865505; #4 ind=36 HV=0.9959392320888383; #5 ind=53 HV=0.9943633070396181
+  Task 1: #1 ind=0 HV=0.9986816328660585; #2 ind=2 HV=0.9983211231853476; #3 ind=3 HV=0.9982038497460763; #4 ind=6 HV=0.998125760904387; #5 ind=7 HV=0.997874410814489
+MPSLGP task 0 best fitness of generation Fitness: [1464.323179436702 3055.51232013735]
+MPSLGP task 1 best fitness of generation Fitness: [1486.1121417917311 2899.625442525954]
+
+Pareto Front of Subpopulation 2
+Objective 0: [1441.1367845410423, 1464.323179436702, 1486.1121417917311, 1566.657508449949, 1832.8774381714175, 2410.125757266418]
+Objective 1: [3124.547138164169, 3055.51232013735, 2899.625442525954, 2850.1437497067964, 2700.5875758975744, 2649.75429232663]
+2
+duration: 66.0
+Generation 2 elapsed 66.0 seconds.
+Generation 3
+Preselection cleared number: 2005
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1355.9826363781156, 2313.1128349363457]
+nadir points: [2505.7091752296255, 3374.196416871273]
+max objectives: [86214.17030178697, 293395.859495052]
+min objectives: [1506.6473737534616, 2570.125372151495]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=964.592935, min=0.000000, average=0.964593, max=0.998062}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=12.670988, min=0.000000, average=0.012671, max=0.092937}
+Genotype diversity: 1.0
+Entropy diversity: 6.811550617854455
+PC diversity: 0.929
+MPSLGP top 5 HV by task at generation 3:
+  Task 0: #1 ind=25 HV=0.9968522944537752; #2 ind=20 HV=0.99617738984134; #3 ind=14 HV=0.9952276645324803; #4 ind=79 HV=0.9943670812428608; #5 ind=87 HV=0.9940477572699854
+  Task 1: #1 ind=0 HV=0.9980620979323348; #2 ind=24 HV=0.9978098307492544; #3 ind=1 HV=0.9975673202221294; #4 ind=2 HV=0.9975389509939064; #5 ind=9 HV=0.9972586474718727
+MPSLGP task 0 best fitness of generation Fitness: [1777.5664573802205 2963.16566731449]
+MPSLGP task 1 best fitness of generation Fitness: [1563.9279477604723 3098.713191136776]
+
+Pareto Front of Subpopulation 3
+Objective 0: [1506.6473737534616, 1522.9261984023615, 1543.5847721876635, 1563.9279477604723, 1622.515650306872, 1637.2580458408993, 2228.470080265746, 2289.71509110232, 2505.7091752296255]
+Objective 1: [3374.196416871273, 3213.0056776349666, 3146.039543837658, 3098.713191136776, 2998.187062189216, 2919.4530085545557, 2880.539389376878, 2820.6959692860255, 2570.125372151495]
+2
+duration: 80.0
+Generation 3 elapsed 80.0 seconds.
+Generation 4
+Preselection cleared number: 2029
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1252.4338605074415, 2101.5292733935526]
+nadir points: [1908.112801150135, 2758.2425654039253]
+max objectives: [30150.456268752838, 86911.63452150451]
+min objectives: [1391.5931783416017, 2335.032525992836]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=902.134707, min=0.000000, average=0.902135, max=0.994950}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=12.131381, min=0.000000, average=0.012131, max=0.102124}
+Genotype diversity: 1.0
+Entropy diversity: 6.666493541328251
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 4:
+  Task 0: #1 ind=1 HV=0.9940278136962228; #2 ind=13 HV=0.9917011626688185; #3 ind=49 HV=0.9870732233125331; #4 ind=9 HV=0.9863654842260606; #5 ind=50 HV=0.9856006511685006
+  Task 1: #1 ind=0 HV=0.9949498332552414; #2 ind=6 HV=0.9932720776731488; #3 ind=2 HV=0.9915196706418494; #4 ind=7 HV=0.991266737963015; #5 ind=14 HV=0.9909241884217153
+MPSLGP task 0 best fitness of generation Fitness: [1451.7525695686272 2656.0747206294036]
+MPSLGP task 1 best fitness of generation Fitness: [1391.5931783416017 2758.2425654039253]
+
+Pareto Front of Subpopulation 4
+Objective 0: [1391.5931783416017, 1451.7525695686272, 1581.7362611617427, 1880.7228893118445, 1880.7228893118445, 1908.112801150135]
+Objective 1: [2758.2425654039253, 2656.0747206294036, 2482.3964488093625, 2476.323359174188, 2476.323359174188, 2335.032525992836]
+2
+duration: 79.0
+Generation 4 elapsed 79.0 seconds.
+Generation 5
+Preselection cleared number: 1709
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1257.0640420584082, 2182.620978587115]
+nadir points: [1876.3890727547987, 3097.7620836370043]
+max objectives: [176603.76287665105, 176009.76287665105]
+min objectives: [1396.7378245093423, 2425.13442065235]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=940.234697, min=0.000000, average=0.940235, max=0.997949}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=11.513862, min=0.000000, average=0.011514, max=0.118978}
+Genotype diversity: 1.0
+Entropy diversity: 6.661540833496581
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 5:
+  Task 0: #1 ind=3 HV=0.9975153419258941; #2 ind=4 HV=0.9972929600908195; #3 ind=5 HV=0.9971504461841025; #4 ind=7 HV=0.9971092954015883; #5 ind=23 HV=0.9970492752447321
+  Task 1: #1 ind=0 HV=0.9979490872679294; #2 ind=10 HV=0.9979111253576897; #3 ind=38 HV=0.9978408692304613; #4 ind=1 HV=0.9975604358612327; #5 ind=2 HV=0.9975373323444652
+MPSLGP task 0 best fitness of generation Fitness: [1504.24569372923 2738.212514178944]
+MPSLGP task 1 best fitness of generation Fitness: [1719.7549970649707 2479.4196534374496]
+
+Pareto Front of Subpopulation 5
+Objective 0: [1396.7378245093423, 1405.3974565588578, 1452.1628649868362, 1483.4104726828227, 1494.159454662542, 1504.24569372923, 1558.4395180227002, 1674.8194334849686, 1719.7549970649707, 1876.3890727547987]
+Objective 1: [3097.7620836370043, 2914.3968276326195, 2913.0093159565004, 2826.1724937045947, 2822.853011323954, 2738.212514178944, 2678.761417675996, 2603.9504908121307, 2479.4196534374496, 2425.13442065235]
+2
+duration: 55147.0
+Generation 5 elapsed 55147.0 seconds.
+Generation 6
+Preselection cleared number: 1721
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1283.650994717647, 2243.3259452663365]
+nadir points: [2369.744628745888, 3044.3093213404063]
+max objectives: [35456.39993242247, 34796.39993242247]
+min objectives: [1426.2788830196077, 2492.5843836292624]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=858.872880, min=0.000000, average=0.858873, max=0.995771}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=10.081327, min=0.000000, average=0.010081, max=0.117146}
+Genotype diversity: 1.0
+Entropy diversity: 6.491568929530235
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 6:
+  Task 0: #1 ind=1 HV=0.9896271871764395; #2 ind=2 HV=0.988730093105057; #3 ind=3 HV=0.9882353555418448; #4 ind=4 HV=0.9880274725581705; #5 ind=18 HV=0.9858584537404302
+  Task 1: #1 ind=0 HV=0.9957714527287842; #2 ind=12 HV=0.9900448972111342; #3 ind=45 HV=0.989922286327179; #4 ind=13 HV=0.9880157233103072; #5 ind=14 HV=0.9872556142050332
+MPSLGP task 0 best fitness of generation Fitness: [1712.0914514757897 2539.471433996514]
+MPSLGP task 1 best fitness of generation Fitness: [2041.7964804412768 2523.8135394693527]
+
+Pareto Front of Subpopulation 6
+Objective 0: [1426.2788830196077, 1429.6194077156251, 1447.57588312999, 1456.5156466162443, 1482.2655644384504, 1484.3628252378548, 1569.5346075872076, 1598.3822999681433, 1712.0914514757897, 2041.7964804412768, 2110.421479913217, 2369.744628745888]
+Objective 1: [3044.3093213404063, 3025.8986840347643, 3024.0841920385137, 2931.9172004704014, 2858.344409215235, 2790.5185791952536, 2730.95670827874, 2694.957101291511, 2539.471433996514, 2523.8135394693527, 2510.7431612201035, 2492.5843836292624]
+2
+duration: 66.0
+Generation 6 elapsed 66.0 seconds.
+Generation 7
+Preselection cleared number: 1695
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1264.1677258251207, 2079.8168864752747]
+nadir points: [1729.6037589640619, 2784.995537177194]
+max objectives: [37995.02023861469, 57520.675688777876]
+min objectives: [1404.6308064723562, 2310.9076516391942]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=900.620685, min=0.000000, average=0.900621, max=0.995488}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=11.307125, min=0.000000, average=0.011307, max=0.146571}
+Genotype diversity: 1.0
+Entropy diversity: 6.60144310196536
+PC diversity: 0.976
+MPSLGP top 5 HV by task at generation 7:
+  Task 0: #1 ind=0 HV=0.9954875764041226; #2 ind=1 HV=0.9948399842867015; #3 ind=4 HV=0.9941076207616881; #4 ind=31 HV=0.9928488621040022; #5 ind=5 HV=0.9928212169407538
+  Task 1: #1 ind=15 HV=0.9930130374686554; #2 ind=6 HV=0.9928200689090436; #3 ind=16 HV=0.991546732715308; #4 ind=32 HV=0.9909945773288514; #5 ind=3 HV=0.9909394831163048
+MPSLGP task 0 best fitness of generation Fitness: [1479.4053278330975 2440.0009494774276]
+MPSLGP task 1 best fitness of generation Fitness: [1729.6037589640619 2310.9076516391942]
+
+Pareto Front of Subpopulation 7
+Objective 0: [1404.6308064723562, 1450.0247537434334, 1479.4053278330975, 1729.6037589640619]
+Objective 1: [2784.995537177194, 2522.580106595182, 2440.0009494774276, 2310.9076516391942]
+2
+duration: 69.0
+Generation 7 elapsed 69.0 seconds.
+Generation 8
+Preselection cleared number: 1852
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1322.2769716332464, 2188.9475892383607]
+nadir points: [2091.4971271782997, 2771.8876553814625]
+max objectives: [24173.80572128709, 23513.80572128709]
+min objectives: [1469.1966351480514, 2432.163988042623]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=889.884274, min=0.000000, average=0.889884, max=0.985667}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=10.247974, min=0.000000, average=0.010248, max=0.120852}
+Genotype diversity: 1.0
+Entropy diversity: 6.82514788898505
+PC diversity: 0.98
+MPSLGP top 5 HV by task at generation 8:
+  Task 0: #1 ind=1 HV=0.9837961017063439; #2 ind=2 HV=0.9837068922644597; #3 ind=12 HV=0.982726931669755; #4 ind=3 HV=0.9819981510694425; #5 ind=4 HV=0.9806314012133279
+  Task 1: #1 ind=0 HV=0.985666683038529; #2 ind=24 HV=0.9828919263407192; #3 ind=13 HV=0.9788785433239249; #4 ind=8 HV=0.9786602892927859; #5 ind=25 HV=0.9784203800812273
+MPSLGP task 0 best fitness of generation Fitness: [1469.1966351480514 2771.8876553814625]
+MPSLGP task 1 best fitness of generation Fitness: [1900.279401878448 2539.8583662604215]
+
+Pareto Front of Subpopulation 8
+Objective 0: [1469.1966351480514, 1469.1966351480514, 1602.9725240516418, 1654.2729989231739, 1663.3177070384845, 1738.073218283127, 1752.1088106749812, 1892.637188176217, 1900.279401878448, 1922.4840433151985, 1989.7516324745666, 2091.4971271782997]
+Objective 1: [2771.8876553814625, 2771.8876553814625, 2683.309656051104, 2667.4461726393783, 2652.763390148175, 2596.9555318368366, 2572.222123766085, 2557.2107729797717, 2539.8583662604215, 2529.344068795792, 2526.9919505271246, 2432.163988042623]
+2
+duration: 74.0
+Generation 8 elapsed 74.0 seconds.
+Generation 9
+Preselection cleared number: 1822
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1216.3266797199685, 2137.896890493264]
+nadir points: [2034.0652772681497, 3044.2180439621443]
+max objectives: [29084.80568979346, 28424.80568979346]
+min objectives: [1351.4740885777428, 2375.44098943696]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=885.599015, min=0.000000, average=0.885599, max=0.994998}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=9.332795, min=0.000000, average=0.009333, max=0.126642}
+Genotype diversity: 1.0
+Entropy diversity: 6.683261771564179
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 9:
+  Task 0: #1 ind=0 HV=0.9949979829724022; #2 ind=1 HV=0.9949241265896084; #3 ind=2 HV=0.9915648116514407; #4 ind=46 HV=0.9910293096107897; #5 ind=9 HV=0.9908317091449514
+  Task 1: #1 ind=8 HV=0.9912484583971581; #2 ind=79 HV=0.9880164204069697; #3 ind=11 HV=0.9879503211350208; #4 ind=25 HV=0.9858148646622821; #5 ind=35 HV=0.9855828680816379
+MPSLGP task 0 best fitness of generation Fitness: [1384.940593196021 2466.7168518700055]
+MPSLGP task 1 best fitness of generation Fitness: [1352.3818700911143 2985.5668126321398]
+
+Pareto Front of Subpopulation 9
+Objective 0: [1351.4740885777428, 1352.3818700911143, 1379.8638952637848, 1384.940593196021, 1384.940593196021, 1538.9728684703587, 1607.448033700719, 2034.0652772681497]
+Objective 1: [3044.2180439621443, 2985.5668126321398, 2941.5176497551147, 2466.7168518700055, 2466.7168518700055, 2431.140076145879, 2400.0058492772514, 2375.44098943696]
+2
+duration: 82.0
+Generation 9 elapsed 82.0 seconds.
+Generation 10
+Preselection cleared number: 1844
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1230.0519202483847, 1990.8301648391296]
+nadir points: [2034.6653613311355, 2772.09092828969]
+max objectives: [16563.316932828508, 16283.427096048254]
+min objectives: [1366.7243558315386, 2212.0335164879216]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=861.526761, min=0.000000, average=0.861527, max=0.986199}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=12.070935, min=0.000000, average=0.012071, max=0.134918}
+Genotype diversity: 1.0
+Entropy diversity: 6.861824114995118
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 10:
+  Task 0: #1 ind=0 HV=0.9861985909604846; #2 ind=1 HV=0.9696257237407407; #3 ind=5 HV=0.9690160491742517; #4 ind=6 HV=0.9686838548574328; #5 ind=7 HV=0.96625901052387
+  Task 1: #1 ind=14 HV=0.9732962804426396; #2 ind=4 HV=0.9702496382536921; #3 ind=44 HV=0.9682780743018666; #4 ind=27 HV=0.9677211765429555; #5 ind=45 HV=0.9629966235076028
+MPSLGP task 0 best fitness of generation Fitness: [1445.5970427109278 2328.149885361432]
+MPSLGP task 1 best fitness of generation Fitness: [2034.6653613311355 2212.0335164879216]
+
+Pareto Front of Subpopulation 10
+Objective 0: [1366.7243558315386, 1389.3740366407437, 1445.5970427109278, 2034.6653613311355]
+Objective 1: [2772.09092828969, 2615.395727041876, 2328.149885361432, 2212.0335164879216]
+2
+duration: 96.0
+Generation 10 elapsed 96.0 seconds.
+Generation 11
+Preselection cleared number: 2018
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1231.9649310500834, 2166.524854541762]
+nadir points: [2382.5564673307963, 2772.5735932341777]
+max objectives: [32420.09722037069, 31826.09722037069]
+min objectives: [1368.8499233889816, 2407.2498383797356]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=923.053759, min=0.000000, average=0.923054, max=0.993230}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=9.232206, min=0.000000, average=0.009232, max=0.132252}
+Genotype diversity: 1.0
+Entropy diversity: 6.850393962032568
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 11:
+  Task 0: #1 ind=0 HV=0.9932304938915723; #2 ind=1 HV=0.9926782185365314; #3 ind=2 HV=0.9926102508528298; #4 ind=4 HV=0.992053055307136; #5 ind=11 HV=0.990593249016046
+  Task 1: #1 ind=3 HV=0.9922404891097476; #2 ind=13 HV=0.9891911010687188; #3 ind=16 HV=0.9885589587648936; #4 ind=24 HV=0.987464320602919; #5 ind=27 HV=0.9864021914570053
+MPSLGP task 0 best fitness of generation Fitness: [1457.8030361188357 2512.7874720631517]
+MPSLGP task 1 best fitness of generation Fitness: [2029.7459898822417 2426.5401815449586]
+
+Pareto Front of Subpopulation 11
+Objective 0: [1368.8499233889816, 1393.7626272101916, 1401.7256422190403, 1427.635686746682, 1457.8030361188357, 1493.2328158345263, 1763.5327097621703, 1871.2913692172515, 2029.7459898822417, 2029.7459898822417, 2382.5564673307963]
+Objective 1: [2772.5735932341777, 2728.5788099815836, 2604.328538399539, 2561.5409481552197, 2512.7874720631517, 2493.5925032200757, 2482.3639090150828, 2450.0592640554532, 2426.5401815449586, 2426.5401815449586, 2407.2498383797356]
+2
+duration: 86.0
+Generation 11 elapsed 86.0 seconds.
+Generation 12
+Preselection cleared number: 2038
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1219.186448747365, 1934.9655678487325]
+nadir points: [1772.1787320332078, 2848.2984218881465]
+max objectives: [35153.743805352584, 34625.743805352584]
+min objectives: [1354.6516097192944, 2149.961742054147]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=934.468107, min=0.000000, average=0.934468, max=0.992537}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=6.598504, min=0.000000, average=0.006599, max=0.140332}
+Genotype diversity: 1.0
+Entropy diversity: 6.864344032178142
+PC diversity: 0.971
+MPSLGP top 5 HV by task at generation 12:
+  Task 0: #1 ind=0 HV=0.9925374134545962; #2 ind=1 HV=0.9922316224652425; #3 ind=2 HV=0.9898040478432945; #4 ind=12 HV=0.9885637240549655; #5 ind=31 HV=0.9879801044660098
+  Task 1: #1 ind=11 HV=0.9908996782731434; #2 ind=21 HV=0.9889048420358021; #3 ind=3 HV=0.9875875318345414; #4 ind=13 HV=0.9861506927828592; #5 ind=27 HV=0.9828214954654169
+MPSLGP task 0 best fitness of generation Fitness: [1430.7989327196265 2311.7577152871527]
+MPSLGP task 1 best fitness of generation Fitness: [1772.1787320332078 2149.961742054147]
+
+Pareto Front of Subpopulation 12
+Objective 0: [1354.6516097192944, 1376.811924573558, 1378.4882599390403, 1379.410369597288, 1389.4218551399535, 1399.658496466407, 1424.83832447631, 1430.7989327196265, 1460.485811438688, 1705.9090640201175, 1772.1787320332078]
+Objective 1: [2848.2984218881465, 2784.3693265970796, 2719.267918624857, 2593.448203358479, 2559.7863970088074, 2516.3069819310913, 2404.5185827979003, 2311.7577152871527, 2295.195866872673, 2263.225809577969, 2149.961742054147]
+2
+duration: 80.0
+Generation 12 elapsed 80.0 seconds.
+Generation 13
+Preselection cleared number: 2211
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1243.1732314943322, 2078.3142812056176]
+nadir points: [2505.0869039051177, 2629.008769374108]
+max objectives: [36014.91358759414, 35552.91358759414]
+min objectives: [1381.303590549258, 2309.238090228464]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=932.895630, min=0.000000, average=0.932896, max=0.992676}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=6.128014, min=0.000000, average=0.006128, max=0.105959}
+Genotype diversity: 1.0
+Entropy diversity: 6.857343338903505
+PC diversity: 0.976
+MPSLGP top 5 HV by task at generation 13:
+  Task 0: #1 ind=0 HV=0.992676162886853; #2 ind=1 HV=0.9920977956840534; #3 ind=2 HV=0.990974689865646; #4 ind=3 HV=0.9903105141334123; #5 ind=8 HV=0.989505683618587
+  Task 1: #1 ind=7 HV=0.9900089237198669; #2 ind=4 HV=0.9899745294549519; #3 ind=12 HV=0.9885543726372255; #4 ind=30 HV=0.9873340418693832; #5 ind=5 HV=0.9865446016173116
+MPSLGP task 0 best fitness of generation Fitness: [1480.975035971147 2447.7442516323645]
+MPSLGP task 1 best fitness of generation Fitness: [1381.303590549258 2629.008769374108]
+
+Pareto Front of Subpopulation 13
+Objective 0: [1381.303590549258, 1453.8383606280258, 1480.975035971147, 1566.2957217388903, 1597.2560321170604, 1768.4755496035796, 2505.0869039051177]
+Objective 1: [2629.008769374108, 2491.07295480452, 2447.7442516323645, 2424.58674749441, 2418.955978556187, 2381.8821690786863, 2309.238090228464]
+2
+duration: 81.0
+Generation 13 elapsed 81.0 seconds.
+Generation 14
+Preselection cleared number: 2001
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1233.9634857124881, 2103.9242393160357]
+nadir points: [1775.5528520767257, 2801.307156371069]
+max objectives: [20707.334715773388, 20245.334715773388]
+min objectives: [1371.0705396805424, 2337.6935992400395]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=884.338600, min=0.000000, average=0.884339, max=0.991680}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.426656, min=0.000000, average=0.005427, max=0.111927}
+Genotype diversity: 1.0
+Entropy diversity: 6.811090281908109
+PC diversity: 0.98
+MPSLGP top 5 HV by task at generation 14:
+  Task 0: #1 ind=0 HV=0.9916803198685817; #2 ind=1 HV=0.9895986927271079; #3 ind=2 HV=0.9890787923023999; #4 ind=3 HV=0.9840932252755714; #5 ind=10 HV=0.9816228185596783
+  Task 1: #1 ind=9 HV=0.9835770260009856; #2 ind=5 HV=0.9789774595782974; #3 ind=6 HV=0.9788732749397033; #4 ind=7 HV=0.9787691182768326; #5 ind=26 HV=0.9775775589710889
+MPSLGP task 0 best fitness of generation Fitness: [1461.7389042780997 2395.3709785788087]
+MPSLGP task 1 best fitness of generation Fitness: [1775.5528520767257 2337.6935992400395]
+
+Pareto Front of Subpopulation 14
+Objective 0: [1371.0705396805424, 1381.190733387455, 1395.1468124041276, 1409.499840997465, 1436.4552069134224, 1461.7389042780997, 1775.5528520767257, 1775.5528520767257, 1775.5528520767257]
+Objective 1: [2801.307156371069, 2670.829662501521, 2587.3994507720345, 2486.6046802363126, 2454.315852354979, 2395.3709785788087, 2337.6935992400395, 2337.6935992400395, 2337.6935992400395]
+2
+duration: 83.0
+Generation 14 elapsed 83.0 seconds.
+Generation 15
+Preselection cleared number: 2118
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1221.2250551239704, 1993.2078468324034]
+nadir points: [1760.2571003371413, 3073.850170268968]
+max objectives: [24379.037705147202, 23719.037705147202]
+min objectives: [1356.9167279155226, 2214.675385369337]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=901.229870, min=0.000000, average=0.901230, max=0.984139}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.394466, min=0.000000, average=0.005394, max=0.107857}
+Genotype diversity: 1.0
+Entropy diversity: 6.820841603328579
+PC diversity: 0.969
+MPSLGP top 5 HV by task at generation 15:
+  Task 0: #1 ind=0 HV=0.98413938857658; #2 ind=2 HV=0.9820370941004647; #3 ind=3 HV=0.9797761988507104; #4 ind=13 HV=0.9796575084372385; #5 ind=14 HV=0.979570442859188
+  Task 1: #1 ind=1 HV=0.9823927200348215; #2 ind=12 HV=0.9801372381897347; #3 ind=31 HV=0.9751669573815837; #4 ind=9 HV=0.975016532599233; #5 ind=73 HV=0.973638300462689
+MPSLGP task 0 best fitness of generation Fitness: [1486.7731153482746 2431.901414604159]
+MPSLGP task 1 best fitness of generation Fitness: [1760.2571003371413 2214.675385369337]
+
+Pareto Front of Subpopulation 15
+Objective 0: [1356.9167279155226, 1368.7286652713883, 1411.3792130701331, 1436.7344228064612, 1441.9641767965804, 1444.149860394471, 1458.3672562825086, 1459.3236516927864, 1486.7731153482746, 1610.6626766234258, 1723.2986265605723, 1760.2571003371413]
+Objective 1: [3073.850170268968, 2734.104907381872, 2664.616700419894, 2653.3512398165767, 2629.594739449618, 2562.5597991864197, 2545.01657230861, 2497.1473561407183, 2431.901414604159, 2424.7710928006563, 2405.286067727837, 2214.675385369337]
+2
+duration: 84.0
+Generation 15 elapsed 84.0 seconds.
+Generation 16
+Preselection cleared number: 1982
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1272.0680961679377, 2011.9675716593047]
+nadir points: [1582.1076091578288, 3462.3895901602227]
+max objectives: [7532.882434383646, 9203.297866236186]
+min objectives: [1413.408995742153, 2235.519524065894]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=744.822503, min=0.000000, average=0.744823, max=0.972139}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.072200, min=0.000000, average=0.005072, max=0.105702}
+Genotype diversity: 1.0
+Entropy diversity: 6.815138844581796
+PC diversity: 0.982
+MPSLGP top 5 HV by task at generation 16:
+  Task 0: #1 ind=1 HV=0.9691262643424926; #2 ind=5 HV=0.9519569772701846; #3 ind=6 HV=0.9456224256093558; #4 ind=7 HV=0.940066122829212; #5 ind=2 HV=0.9336245144557945
+  Task 1: #1 ind=0 HV=0.9721386435053081; #2 ind=19 HV=0.92588940366168; #3 ind=20 HV=0.9257787562440317; #4 ind=21 HV=0.9238999008248028; #5 ind=31 HV=0.9229964967849562
+MPSLGP task 0 best fitness of generation Fitness: [1453.6175728967355 2401.868913476472]
+MPSLGP task 1 best fitness of generation Fitness: [1582.1076091578288 2235.519524065894]
+
+Pareto Front of Subpopulation 16
+Objective 0: [1413.408995742153, 1415.2964135356015, 1426.4692627761979, 1453.6175728967355, 1582.1076091578288]
+Objective 1: [3462.3895901602227, 3066.218071193085, 2678.2917875874555, 2401.868913476472, 2235.519524065894]
+2
+duration: 88.0
+Generation 16 elapsed 88.0 seconds.
+Generation 17
+Preselection cleared number: 1912
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1413.6067176567478, 2180.953551168699]
+nadir points: [2641.7449534192274, 3871.366432277602]
+max objectives: [14273.173928441422, 14846.763177333982]
+min objectives: [1570.6741307297198, 2423.2817235207767]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=814.738206, min=0.000000, average=0.814738, max=0.964969}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.649358, min=0.000000, average=0.005649, max=0.134860}
+Genotype diversity: 1.0
+Entropy diversity: 6.863103932747695
+PC diversity: 0.983
+MPSLGP top 5 HV by task at generation 17:
+  Task 0: #1 ind=2 HV=0.9509643043580331; #2 ind=14 HV=0.9495231286087331; #3 ind=18 HV=0.9437424011266466; #4 ind=19 HV=0.9430921535514935; #5 ind=22 HV=0.9379134159971705
+  Task 1: #1 ind=0 HV=0.9649690630494949; #2 ind=33 HV=0.9542548118272844; #3 ind=1 HV=0.9514036560209262; #4 ind=3 HV=0.9499087719456804; #5 ind=13 HV=0.9496224601305925
+MPSLGP task 0 best fitness of generation Fitness: [2047.1369065604813 2564.4393361381954]
+MPSLGP task 1 best fitness of generation Fitness: [1844.1496391744586 2585.129709528759]
+
+Pareto Front of Subpopulation 17
+Objective 0: [1570.6741307297198, 1637.6531445689907, 1682.5532436246576, 1693.9914613041037, 1731.4136928542866, 1834.1824989175657, 1839.9245723701315, 1840.6206412036554, 1844.1496391744586, 2047.1369065604813, 2069.841355327575, 2530.990536428959, 2641.7449534192274]
+Objective 1: [3871.366432277602, 3712.360996633768, 3390.681207569083, 2931.2332370576914, 2928.9353173853015, 2902.37474616291, 2857.733115515439, 2759.1289750585565, 2585.129709528759, 2564.4393361381954, 2557.156194323441, 2556.4663790899795, 2423.2817235207767]
+2
+duration: 89.0
+Generation 17 elapsed 89.0 seconds.
+Generation 18
+Preselection cleared number: 1893
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1200.9855181431108, 2040.6579917656695]
+nadir points: [1582.0806427080242, 2875.0309429700137]
+max objectives: [10645.10650291745, 39940.4260116698]
+min objectives: [1334.4283534923452, 2267.3977686285216]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=881.300933, min=0.000000, average=0.881301, max=0.986175}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.080501, min=0.000000, average=0.005081, max=0.126533}
+Genotype diversity: 1.0
+Entropy diversity: 6.885207669063988
+PC diversity: 0.982
+MPSLGP top 5 HV by task at generation 18:
+  Task 0: #1 ind=0 HV=0.9861746220734006; #2 ind=1 HV=0.9830937147126817; #3 ind=2 HV=0.9825599548109755; #4 ind=4 HV=0.9795232678639592; #5 ind=12 HV=0.978470459503303
+  Task 1: #1 ind=3 HV=0.9807808436987553; #2 ind=10 HV=0.9801166790293937; #3 ind=11 HV=0.980054407006731; #4 ind=5 HV=0.9791278332742875; #5 ind=6 HV=0.9789684593774995
+MPSLGP task 0 best fitness of generation Fitness: [1390.6235994597955 2537.7786278277927]
+MPSLGP task 1 best fitness of generation Fitness: [1471.3358027619252 2425.149397676694]
+
+Pareto Front of Subpopulation 18
+Objective 0: [1334.4283534923452, 1388.863650750718, 1390.3582132899028, 1390.6235994597955, 1459.9616979981074, 1465.1287949036632, 1471.3358027619252, 1492.7183287796506, 1532.1225908849956, 1582.0806427080242]
+Objective 1: [2875.0309429700137, 2798.4705245621153, 2640.8539015759306, 2537.7786278277927, 2514.973457189277, 2483.740556740202, 2425.149397676694, 2408.6316251001554, 2348.9271761934506, 2267.3977686285216]
+2
+duration: 91.0
+Generation 18 elapsed 91.0 seconds.
+Generation 19
+Preselection cleared number: 1956
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1189.6968303491085, 2113.2787377438976]
+nadir points: [1500.8244572277908, 2438.6591116103227]
+max objectives: [7309.867885878688, 6844.755813101772]
+min objectives: [1321.885367054565, 2348.087486382108]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=713.431532, min=0.000000, average=0.713432, max=0.979481}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=5.582911, min=0.000000, average=0.005583, max=0.124416}
+Genotype diversity: 1.0
+Entropy diversity: 6.889733452287694
+PC diversity: 0.989
+MPSLGP top 5 HV by task at generation 19:
+  Task 0: #1 ind=0 HV=0.9794811790899715; #2 ind=1 HV=0.9750338872384076; #3 ind=2 HV=0.9739012943236376; #4 ind=3 HV=0.9686288469953951; #5 ind=5 HV=0.9536831831809184
+  Task 1: #1 ind=4 HV=0.9594531524459802; #2 ind=6 HV=0.9532043034680073; #3 ind=13 HV=0.9508757078375499; #4 ind=15 HV=0.9419418549688312; #5 ind=16 HV=0.9416972570914133
+MPSLGP task 0 best fitness of generation Fitness: [1321.885367054565 2438.6591116103227]
+MPSLGP task 1 best fitness of generation Fitness: [1515.6056763229426 2374.242363224097]
+
+Pareto Front of Subpopulation 19
+Objective 0: [1321.885367054565, 1356.2299771119215, 1377.4653824867273, 1500.8244572277908]
+Objective 1: [2438.6591116103227, 2436.800342782808, 2414.1715831819456, 2348.087486382108]
+2
+duration: 110.0
+Generation 19 elapsed 110.0 seconds.
+Generation 20
+Preselection cleared number: 2069
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1176.5547957634233, 1999.6758005920449]
+nadir points: [1561.3720166193962, 2878.1507909141947]
+max objectives: [5446.391196197073, 6414.963354762527]
+min objectives: [1307.2831064038037, 2221.8620006578276]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=650.733988, min=0.000000, average=0.650734, max=0.938177}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=3.937114, min=0.000000, average=0.003937, max=0.115874}
+Genotype diversity: 1.0
+Entropy diversity: 6.877256803037613
+PC diversity: 0.991
+MPSLGP top 5 HV by task at generation 20:
+  Task 0: #1 ind=2 HV=0.9172682539152317; #2 ind=4 HV=0.8975677012329544; #3 ind=5 HV=0.8919771569776733; #4 ind=14 HV=0.8899184594094555; #5 ind=26 HV=0.8857729290931183
+  Task 1: #1 ind=0 HV=0.9381771188441068; #2 ind=10 HV=0.9184960324800359; #3 ind=1 HV=0.9174500047620636; #4 ind=3 HV=0.9154300387025406; #5 ind=11 HV=0.9086133801100003
+MPSLGP task 0 best fitness of generation Fitness: [1464.6617900511192 2413.0722950627096]
+MPSLGP task 1 best fitness of generation Fitness: [1561.3720166193962 2221.8620006578276]
+
+Pareto Front of Subpopulation 20
+Objective 0: [1307.2831064038037, 1362.727057496435, 1391.6527315146377, 1428.3881882269052, 1443.4483647595334, 1459.5434463513084, 1464.6617900511192, 1472.0642098122335, 1510.1549724408105, 1561.3720166193962]
+Objective 1: [2878.1507909141947, 2667.9335306338035, 2662.5885626499075, 2635.372931041755, 2535.3462239208166, 2496.999704835238, 2413.0722950627096, 2411.823748933384, 2362.302865547943, 2221.8620006578276]
+2
+duration: 120.0
+Generation 20 elapsed 120.0 seconds.
+Generation 21
+Preselection cleared number: 1961
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1178.7653213138606, 2031.4017087870743]
+nadir points: [1584.6269537885382, 2575.9566647018073]
+max objectives: [34081.14830616105, 33620.67306235392]
+min objectives: [1309.7392459042894, 2257.113009763416]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=934.188569, min=0.000000, average=0.934189, max=0.995967}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=3.897026, min=0.000000, average=0.003897, max=0.130911}
+Genotype diversity: 1.0
+Entropy diversity: 6.872391221740318
+PC diversity: 0.996
+MPSLGP top 5 HV by task at generation 21:
+  Task 0: #1 ind=2 HV=0.9941285937355736; #2 ind=22 HV=0.9933976206326287; #3 ind=4 HV=0.9933546134108884; #4 ind=23 HV=0.9930865486850853; #5 ind=24 HV=0.9930428328801875
+  Task 1: #1 ind=0 HV=0.995966695735931; #2 ind=9 HV=0.9948554560623887; #3 ind=1 HV=0.9945875711573746; #4 ind=3 HV=0.9938300830879601; #5 ind=39 HV=0.9922814315567684
+MPSLGP task 0 best fitness of generation Fitness: [1397.835290686533 2351.3834735330893]
+MPSLGP task 1 best fitness of generation Fitness: [1436.5282712509797 2260.336740247789]
+
+Pareto Front of Subpopulation 21
+Objective 0: [1309.7392459042894, 1337.2949121737038, 1352.1491488742467, 1385.6414001618396, 1397.835290686533, 1427.9795683512057, 1436.2831744390423, 1436.5282712509797, 1584.6269537885382]
+Objective 1: [2575.9566647018073, 2499.414612535853, 2406.350871831877, 2400.9591936167562, 2351.3834735330893, 2341.0516264596954, 2298.151539296261, 2260.336740247789, 2257.113009763416]
+2
+duration: 97.0
+Generation 21 elapsed 97.0 seconds.
+Generation 22
+Preselection cleared number: 1937
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1188.1403074816424, 2080.6869201286754]
+nadir points: [1414.0180388980443, 2755.005446828145]
+max objectives: [4086.0185040226934, 11863.567371859099]
+min objectives: [1320.1558972018247, 2311.8743556985282]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=717.756227, min=0.000000, average=0.717756, max=0.968742}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=4.287481, min=0.000000, average=0.004287, max=0.106089}
+Genotype diversity: 1.0
+Entropy diversity: 6.819305415267415
+PC diversity: 0.992
+MPSLGP top 5 HV by task at generation 22:
+  Task 0: #1 ind=0 HV=0.9687422079558335; #2 ind=1 HV=0.9651889563317323; #3 ind=2 HV=0.9584019484333811; #4 ind=3 HV=0.9559135949426028; #5 ind=6 HV=0.950543564535199
+  Task 1: #1 ind=4 HV=0.9551776905994629; #2 ind=5 HV=0.9544824125194257; #3 ind=8 HV=0.9501395038439595; #4 ind=9 HV=0.9489465040669268; #5 ind=12 HV=0.9419966203778942
+MPSLGP task 0 best fitness of generation Fitness: [1401.5846321428398 2325.4197315030615]
+MPSLGP task 1 best fitness of generation Fitness: [1379.9252045644316 2517.2570402396377]
+
+Pareto Front of Subpopulation 22
+Objective 0: [1320.1558972018247, 1343.736397576322, 1352.5496852365468, 1372.5129050763499, 1379.9252045644316, 1395.9512608032383, 1401.5846321428398, 1414.0180388980443]
+Objective 1: [2755.005446828145, 2734.9455903052876, 2587.977873749798, 2539.813392693177, 2517.2570402396377, 2464.2468668544316, 2325.4197315030615, 2311.8743556985282]
+2
+duration: 91.0
+Generation 22 elapsed 91.0 seconds.
+Generation 23
+Preselection cleared number: 1899
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1178.9920591653297, 1980.3803072981536]
+nadir points: [1647.6320186950616, 2644.0713529187196]
+max objectives: [14665.727601042046, 20256.381062675908]
+min objectives: [1309.9911768503662, 2200.422563664615]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=884.245095, min=0.000000, average=0.884245, max=0.993319}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=2.706125, min=0.000000, average=0.002706, max=0.074715}
+Genotype diversity: 1.0
+Entropy diversity: 6.8657482316046
+PC diversity: 0.997
+MPSLGP top 5 HV by task at generation 23:
+  Task 0: #1 ind=1 HV=0.9909996189584871; #2 ind=29 HV=0.9883923656661568; #3 ind=9 HV=0.9880853037907482; #4 ind=10 HV=0.987350636562219; #5 ind=30 HV=0.9867811037446578
+  Task 1: #1 ind=0 HV=0.9933194969738385; #2 ind=2 HV=0.9875936123197726; #3 ind=11 HV=0.9872676782074135; #4 ind=22 HV=0.9828669610992221; #5 ind=3 HV=0.9825992462080634
+MPSLGP task 0 best fitness of generation Fitness: [1337.2685804649227 2323.9873174736276]
+MPSLGP task 1 best fitness of generation Fitness: [1378.3058665299905 2224.154802731122]
+
+Pareto Front of Subpopulation 23
+Objective 0: [1309.9911768503662, 1317.5858384160529, 1324.4081163497467, 1329.4285293289722, 1337.1130702910596, 1337.2685804649227, 1375.5933597327676, 1378.3058665299905, 1647.6320186950616]
+Objective 1: [2644.0713529187196, 2630.3433536642115, 2595.4058257428696, 2561.821502142353, 2471.6145876232767, 2323.9873174736276, 2317.8469995449414, 2224.154802731122, 2200.422563664615]
+2
+duration: 95.0
+Generation 23 elapsed 95.0 seconds.
+Generation 24
+Preselection cleared number: 1946
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1200.4048049867386, 2174.8592764700647]
+nadir points: [1576.647562891565, 2901.837188481353]
+max objectives: [3748.730587435828, 8260.589945366955]
+min objectives: [1333.7831166519318, 2416.5103071889607]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=668.621214, min=0.000000, average=0.668621, max=0.936189}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=4.325855, min=0.000000, average=0.004326, max=0.109282}
+Genotype diversity: 1.0
+Entropy diversity: 6.863660380519883
+PC diversity: 0.99
+MPSLGP top 5 HV by task at generation 24:
+  Task 0: #1 ind=0 HV=0.9361889623725628; #2 ind=1 HV=0.9321524767109779; #3 ind=2 HV=0.9316014628153141; #4 ind=3 HV=0.9292537319425488; #5 ind=5 HV=0.9122865273319
+  Task 1: #1 ind=9 HV=0.9300257076713055; #2 ind=10 HV=0.9257483433884055; #3 ind=23 HV=0.9194565560608787; #4 ind=24 HV=0.9178995346268104; #5 ind=25 HV=0.9177242432960061
+MPSLGP task 0 best fitness of generation Fitness: [1448.424503611197 2510.3079160529887]
+MPSLGP task 1 best fitness of generation Fitness: [1431.316957950039 2664.4842370948754]
+
+Pareto Front of Subpopulation 24
+Objective 0: [1333.7831166519318, 1339.4141614697583, 1421.1170954449917, 1431.316957950039, 1436.4192999820807, 1441.897877047304, 1448.424503611197, 1552.8269586239767, 1576.647562891565]
+Objective 1: [2901.837188481353, 2792.3823488764465, 2708.894308668212, 2664.4842370948754, 2558.604744902812, 2544.897488620947, 2510.3079160529887, 2508.445898275997, 2416.5103071889607]
+2
+duration: 96.0
+Generation 24 elapsed 96.0 seconds.
+Generation 25
+Preselection cleared number: 1874
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1248.7494156300295, 2022.0644239596966]
+nadir points: [1586.473154270032, 2742.383855307824]
+max objectives: [12438.083048997389, 19504.40171978157]
+min objectives: [1387.4993507000327, 2246.738248844107]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=864.915618, min=0.000000, average=0.864916, max=0.989685}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=3.095983, min=0.000000, average=0.003096, max=0.113711}
+Genotype diversity: 1.0
+Entropy diversity: 6.868865759890772
+PC diversity: 0.989
+MPSLGP top 5 HV by task at generation 25:
+  Task 0: #1 ind=7 HV=0.9896850537843528; #2 ind=0 HV=0.9854621858750844; #3 ind=84 HV=0.9735965337177298; #4 ind=4 HV=0.9728914468053821; #5 ind=11 HV=0.9720658212725594
+  Task 1: #1 ind=1 HV=0.9818501634002084; #2 ind=8 HV=0.9815619759000184; #3 ind=9 HV=0.9799224843296718; #4 ind=2 HV=0.9774892724738424; #5 ind=3 HV=0.9763601631036367
+MPSLGP task 0 best fitness of generation Fitness: [1444.9004793846689 2403.785241334175]
+MPSLGP task 1 best fitness of generation Fitness: [1586.473154270032 2246.738248844107]
+
+Pareto Front of Subpopulation 25
+Objective 0: [1387.4993507000327, 1392.266696559178, 1420.0813953553734, 1437.2007075107103, 1444.9004793846689, 1586.1609827365319, 1586.473154270032]
+Objective 1: [2742.383855307824, 2720.9992561237887, 2592.4620175137534, 2580.641093780403, 2403.785241334175, 2399.702938906208, 2246.738248844107]
+2
+duration: 96.0
+Generation 25 elapsed 96.0 seconds.
+Generation 26
+Preselection cleared number: 1795
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1163.1710831679666, 2041.456403969822]
+nadir points: [1584.010192299931, 2883.4354646836873]
+max objectives: [15923.2784339934, 15263.2784339934]
+min objectives: [1292.412314631074, 2268.284893299802]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=861.498536, min=0.000000, average=0.861499, max=0.991422}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=2.641591, min=0.000000, average=0.002642, max=0.056693}
+Genotype diversity: 1.0
+Entropy diversity: 6.79852908692097
+PC diversity: 0.989
+MPSLGP top 5 HV by task at generation 26:
+  Task 0: #1 ind=1 HV=0.9875264210763095; #2 ind=10 HV=0.9829629453607902; #3 ind=3 HV=0.9829000776051647; #4 ind=11 HV=0.9826653231122272; #5 ind=4 HV=0.9804593176184507
+  Task 1: #1 ind=0 HV=0.9914224315641047; #2 ind=2 HV=0.9874582268492639; #3 ind=25 HV=0.9791690918883884; #4 ind=26 HV=0.9783386444622244; #5 ind=27 HV=0.9781813009707655
+MPSLGP task 0 best fitness of generation Fitness: [1454.0457665079884 2270.151652064873]
+MPSLGP task 1 best fitness of generation Fitness: [1385.2820798779576 2284.313434755779]
+
+Pareto Front of Subpopulation 26
+Objective 0: [1292.412314631074, 1313.8613195765356, 1334.260315257794, 1355.825230058792, 1362.1634346551145, 1364.449245135911, 1384.3668962298252, 1385.2820798779576, 1454.0457665079884, 1584.010192299931]
+Objective 1: [2883.4354646836873, 2649.48836554389, 2539.190620018635, 2516.0987574046594, 2474.22655045148, 2448.1220174276386, 2394.8996248308686, 2284.313434755779, 2270.151652064873, 2268.284893299802]
+2
+duration: 96.0
+Generation 26 elapsed 96.0 seconds.
+Generation 27
+Preselection cleared number: 1906
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1227.3344061461817, 2138.5426676590114]
+nadir points: [1566.7500371866045, 2895.9708797313506]
+max objectives: [2724.6043672360684, 5884.05540871853]
+min objectives: [1363.7048957179795, 2376.1585196211236]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=556.728722, min=0.000000, average=0.556729, max=0.911271}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=2.962560, min=0.000000, average=0.002963, max=0.107565}
+Genotype diversity: 1.0
+Entropy diversity: 6.895025958192958
+PC diversity: 0.985
+MPSLGP top 5 HV by task at generation 27:
+  Task 0: #1 ind=0 HV=0.9112713511420328; #2 ind=3 HV=0.8839673124605931; #3 ind=8 HV=0.8831860406601374; #4 ind=10 HV=0.8666809900197481; #5 ind=11 HV=0.863410856799978
+  Task 1: #1 ind=1 HV=0.9055240541469651; #2 ind=2 HV=0.8973490594976427; #3 ind=4 HV=0.8772116333181947; #4 ind=9 HV=0.8697085877628756; #5 ind=12 HV=0.8614270697431141
+MPSLGP task 0 best fitness of generation Fitness: [1409.9421229825239 2558.829921077937]
+MPSLGP task 1 best fitness of generation Fitness: [1488.40165674538 2383.8522633791436]
+
+Pareto Front of Subpopulation 27
+Objective 0: [1363.7048957179795, 1387.981939973426, 1399.94552928771, 1409.9421229825239, 1470.78843174933, 1486.4973883370985, 1488.40165674538, 1566.7500371866045]
+Objective 1: [2895.9708797313506, 2798.236639363109, 2631.212930684327, 2558.829921077937, 2505.6411288806703, 2492.204126687022, 2383.8522633791436, 2376.1585196211236]
+2
+duration: 126.0
+Generation 27 elapsed 126.0 seconds.
+Generation 28
+Preselection cleared number: 1879
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1161.1646692144263, 2019.1102835162776]
+nadir points: [1422.930210456674, 2491.9853797456017]
+max objectives: [3064.378761303815, 6086.211874595378]
+min objectives: [1290.182965793807, 2243.4558705736417]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=637.132069, min=0.167600, average=0.637132, max=0.976115}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=3.073034, min=0.000000, average=0.003073, max=0.082117}
+Genotype diversity: 1.0
+Entropy diversity: 6.902210101537774
+PC diversity: 0.993
+MPSLGP top 5 HV by task at generation 28:
+  Task 0: #1 ind=0 HV=0.9761149449488585; #2 ind=6 HV=0.9519517678372587; #3 ind=7 HV=0.9458462805145393; #4 ind=8 HV=0.9387929235262187; #5 ind=20 HV=0.9318072786354514
+  Task 1: #1 ind=1 HV=0.9639989568649174; #2 ind=2 HV=0.9528917559180985; #3 ind=17 HV=0.9359218046133461; #4 ind=18 HV=0.93528129241734; #5 ind=19 HV=0.9338991788992307
+MPSLGP task 0 best fitness of generation Fitness: [1293.6541719195084 2312.5383472716203]
+MPSLGP task 1 best fitness of generation Fitness: [1329.885109781666 2287.83010251855]
+
+Pareto Front of Subpopulation 28
+Objective 0: [1290.182965793807, 1293.6541719195084, 1329.885109781666, 1362.4909026493842, 1400.9947678656317, 1422.930210456674]
+Objective 1: [2491.9853797456017, 2312.5383472716203, 2287.83010251855, 2265.8590128551004, 2256.7164325830527, 2243.4558705736417]
+2
+duration: 113.0
+Generation 28 elapsed 113.0 seconds.
+Generation 29
+Preselection cleared number: 1899
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1245.495829210442, 2127.716032990103]
+nadir points: [1573.8685396545625, 2792.3941714694956]
+max objectives: [7498.063770272129, 16225.06031970866]
+min objectives: [1383.884254678269, 2364.128925544559]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=822.319545, min=0.000000, average=0.822320, max=0.980626}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=2.078288, min=0.000000, average=0.002078, max=0.083928}
+Genotype diversity: 1.0
+Entropy diversity: 6.899437512815535
+PC diversity: 0.995
+MPSLGP top 5 HV by task at generation 29:
+  Task 0: #1 ind=1 HV=0.9719608455929991; #2 ind=2 HV=0.9709269834523315; #3 ind=3 HV=0.9695881999751961; #4 ind=9 HV=0.9689761918026023; #5 ind=10 HV=0.9685509144613961
+  Task 1: #1 ind=0 HV=0.9806258558892352; #2 ind=6 HV=0.9790418791521668; #3 ind=7 HV=0.9717115223378381; #4 ind=8 HV=0.9716168314621891; #5 ind=4 HV=0.9684809621625367
+MPSLGP task 0 best fitness of generation Fitness: [1445.694204127387 2602.524520957493]
+MPSLGP task 1 best fitness of generation Fitness: [1482.0769324630965 2407.6025268229423]
+
+Pareto Front of Subpopulation 29
+Objective 0: [1383.884254678269, 1434.4869057555043, 1445.694204127387, 1468.0476771504036, 1482.0769324630965, 1573.8685396545625]
+Objective 1: [2792.3941714694956, 2639.002813255647, 2602.524520957493, 2588.5943844094872, 2407.6025268229423, 2364.128925544559]
+2
+duration: 142.0
+Generation 29 elapsed 142.0 seconds.
+Generation 30
+Preselection cleared number: 1906
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1183.1678978786529, 1988.8028259913729]
+nadir points: [1477.669863725925, 2565.4041752257617]
+max objectives: [3141.4738087234145, 7362.8332270975225]
+min objectives: [1314.6309976429475, 2209.780917768192]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=644.496653, min=0.000000, average=0.644497, max=0.939853}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=1.971450, min=0.000000, average=0.001971, max=0.083267}
+Genotype diversity: 1.0
+Entropy diversity: 6.8913613192166245
+PC diversity: 0.997
+MPSLGP top 5 HV by task at generation 30:
+  Task 0: #1 ind=2 HV=0.9349457052781206; #2 ind=3 HV=0.9330540948026598; #3 ind=5 HV=0.9269020456860868; #4 ind=7 HV=0.9238576006401147; #5 ind=9 HV=0.9214835362532868
+  Task 1: #1 ind=0 HV=0.939852792259004; #2 ind=1 HV=0.9395802998032915; #3 ind=4 HV=0.9313149628296796; #4 ind=6 HV=0.9249531377130222; #5 ind=11 HV=0.9185027260068088
+MPSLGP task 0 best fitness of generation Fitness: [1333.3867487313983 2473.890711568878]
+MPSLGP task 1 best fitness of generation Fitness: [1369.7958605058084 2354.5828150084126]
+
+Pareto Front of Subpopulation 30
+Objective 0: [1314.6309976429475, 1327.9174549462623, 1333.3867487313983, 1360.1868271609128, 1362.8127464668942, 1369.7958605058084, 1413.5991353701684, 1434.1433400514652, 1477.669863725925]
+Objective 1: [2565.4041752257617, 2523.63870204438, 2473.890711568878, 2455.921108500188, 2372.090225327178, 2354.5828150084126, 2272.1721005539875, 2224.176074429881, 2209.780917768192]
+2
+duration: 131.0
+Generation 30 elapsed 131.0 seconds.
+Generation 31
+Preselection cleared number: 1883
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1161.556360093711, 1908.0195192426763]
+nadir points: [1496.8800852598797, 2521.758545978111]
+max objectives: [5168.348965610712, 8683.51919298066]
+min objectives: [1290.618177881901, 2120.021688047418]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=733.303391, min=0.000000, average=0.733303, max=0.966040}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=1.850249, min=0.000000, average=0.001850, max=0.079292}
+Genotype diversity: 1.0
+Entropy diversity: 6.8933690872272875
+PC diversity: 0.998
+MPSLGP top 5 HV by task at generation 31:
+  Task 0: #1 ind=1 HV=0.9596457192205645; #2 ind=4 HV=0.9472881011478821; #3 ind=9 HV=0.9466731540622967; #4 ind=5 HV=0.9441953534705102; #5 ind=18 HV=0.9437494141844704
+  Task 1: #1 ind=0 HV=0.9660398833168374; #2 ind=2 HV=0.9589333937213265; #3 ind=3 HV=0.9510392027384048; #4 ind=7 HV=0.9496092890001324; #5 ind=8 HV=0.9484745011155155
+MPSLGP task 0 best fitness of generation Fitness: [1420.5405394001282 2156.103405972768]
+MPSLGP task 1 best fitness of generation Fitness: [1311.0000788390462 2306.838191165938]
+
+Pareto Front of Subpopulation 31
+Objective 0: [1290.618177881901, 1311.0000788390462, 1377.571770509523, 1420.5405394001282, 1457.8063763483078, 1479.2098726547556, 1496.8800852598797]
+Objective 1: [2521.758545978111, 2306.838191165938, 2237.437312351307, 2156.103405972768, 2147.14697861101, 2132.6057131581474, 2120.021688047418]
+2
+duration: 102.0
+Generation 31 elapsed 102.0 seconds.
+Generation 32
+Preselection cleared number: 1902
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1183.9761245686502, 2133.6400929833762]
+nadir points: [1383.6917369734147, 3021.7724427441135]
+max objectives: [5824.118322455033, 18910.26552256092]
+min objectives: [1315.5290272985003, 2370.7112144259736]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=822.995918, min=0.000000, average=0.822996, max=0.984333}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.923526, min=0.000000, average=0.000924, max=0.064409}
+Genotype diversity: 1.0
+Entropy diversity: 6.904982690260015
+PC diversity: 0.999
+MPSLGP top 5 HV by task at generation 32:
+  Task 0: #1 ind=0 HV=0.9843327714197472; #2 ind=1 HV=0.9819310621653069; #3 ind=2 HV=0.9759400480507603; #4 ind=6 HV=0.9753502394435195; #5 ind=12 HV=0.9721857058409589
+  Task 1: #1 ind=5 HV=0.9766790472066016; #2 ind=3 HV=0.9750403732513807; #3 ind=7 HV=0.9722883261544955; #4 ind=8 HV=0.9714833840323844; #5 ind=14 HV=0.9690917303204619
+MPSLGP task 0 best fitness of generation Fitness: [1383.6917369734147 2370.7112144259736]
+MPSLGP task 1 best fitness of generation Fitness: [1377.9554056989437 2534.345869857236]
+
+Pareto Front of Subpopulation 32
+Objective 0: [1315.5290272985003, 1332.5833860168495, 1362.7059443964972, 1377.9554056989437, 1383.6917369734147]
+Objective 1: [3021.7724427441135, 2603.3243750103284, 2584.310036771116, 2534.345869857236, 2370.7112144259736]
+2
+duration: 104.0
+Generation 32 elapsed 104.0 seconds.
+Generation 33
+Preselection cleared number: 1991
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1202.0217658114213, 2114.577496518509]
+nadir points: [1651.2198761960171, 2761.716264689574]
+max objectives: [7297.261008312926, 6967.261008312926]
+min objectives: [1335.579739790468, 2349.530551687232]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=725.939194, min=0.000000, average=0.725939, max=0.979633}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.677589, min=0.000000, average=0.000678, max=0.050924}
+Genotype diversity: 1.0
+Entropy diversity: 6.894162911975604
+PC diversity: 0.998
+MPSLGP top 5 HV by task at generation 33:
+  Task 0: #1 ind=8 HV=0.9698516083891239; #2 ind=1 HV=0.9648310385007037; #3 ind=3 HV=0.9624229397200107; #4 ind=4 HV=0.9570648556181909; #5 ind=16 HV=0.9528763479085941
+  Task 1: #1 ind=0 HV=0.9796331869125265; #2 ind=9 HV=0.9696740962223269; #3 ind=2 HV=0.9626595279310529; #4 ind=15 HV=0.9572470615405497; #5 ind=10 HV=0.9571898427370865
+MPSLGP task 0 best fitness of generation Fitness: [1437.4286231432052 2427.6495596753666]
+MPSLGP task 1 best fitness of generation Fitness: [1444.616599894951 2357.546693219163]
+
+Pareto Front of Subpopulation 33
+Objective 0: [1335.579739790468, 1343.5446662239265, 1402.409639183301, 1422.6117039007804, 1437.4286231432052, 1444.616599894951, 1581.1146813965752, 1651.2198761960171]
+Objective 1: [2761.716264689574, 2588.1205480706412, 2461.399176478386, 2448.7128514283686, 2427.6495596753666, 2357.546693219163, 2354.483536055952, 2349.530551687232]
+2
+duration: 137.0
+Generation 33 elapsed 137.0 seconds.
+Generation 34
+Preselection cleared number: 2010
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1191.1849620768808, 2036.7289971887833]
+nadir points: [1510.2750314800942, 2713.225273158954]
+max objectives: [6035.775490829983, 15672.008088940696]
+min objectives: [1323.5388467520897, 2263.032219098648]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=792.800779, min=0.000000, average=0.792801, max=0.978744}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.413970, min=0.000000, average=0.000414, max=0.027636}
+Genotype diversity: 1.0
+Entropy diversity: 6.854342292979001
+PC diversity: 0.999
+MPSLGP top 5 HV by task at generation 34:
+  Task 0: #1 ind=0 HV=0.9787444427852329; #2 ind=1 HV=0.9749952563924259; #3 ind=9 HV=0.9674801107534693; #4 ind=4 HV=0.9661514469998068; #5 ind=21 HV=0.9661195701677169
+  Task 1: #1 ind=8 HV=0.9739198622165575; #2 ind=2 HV=0.9718504471709375; #3 ind=3 HV=0.9715699945252553; #4 ind=6 HV=0.9646624677743308; #5 ind=32 HV=0.9619101608458093
+MPSLGP task 0 best fitness of generation Fitness: [1372.2387644465198 2392.188883219962]
+MPSLGP task 1 best fitness of generation Fitness: [1413.841541277885 2363.41107877341]
+
+Pareto Front of Subpopulation 34
+Objective 0: [1323.5388467520897, 1338.1584874791733, 1354.39207340742, 1356.7812047637344, 1372.2387644465198, 1413.841541277885, 1437.7140543276037, 1510.2750314800942]
+Objective 1: [2713.225273158954, 2689.2564599267207, 2632.2337613005657, 2494.2242299839854, 2392.188883219962, 2363.41107877341, 2294.4838713592617, 2263.032219098648]
+2
+duration: 121.0
+Generation 34 elapsed 121.0 seconds.
+Generation 35
+Preselection cleared number: 1898
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1170.4543146532844, 2010.5077573010233]
+nadir points: [1441.5703045110859, 2764.6436602447357]
+max objectives: [10577.56657858241, 21373.822264467948]
+min objectives: [1300.5047940592049, 2233.897508112248]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=878.590756, min=0.000000, average=0.878591, max=0.992244}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.204177, min=0.000000, average=0.000204, max=0.057617}
+Genotype diversity: 1.0
+Entropy diversity: 6.883343133691192
+PC diversity: 0.996
+MPSLGP top 5 HV by task at generation 35:
+  Task 0: #1 ind=9 HV=0.9832551473154877; #2 ind=10 HV=0.9827618811046273; #3 ind=11 HV=0.9821617314062562; #4 ind=12 HV=0.9814394705438432; #5 ind=16 HV=0.9810320948871162
+  Task 1: #1 ind=0 HV=0.9922440444196796; #2 ind=7 HV=0.9875416836081231; #3 ind=8 HV=0.9874956912547952; #4 ind=1 HV=0.9871191790390169; #5 ind=2 HV=0.9867603071241815
+MPSLGP task 0 best fitness of generation Fitness: [1325.3332018564397 2467.8873052350827]
+MPSLGP task 1 best fitness of generation Fitness: [1363.0113390837796 2250.4730484366883]
+
+Pareto Front of Subpopulation 35
+Objective 0: [1300.5047940592049, 1310.2671798772062, 1324.2176966694533, 1343.9882008403947, 1357.5283914795436, 1363.0113390837796, 1441.5703045110859]
+Objective 1: [2764.6436602447357, 2507.7545403585536, 2441.9475440645474, 2386.2882626976934, 2354.5158976402017, 2250.4730484366883, 2233.897508112248]
+2
+duration: 110.0
+Generation 35 elapsed 110.0 seconds.
+Generation 36
+Preselection cleared number: 2052
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1191.921902385205, 2015.1996017753206]
+nadir points: [1470.78792649752, 2626.5817077617394]
+max objectives: [4595.932734484959, 14817.191301002284]
+min objectives: [1324.3576693168943, 2239.110668639245]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=768.475004, min=0.000000, average=0.768475, max=0.972459}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.171042, min=0.000000, average=0.000171, max=0.060328}
+Genotype diversity: 1.0
+Entropy diversity: 6.9063689846211345
+PC diversity: 0.999
+MPSLGP top 5 HV by task at generation 36:
+  Task 0: #1 ind=0 HV=0.9724586882239805; #2 ind=2 HV=0.9666093027625114; #3 ind=9 HV=0.9658637706839873; #4 ind=10 HV=0.9656894926236609; #5 ind=3 HV=0.9620454635667023
+  Task 1: #1 ind=1 HV=0.9704999689691629; #2 ind=4 HV=0.9601628827331015; #3 ind=5 HV=0.9559373387768498; #4 ind=11 HV=0.9556029194317213; #5 ind=19 HV=0.9552932480317622
+MPSLGP task 0 best fitness of generation Fitness: [1378.0011227271461 2376.9091432333225]
+MPSLGP task 1 best fitness of generation Fitness: [1362.6486372743966 2446.829849206144]
+
+Pareto Front of Subpopulation 36
+Objective 0: [1324.3576693168943, 1358.1722813780361, 1358.2977240593464, 1362.6486372743966, 1378.0011227271461, 1421.0917917518818, 1449.5707405529247, 1467.848325240746, 1470.78792649752]
+Objective 1: [2626.5817077617394, 2626.343544306117, 2576.565098715597, 2446.829849206144, 2376.9091432333225, 2333.781643426919, 2300.3579279442783, 2296.4294635624974, 2239.110668639245]
+2
+duration: 121.0
+Generation 36 elapsed 121.0 seconds.
+Generation 37
+Preselection cleared number: 2095
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1270.5107518275981, 2157.5498101181233]
+nadir points: [1551.8209598688409, 3204.0710498995613]
+max objectives: [5183.25555945473, 10701.082715197816]
+min objectives: [1411.6786131417757, 2397.277566797915]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=742.905760, min=0.000000, average=0.742906, max=0.979946}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.249136, min=0.000000, average=0.000249, max=0.046648}
+Genotype diversity: 1.0
+Entropy diversity: 6.9063689846211345
+PC diversity: 1.0
+MPSLGP top 5 HV by task at generation 37:
+  Task 0: #1 ind=0 HV=0.9799455213453453; #2 ind=1 HV=0.9606809053919487; #3 ind=6 HV=0.9580176062392758; #4 ind=7 HV=0.9578724679373386; #5 ind=9 HV=0.9444547279693399
+  Task 1: #1 ind=2 HV=0.9529262250775828; #2 ind=3 HV=0.9517041672999764; #3 ind=8 HV=0.9479860833799223; #4 ind=4 HV=0.9437304637783646; #5 ind=10 HV=0.9403900395176222
+MPSLGP task 0 best fitness of generation Fitness: [1439.3703291171696 2487.960968533356]
+MPSLGP task 1 best fitness of generation Fitness: [1431.021919457853 2735.3230281037977]
+
+Pareto Front of Subpopulation 37
+Objective 0: [1411.6786131417757, 1412.5547720154282, 1412.6428412618843, 1431.021919457853, 1439.3703291171696, 1551.8209598688409]
+Objective 1: [3204.0710498995613, 2856.7767508359393, 2793.29664910445, 2735.3230281037977, 2487.960968533356, 2397.277566797915]
+2
+duration: 142.0
+Generation 37 elapsed 142.0 seconds.
+Generation 38
+Preselection cleared number: 1990
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1205.0545620970859, 2051.9080047148977]
+nadir points: [1478.1632093020598, 2640.3566909326473]
+max objectives: [9567.882872136222, 34689.5875290595]
+min objectives: [1338.9495134412064, 2279.897783016553]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=887.970523, min=0.000000, average=0.887971, max=0.993104}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.200336, min=0.000000, average=0.000200, max=0.036132}
+Genotype diversity: 1.0
+Entropy diversity: 6.894232133444646
+PC diversity: 0.996
+MPSLGP top 5 HV by task at generation 38:
+  Task 0: #1 ind=0 HV=0.9931040483450646; #2 ind=1 HV=0.9905147389069504; #3 ind=2 HV=0.9889136368955594; #4 ind=3 HV=0.9882772484816701; #5 ind=7 HV=0.9858047185398491
+  Task 1: #1 ind=5 HV=0.9868121372242323; #2 ind=6 HV=0.9864587799314739; #3 ind=4 HV=0.9823445443746084; #4 ind=29 HV=0.9801373649799088; #5 ind=8 HV=0.9793738584698676
+MPSLGP task 0 best fitness of generation Fitness: [1377.472587845412 2347.1011456267443]
+MPSLGP task 1 best fitness of generation Fitness: [1478.1632093020598 2279.897783016553]
+
+Pareto Front of Subpopulation 38
+Objective 0: [1338.9495134412064, 1347.2738731485733, 1370.7298632583115, 1377.472587845412, 1478.1632093020598]
+Objective 1: [2640.3566909326473, 2592.1265858438564, 2453.073023808305, 2347.1011456267443, 2279.897783016553]
+2
+duration: 145.0
+Generation 38 elapsed 145.0 seconds.
+Generation 39
+Preselection cleared number: 1885
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1204.8464802429808, 1999.650176285865]
+nadir points: [1444.759398207214, 2892.0067564135534]
+max objectives: [5612.625782723626, 9365.937145085423]
+min objectives: [1338.7183113810897, 2221.8335292065167]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=759.496823, min=0.000000, average=0.759497, max=0.980054}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.374908, min=0.000000, average=0.000375, max=0.101080}
+Genotype diversity: 1.0
+Entropy diversity: 6.902210101537775
+PC diversity: 0.997
+MPSLGP top 5 HV by task at generation 39:
+  Task 0: #1 ind=0 HV=0.9800540892552362; #2 ind=1 HV=0.9762068926381786; #3 ind=2 HV=0.9733987015021347; #4 ind=3 HV=0.9654168717203555; #5 ind=5 HV=0.9584427750159872
+  Task 1: #1 ind=6 HV=0.9564066872309935; #2 ind=17 HV=0.9496239951254838; #3 ind=19 HV=0.9469351800810102; #4 ind=22 HV=0.944527565488756; #5 ind=23 HV=0.9440825832612428
+MPSLGP task 0 best fitness of generation Fitness: [1340.9072127235413 2358.142030181596]
+MPSLGP task 1 best fitness of generation Fitness: [1352.468799197377 2493.5877156935167]
+
+Pareto Front of Subpopulation 39
+Objective 0: [1338.7183113810897, 1340.9072127235413, 1402.4310380826064, 1402.436848656449, 1444.759398207214]
+Objective 1: [2892.0067564135534, 2358.142030181596, 2356.805418802018, 2281.0379899288528, 2221.8335292065167]
+2
+duration: 114.0
+Generation 39 elapsed 114.0 seconds.
+Generation 40
+Preselection cleared number: 1938
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1193.3926172738022, 2097.949834943516]
+nadir points: [1471.5725264425128, 2660.5331954490393]
+max objectives: [3756.428380887999, 8912.179903661367]
+min objectives: [1325.9917969708913, 2331.0553721594624]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=687.472453, min=0.000000, average=0.687472, max=0.968629}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.141173, min=0.000000, average=0.000141, max=0.030946}
+Genotype diversity: 1.0
+Entropy diversity: 6.90445944211625
+PC diversity: 0.997
+MPSLGP top 5 HV by task at generation 40:
+  Task 0: #1 ind=0 HV=0.968629278896657; #2 ind=5 HV=0.9485567054384009; #3 ind=2 HV=0.9473084561883662; #4 ind=3 HV=0.9465681085037276; #5 ind=7 HV=0.9447616519937891
+  Task 1: #1 ind=1 HV=0.9615727651882546; #2 ind=6 HV=0.945809760538515; #3 ind=4 HV=0.9395963865751413; #4 ind=8 HV=0.9376386681577806; #5 ind=9 HV=0.9268149394705615
+MPSLGP task 0 best fitness of generation Fitness: [1349.6824220674898 2460.450386084034]
+MPSLGP task 1 best fitness of generation Fitness: [1393.134084716934 2397.004228263919]
+
+Pareto Front of Subpopulation 40
+Objective 0: [1325.9917969708913, 1349.6824220674898, 1393.134084716934, 1429.990104052602, 1471.5725264425128]
+Objective 1: [2660.5331954490393, 2460.450386084034, 2397.004228263919, 2393.6176134519046, 2331.0553721594624]
+2
+duration: 124.0
+Generation 40 elapsed 124.0 seconds.
+Generation 41
+Preselection cleared number: 1866
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1212.8196031078667, 1915.2146739854536]
+nadir points: [1578.851571727253, 2662.1601297642337]
+max objectives: [2863.5748525056697, 4840.745171907009]
+min objectives: [1347.5773367865186, 2128.0163044282817]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=532.196879, min=0.000000, average=0.532197, max=0.924354}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.204280, min=0.000000, average=0.000204, max=0.036466}
+Genotype diversity: 1.0
+Entropy diversity: 6.90445944211625
+PC diversity: 0.999
+MPSLGP top 5 HV by task at generation 41:
+  Task 0: #1 ind=6 HV=0.8808412472819988; #2 ind=7 HV=0.8707861498006462; #3 ind=1 HV=0.8634837260839683; #4 ind=11 HV=0.8556684400382365; #5 ind=2 HV=0.8459066598642628
+  Task 1: #1 ind=0 HV=0.9243541546492949; #2 ind=8 HV=0.864643642593568; #3 ind=9 HV=0.8609942092404914; #4 ind=10 HV=0.8576580822422842; #5 ind=12 HV=0.8512262060309622
+MPSLGP task 0 best fitness of generation Fitness: [1375.9170524826914 2446.8113579392084]
+MPSLGP task 1 best fitness of generation Fitness: [1387.8612488566432 2262.2207508961437]
+
+Pareto Front of Subpopulation 41
+Objective 0: [1347.5773367865186, 1371.2046030968777, 1372.1029912135637, 1375.9170524826914, 1387.8612488566432, 1578.851571727253]
+Objective 1: [2662.1601297642337, 2648.5673900124093, 2627.5517193714622, 2446.8113579392084, 2262.2207508961437, 2128.0163044282817]
+2
+duration: 121.0
+Generation 41 elapsed 121.0 seconds.
+Generation 42
+Preselection cleared number: 1945
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1199.8974369748873, 2019.112007804675]
+nadir points: [1474.3118148950452, 3441.1565946447663]
+max objectives: [2772.2120137131424, 5924.200487466413]
+min objectives: [1333.2193744165415, 2243.4577864496387]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=564.500994, min=0.000000, average=0.564501, max=0.932787}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.596635, min=0.000000, average=0.000597, max=0.033069}
+Genotype diversity: 1.0
+Entropy diversity: 6.902210101537774
+PC diversity: 0.997
+MPSLGP top 5 HV by task at generation 42:
+  Task 0: #1 ind=0 HV=0.9327869602257409; #2 ind=2 HV=0.9104722401852645; #3 ind=3 HV=0.8971662400901329; #4 ind=12 HV=0.8933030575679252; #5 ind=13 HV=0.887583308184927
+  Task 1: #1 ind=1 HV=0.914538325823511; #2 ind=11 HV=0.8960572176956052; #3 ind=4 HV=0.8809533072791769; #4 ind=14 HV=0.878892123244222; #5 ind=23 HV=0.8764509562255534
+MPSLGP task 0 best fitness of generation Fitness: [1421.377554203209 2263.4217941863462]
+MPSLGP task 1 best fitness of generation Fitness: [1402.3741057413863 2378.3221473539015]
+
+Pareto Front of Subpopulation 42
+Objective 0: [1333.2193744165415, 1343.7891733686556, 1352.6299777113018, 1356.916110159451, 1372.868824731093, 1375.2934091675124, 1380.512621029644, 1384.452250116854, 1402.3741057413863, 1421.377554203209, 1474.3118148950452]
+Objective 1: [3441.1565946447663, 2999.1566934746224, 2946.702654015273, 2758.211974115926, 2706.6342326762388, 2641.325519508566, 2559.1642221194925, 2442.8413082084735, 2378.3221473539015, 2263.4217941863462, 2243.4577864496387]
+2
+duration: 127.0
+Generation 42 elapsed 127.0 seconds.
+Generation 43
+Preselection cleared number: 1892
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1205.558465855384, 2046.0887832619949]
+nadir points: [1490.7199024736765, 2683.426939235651]
+max objectives: [4472.150161816389, 9847.003388320794]
+min objectives: [1339.509406505982, 2273.4319814022165]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=707.014381, min=0.049176, average=0.707014, max=0.960334}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.350189, min=0.000000, average=0.000350, max=0.090016}
+Genotype diversity: 1.0
+Entropy diversity: 6.907755278982255
+PC diversity: 0.998
+MPSLGP top 5 HV by task at generation 43:
+  Task 0: #1 ind=0 HV=0.960334229242843; #2 ind=1 HV=0.9564810989390413; #3 ind=2 HV=0.9520958463791648; #4 ind=3 HV=0.9496666907342657; #5 ind=4 HV=0.9472451297208765
+  Task 1: #1 ind=6 HV=0.9465406381308111; #2 ind=5 HV=0.9441904925885838; #3 ind=8 HV=0.944115510714019; #4 ind=10 HV=0.9402617231070202; #5 ind=12 HV=0.937154349029281
+MPSLGP task 0 best fitness of generation Fitness: [1351.658282569304 2542.277535474801]
+MPSLGP task 1 best fitness of generation Fitness: [1339.509406505982 2683.426939235651]
+
+Pareto Front of Subpopulation 43
+Objective 0: [1339.509406505982, 1351.658282569304, 1385.1310900479293, 1425.272875592651, 1453.0774896069488, 1490.7199024736765]
+Objective 1: [2683.426939235651, 2542.277535474801, 2489.4642139880452, 2423.496922825114, 2383.600102811586, 2273.4319814022165]
+2
+duration: 140.0
+Generation 43 elapsed 140.0 seconds.
+Generation 44
+Preselection cleared number: 1887
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1181.4085710377171, 1983.2547909105197]
+nadir points: [1782.4515755186148, 2545.545976569585]
+max objectives: [16166.761293657735, 27477.52370143379]
+min objectives: [1312.6761900419078, 2203.616434345022]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=912.633712, min=0.000000, average=0.912634, max=0.986366}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.572224, min=0.000000, average=0.000572, max=0.076769}
+Genotype diversity: 1.0
+Entropy diversity: 6.90445944211625
+PC diversity: 0.999
+MPSLGP top 5 HV by task at generation 44:
+  Task 0: #1 ind=1 HV=0.9860810888378546; #2 ind=2 HV=0.9858844562817269; #3 ind=3 HV=0.9858260129448161; #4 ind=6 HV=0.9838108218937742; #5 ind=23 HV=0.9812899893109294
+  Task 1: #1 ind=0 HV=0.9863661533782876; #2 ind=4 HV=0.9857084175517207; #3 ind=5 HV=0.9855372436859436; #4 ind=9 HV=0.9840152839517421; #5 ind=10 HV=0.9833314937524658
+MPSLGP task 0 best fitness of generation Fitness: [1386.2085500640096 2423.4362909813062]
+MPSLGP task 1 best fitness of generation Fitness: [1312.6761900419078 2545.545976569585]
+
+Pareto Front of Subpopulation 44
+Objective 0: [1312.6761900419078, 1371.0441443738018, 1386.2085500640096, 1398.7143652921732, 1420.9319391480967, 1423.1023778519157, 1440.8150929136464, 1607.6133151156246, 1782.4515755186148]
+Objective 1: [2545.545976569585, 2456.7611052319407, 2423.4362909813062, 2413.3935864547966, 2411.644687693042, 2361.917603975977, 2332.0465335018234, 2310.712932380964, 2203.616434345022]
+2
+duration: 145.0
+Generation 44 elapsed 145.0 seconds.
+Generation 45
+Preselection cleared number: 1920
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1235.7415650878845, 2046.5717375617767]
+nadir points: [1435.201622174136, 2917.457281543524]
+max objectives: [5260.092335055029, 12393.268415274215]
+min objectives: [1373.0461834309826, 2273.968597290863]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=755.046260, min=0.000000, average=0.755046, max=0.983663}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.822353, min=0.000000, average=0.000822, max=0.064038}
+Genotype diversity: 1.0
+Entropy diversity: 6.877936399184797
+PC diversity: 0.996
+MPSLGP top 5 HV by task at generation 45:
+  Task 0: #1 ind=0 HV=0.9836634896689017; #2 ind=1 HV=0.9749597760060066; #3 ind=5 HV=0.9595366617862313; #4 ind=3 HV=0.9569862127455393; #5 ind=8 HV=0.9544570613725746
+  Task 1: #1 ind=2 HV=0.964333948976454; #2 ind=6 HV=0.9571106943289711; #3 ind=7 HV=0.95575754766701; #4 ind=9 HV=0.9538691933779332; #5 ind=18 HV=0.948429549824339
+MPSLGP task 0 best fitness of generation Fitness: [1435.201622174136 2273.968597290863]
+MPSLGP task 1 best fitness of generation Fitness: [1400.8677740758867 2554.1773519421695]
+
+Pareto Front of Subpopulation 45
+Objective 0: [1373.0461834309826, 1383.8172487908305, 1400.8677740758867, 1414.170017481898, 1435.201622174136]
+Objective 1: [2917.457281543524, 2668.6887194716255, 2554.1773519421695, 2414.846897691954, 2273.968597290863]
+2
+duration: 150.0
+Generation 45 elapsed 150.0 seconds.
+Generation 46
+Preselection cleared number: 1861
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1168.6306371500948, 2017.5774945129524]
+nadir points: [1399.8508760386176, 2623.6254467008694]
+max objectives: [5589.089302271175, 8433.453716057644]
+min objectives: [1298.4784857223276, 2241.752771681058]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=731.298171, min=0.000000, average=0.731298, max=0.975994}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.646139, min=0.000000, average=0.000646, max=0.068499}
+Genotype diversity: 1.0
+Entropy diversity: 6.879253472076874
+PC diversity: 0.995
+MPSLGP top 5 HV by task at generation 46:
+  Task 0: #1 ind=2 HV=0.9678465610435254; #2 ind=4 HV=0.9647444859817583; #3 ind=12 HV=0.956166003664307; #4 ind=13 HV=0.9543233445409169; #5 ind=18 HV=0.9496038819677806
+  Task 1: #1 ind=0 HV=0.9759938818195482; #2 ind=1 HV=0.9721093993567598; #3 ind=3 HV=0.967481051656174; #4 ind=5 HV=0.9637216964181026; #5 ind=8 HV=0.9628675581956627
+MPSLGP task 0 best fitness of generation Fitness: [1385.2649719392648 2310.005482519162]
+MPSLGP task 1 best fitness of generation Fitness: [1399.8508760386176 2241.752771681058]
+
+Pareto Front of Subpopulation 46
+Objective 0: [1298.4784857223276, 1302.1815550153842, 1303.3116004905678, 1336.2499260706682, 1376.9501978925255, 1385.2649719392648, 1393.381272733648, 1399.8508760386176]
+Objective 1: [2623.6254467008694, 2563.1061096173944, 2439.3604005916277, 2401.7018449213356, 2322.0320885340334, 2310.005482519162, 2273.5178354951204, 2241.752771681058]
+2
+duration: 147.0
+Generation 46 elapsed 147.0 seconds.
+Generation 47
+Preselection cleared number: 1833
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1213.3937442895171, 2053.961354125582]
+nadir points: [1490.5948218817648, 2727.491619124892]
+max objectives: [5692.33623244206, 14593.531016134773]
+min objectives: [1348.2152714327967, 2282.179282361758]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=791.681760, min=0.000000, average=0.791682, max=0.985725}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=0.863588, min=0.000000, average=0.000864, max=0.058509}
+Genotype diversity: 1.0
+Entropy diversity: 6.877936399184797
+PC diversity: 0.994
+MPSLGP top 5 HV by task at generation 47:
+  Task 0: #1 ind=0 HV=0.9857254873169672; #2 ind=1 HV=0.9847170256519201; #3 ind=8 HV=0.9815225426363776; #4 ind=3 HV=0.9768186240126319; #5 ind=15 HV=0.972724477511639
+  Task 1: #1 ind=2 HV=0.9813365289378345; #2 ind=17 HV=0.9692928248619294; #3 ind=5 HV=0.9648836534846285; #4 ind=7 HV=0.9623463151237258; #5 ind=19 HV=0.9596766509569885
+MPSLGP task 0 best fitness of generation Fitness: [1355.906875930872 2432.6243482467253]
+MPSLGP task 1 best fitness of generation Fitness: [1373.8782616426033 2425.1370921747293]
+
+Pareto Front of Subpopulation 47
+Objective 0: [1348.2152714327967, 1351.9723194416729, 1353.5844329178653, 1355.906875930872, 1373.8782616426033, 1378.9626128076416, 1462.3342996944848, 1490.5948218817648]
+Objective 1: [2727.491619124892, 2711.423855545814, 2541.519908606482, 2432.6243482467253, 2425.1370921747293, 2376.367349876382, 2332.5209859977476, 2282.179282361758]
+2
+duration: 148.0
+Generation 47 elapsed 148.0 seconds.
+Generation 48
+Preselection cleared number: 1914
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1171.6724506993517, 1962.5790116372052]
+nadir points: [1954.878812346462, 3091.921259298804]
+max objectives: [8606.489617732295, 12116.88126322627]
+min objectives: [1301.8582785548351, 2180.6433462635614]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=829.403387, min=0.000000, average=0.829403, max=0.986517}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=1.046821, min=0.000000, average=0.001047, max=0.057215}
+Genotype diversity: 1.0
+Entropy diversity: 6.903073147755131
+PC diversity: 0.995
+MPSLGP top 5 HV by task at generation 48:
+  Task 0: #1 ind=0 HV=0.9865168381433912; #2 ind=7 HV=0.9740709948249405; #3 ind=2 HV=0.9708948654085735; #4 ind=16 HV=0.9679284311660553; #5 ind=9 HV=0.9660597766060636
+  Task 1: #1 ind=1 HV=0.9714928059200679; #2 ind=8 HV=0.9662198262447886; #3 ind=18 HV=0.9631416747375118; #4 ind=13 HV=0.9630860838031832; #5 ind=20 HV=0.960581741981853
+MPSLGP task 0 best fitness of generation Fitness: [1367.7290750101965 2218.418069130974]
+MPSLGP task 1 best fitness of generation Fitness: [1332.4539961429546 2418.750085529522]
+
+Pareto Front of Subpopulation 48
+Objective 0: [1301.8582785548351, 1309.0413525020704, 1332.4539961429546, 1367.7290750101965, 1613.7984623607626, 1625.7312963181466, 1954.878812346462]
+Objective 1: [3091.921259298804, 2458.078586329124, 2418.750085529522, 2218.418069130974, 2210.3172784046037, 2192.7623730755295, 2180.6433462635614]
+2
+duration: 111.0
+Generation 48 elapsed 111.0 seconds.
+Generation 49
+Preselection cleared number: 1785
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1203.8139115772124, 2061.326927584398]
+nadir points: [1688.724824145902, 3543.0882948378567]
+max objectives: [9166.260247464466, 21725.056006932922]
+min objectives: [1337.5710128635692, 2290.3632528715534]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=864.312002, min=0.000000, average=0.864312, max=0.992049}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=1.089433, min=0.000000, average=0.001089, max=0.049788}
+Genotype diversity: 1.0
+Entropy diversity: 6.891119746648815
+PC diversity: 0.995
+MPSLGP top 5 HV by task at generation 49:
+  Task 0: #1 ind=1 HV=0.9856700956592975; #2 ind=9 HV=0.983477201929971; #3 ind=10 HV=0.9833054523566274; #4 ind=12 HV=0.9797009544563595; #5 ind=13 HV=0.9794760410910951
+  Task 1: #1 ind=0 HV=0.9920489451171696; #2 ind=8 HV=0.9837693619688707; #3 ind=2 HV=0.9810345222956126; #4 ind=11 HV=0.9800438570294987; #5 ind=35 HV=0.9778828623220561
+MPSLGP task 0 best fitness of generation Fitness: [1357.095405714921 2514.1203138410347]
+MPSLGP task 1 best fitness of generation Fitness: [1385.3354427917802 2323.076349742536]
+
+Pareto Front of Subpopulation 49
+Objective 0: [1337.5710128635692, 1347.6048098796455, 1347.613806276262, 1349.7060210199852, 1357.095405714921, 1385.3354427917802, 1550.0399764544854, 1688.724824145902]
+Objective 1: [3543.0882948378567, 3013.3499645749107, 2747.5141113332356, 2619.1508033373393, 2514.1203138410347, 2323.076349742536, 2320.983698163065, 2290.3632528715534]
+2
+duration: 94.0
+Generation 49 elapsed 94.0 seconds.
+Generation 50
+Preselection cleared number: 1849
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1199.087078261072, 1992.1030825020396]
+nadir points: [1912.8335254914637, 2846.697029640316]
+max objectives: [9568.370608722675, 20997.842287953885]
+min objectives: [1332.3189758456356, 2213.4478694467107]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=869.846246, min=0.000000, average=0.869846, max=0.981959}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=1.402660, min=0.000000, average=0.001403, max=0.061708}
+Genotype diversity: 1.0
+Entropy diversity: 6.904982690260015
+PC diversity: 0.99
+MPSLGP top 5 HV by task at generation 50:
+  Task 0: #1 ind=0 HV=0.9819588439397844; #2 ind=2 HV=0.9805800852968418; #3 ind=3 HV=0.978966108412291; #4 ind=14 HV=0.9760652503573723; #5 ind=5 HV=0.9759440666002027
+  Task 1: #1 ind=1 HV=0.9810061894375861; #2 ind=12 HV=0.9766705082092382; #3 ind=4 HV=0.9763679074543772; #4 ind=13 HV=0.9761300376715785; #5 ind=15 HV=0.9756480329975011
+MPSLGP task 0 best fitness of generation Fitness: [1409.3900081125612 2374.879065927351]
+MPSLGP task 1 best fitness of generation Fitness: [1377.271160259159 2459.47555169469]
+
+Pareto Front of Subpopulation 50
+Objective 0: [1332.3189758456356, 1351.0977449523634, 1357.0491841895855, 1373.4937082750257, 1377.271160259159, 1402.1233866291514, 1409.3900081125612, 1423.4522240051301, 1491.4446714298683, 1518.8257308184984, 1661.7132639036572, 1912.8335254914637]
+Objective 1: [2846.697029640316, 2764.3909798094537, 2584.64469525998, 2542.8879150555003, 2459.47555169469, 2438.538114787545, 2374.879065927351, 2365.7043969105, 2365.5145207648166, 2344.401629463653, 2317.102187078184, 2213.4478694467107]
+1
+duration: 96.0
+Generation 50 elapsed 96.0 seconds.
+The whole program elapsed 60355.0 seconds.
+45869846875, 2596.154004574055, 2347.093514916487, 2328.56159025745, 2297.883602173417, 2292.6920721550123, 2281.5414266577573]
+2
+duration: 149.0
+Generation 49 elapsed 149.0 seconds.
+Generation 50
+Preselection cleared number: 1950
+MPSLGP task-balanced survival counts: [task 0=500, task 1=500]
+Subpop 0 reduced 5000 -> 1000
+ideal points: [1212.6343246027625, 2027.7085672979827]
+nadir points: [1554.1370894742722, 2983.1823088750825]
+max objectives: [6371.744212072197, 12175.167815566878]
+min objectives: [1347.371471780847, 2253.0095192199806]
+HVOfIntermedidatePopPSL: DoubleSummaryStatistics{count=1000, sum=792.703490, min=0.000000, average=0.792703, max=0.983042}
+preferenceDiversityPopAll: DoubleSummaryStatistics{count=1000, sum=2.182044, min=0.000000, average=0.002182, max=0.104619}
+Genotype diversity: 1.0
+Entropy diversity: 6.885845145808884
+PC diversity: 0.993
+MPSLGP top 5 HV by task at generation 50:
+  Task 0: #1 ind=0 HV=0.9830423876379871; #2 ind=1 HV=0.9701307798901894; #3 ind=3 HV=0.9633594732184072; #4 ind=5 HV=0.9582893471386625; #5 ind=14 HV=0.9572929969025296
+  Task 1: #1 ind=2 HV=0.9668281301096773; #2 ind=4 HV=0.9614102037741843; #3 ind=16 HV=0.956242847052055; #4 ind=17 HV=0.9553638592131866; #5 ind=8 HV=0.9547776121834135
+MPSLGP task 0 best fitness of generation Fitness: [1481.3499908700906 2347.260809791158]
+MPSLGP task 1 best fitness of generation Fitness: [1453.3322180084651 2366.825824019965]
+
+Pareto Front of Subpopulation 50
+Objective 0: [1347.371471780847, 1350.6932719338802, 1372.6543517276586, 1414.4718092006078, 1415.31508634513, 1417.559636142687, 1424.6902438684192, 1437.9289951840037, 1453.3322180084651, 1478.1933963547344, 1481.3499908700906, 1487.6359510158072, 1552.5443447707803, 1554.1370894742722]
+Objective 1: [2983.1823088750825, 2877.3552984538255, 2620.1448558218544, 2573.01741808356, 2570.5035142434062, 2522.7727688367595, 2507.2429459356354, 2369.80938620324, 2366.825824019965, 2349.510120487772, 2347.260809791158, 2344.6995817194693, 2322.089250000543, 2253.0095192199806]
+1
+duration: 150.0
+Generation 50 elapsed 150.0 seconds.
+The whole program elapsed 60186.0 seconds.

@@ -23,10 +23,10 @@ import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 public class MPSLGPPaperTrainingMain {
-    private static final int DEFAULT_RUNS = 30;
+    private static final int DEFAULT_RUNS = 3;
     private static final int DEFAULT_PARALLELISM = Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), DEFAULT_RUNS));
     private static final Path DEFAULT_RESULTS_ROOT = Paths.get("D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\results");
-    private static final Path DEFAULT_PARAM_FILE = Paths.get("D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\multipletreegp-dynamic-MPSLGP.params");
+    private static final Path DEFAULT_PARAM_FILE = Paths.get("D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\multipletreegp-dynamic-MPSLGP-3tasks.params");
     private static final String GPRUN_MAIN_CLASS = "yimei.jss.gp.GPRun";
 
     private static final String F_MAX = "max-flowtime";
