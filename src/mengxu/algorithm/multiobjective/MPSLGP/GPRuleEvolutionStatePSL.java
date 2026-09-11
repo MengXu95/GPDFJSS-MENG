@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -122,11 +123,24 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	private double[][][] transferUtility;
 
-	private int[][][] pendingTransferCounts;
-
-	private double[][] bestTaskRegionFitness;
+	private long nextTransferEventId;
+	private final Map<Long, TransferOffspring> pendingTransferOffspring = new LinkedHashMap<>();
 
 	public List<TransferDiagnosticRecord> transferDiagnosticRecords = new ArrayList<>();
+
+	private static class TransferOffspring implements java.io.Serializable {
+		final int evaluationGeneration;
+		final int receivingTask;
+		final int donorTask;
+		final int preferenceRegion;
+
+		TransferOffspring(int evaluationGeneration, int receivingTask, int donorTask, int preferenceRegion) {
+			this.evaluationGeneration = evaluationGeneration;
+			this.receivingTask = receivingTask;
+			this.donorTask = donorTask;
+			this.preferenceRegion = preferenceRegion;
+		}
+	}
 
 	private static class DiversityRecord {
 		String scope;
@@ -184,7 +198,15 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		}
 	}
 
-	private static class TransferDiagnosticRecord {
+	private static class TransferOutcome {
+		int generated;
+		int survived;
+		int nonImproving;
+		double fitnessSum;
+		double improvementSum;
+	}
+
+	static class TransferDiagnosticRecord {
 		double generation;
 		int receivingTask;
 		int contributingTask;
@@ -199,8 +221,11 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		double noTransferProbabilityAfterUpdate;
 		double utilityBeforeUpdate;
 		double utilityAfterUpdate;
-		double previousBest;
-		double currentBest;
+		double baselineFitness;
+		double meanOffspringFitness;
+		int survivedCount;
+		int localBaselineCount;
+		double survivalRate;
 		double improvement;
 		double improvementComponent;
 		double taskPopulationShare;
@@ -215,9 +240,10 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 							 double probabilityAfterUpdate, double totalTransferProbabilityBeforeUpdate,
 							 double totalTransferProbabilityAfterUpdate, double noTransferProbabilityBeforeUpdate,
 							 double noTransferProbabilityAfterUpdate, double utilityBeforeUpdate, double utilityAfterUpdate,
-							 double previousBest, double currentBest, double improvement, double improvementComponent,
+							 double baselineFitness, double meanOffspringFitness, double improvement, double improvementComponent,
 							 double taskPopulationShare, double survivalComponent, double negativeTransferPenalty,
-							 double learningRate, double temperature, double maxTransferProbability) {
+							 double learningRate, double temperature, double maxTransferProbability,
+							 int survivedCount, int localBaselineCount, double survivalRate) {
 			this.generation = generation;
 			this.receivingTask = receivingTask;
 			this.contributingTask = contributingTask;
@@ -232,8 +258,11 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			this.noTransferProbabilityAfterUpdate = noTransferProbabilityAfterUpdate;
 			this.utilityBeforeUpdate = utilityBeforeUpdate;
 			this.utilityAfterUpdate = utilityAfterUpdate;
-			this.previousBest = previousBest;
-			this.currentBest = currentBest;
+			this.baselineFitness = baselineFitness;
+			this.meanOffspringFitness = meanOffspringFitness;
+			this.survivedCount = survivedCount;
+			this.localBaselineCount = localBaselineCount;
+			this.survivalRate = survivalRate;
 			this.improvement = improvement;
 			this.improvementComponent = improvementComponent;
 			this.taskPopulationShare = taskPopulationShare;
@@ -248,6 +277,12 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	@Override
 	public void setup(EvolutionState state, Parameter base) {
+
+		Parameter numTasksParam = new Parameter("mpslgp.num-tasks");
+		this.numTasks = state.parameters.getIntWithDefault(numTasksParam, null, 1);
+		if (numTasks < 1) {
+			state.output.fatal("mpslgp.num-tasks must be positive.", numTasksParam);
+		}
 
 		super.setup(this, base);
 
@@ -276,9 +311,6 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 		Parameter useBroodRecombinationParam = new Parameter("use-brood-recombination"); //add by mengxu 2023.01.24
 		this.useBroodRecombination = state.parameters.getBoolean(useBroodRecombinationParam, null,false); //add by mengxu 2024.09.26
-
-		Parameter numTasksParam = new Parameter("mpslgp.num-tasks");
-		this.numTasks = state.parameters.getIntWithDefault(numTasksParam, null, 1);
 
 		Parameter transferProbabilityParam = new Parameter("mpslgp.transfer-probability");
 		this.transferProbability = state.parameters.getDoubleWithDefault(transferProbabilityParam, null, 0.0);
@@ -359,14 +391,9 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	private void initialAdaptiveTransferState() {
 		int tasks = Math.max(1, numTasks);
 		int regions = Math.max(1, preferenceRegions);
+		pendingTransferOffspring.clear();
+		nextTransferEventId = 0;
 		transferUtility = new double[tasks][tasks][regions];
-		pendingTransferCounts = new int[tasks][tasks][regions];
-		bestTaskRegionFitness = new double[tasks][regions];
-		for (int task = 0; task < tasks; task++) {
-			for (int region = 0; region < regions; region++) {
-				bestTaskRegionFitness[task][region] = Double.POSITIVE_INFINITY;
-			}
-		}
 	}
 
 	public int preferenceRegionForSubproblem(int subproblemIndex) {
@@ -545,50 +572,90 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		return copy;
 	}
 
-	public void recordTransferEvent(int receivingTask, int donorTask, int region) {
+	private void recordTransferOffspring(Individual child, int receivingTask, int donorTask, int region) {
 		if (!useAdaptiveTransfer() || receivingTask == donorTask) {
 			return;
 		}
-		if (receivingTask < 0 || receivingTask >= pendingTransferCounts.length || donorTask < 0 || donorTask >= pendingTransferCounts.length) {
+		if (receivingTask < 0 || receivingTask >= numTasks || donorTask < 0 || donorTask >= numTasks) {
 			return;
 		}
 		int boundedRegion = Math.max(0, Math.min(preferenceRegions - 1, region));
-		pendingTransferCounts[receivingTask][donorTask][boundedRegion]++;
+		long eventId = nextTransferEventId++;
+		((PSLMultiObjectiveFitness) child.fitness).setTransferEventId(eventId);
+		pendingTransferOffspring.put(eventId, new TransferOffspring(generation + 1, receivingTask, donorTask, boundedRegion));
 	}
 
-	private void updateAdaptiveTransferUtilitiesAfterEvaluation() {
+	void updateAdaptiveTransferUtilitiesAfterEvaluation() {
 		if (!useAdaptiveTransfer()) {
 			return;
 		}
 		int tasks = Math.max(1, numTasks);
 		int[] taskCounts = taskCounts(population.subpops[0].individuals);
+		double[] baselineFitness = new double[tasks];
+		java.util.Arrays.fill(baselineFitness, Double.POSITIVE_INFINITY);
+		int[] baselineCounts = new int[tasks];
+		Map<Long, Double> survivingFitness = new HashMap<>();
+		for (ec.Subpopulation subpopulation : population.subpops) {
+			for (Individual individual : subpopulation.individuals) {
+				PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) individual.fitness;
+				double score = evaluatedScalarFitness(individual);
+				if (!Double.isFinite(score)) {
+					continue;
+				}
+				int task = fitness.getTaskIndex();
+				TransferOffspring event = pendingTransferOffspring.get(fitness.getTransferEventId());
+				if (event == null) {
+					baselineFitness[task] = Math.min(baselineFitness[task], score);
+					baselineCounts[task]++;
+				} else if (event.evaluationGeneration == generation && event.receivingTask == task) {
+					survivingFitness.merge(fitness.getTransferEventId(), score, Math::min);
+				}
+			}
+		}
+		TransferOutcome[][][] outcomes = new TransferOutcome[tasks][tasks][preferenceRegions];
+		for (int receivingTask = 0; receivingTask < tasks; receivingTask++) {
+			for (int donorTask = 0; donorTask < tasks; donorTask++) {
+				for (int region = 0; region < preferenceRegions; region++) {
+					outcomes[receivingTask][donorTask][region] = new TransferOutcome();
+				}
+			}
+		}
+		for (Map.Entry<Long, TransferOffspring> entry : pendingTransferOffspring.entrySet()) {
+			TransferOffspring event = entry.getValue();
+			if (event.evaluationGeneration != generation) {
+				continue;
+			}
+			TransferOutcome outcome = outcomes[event.receivingTask][event.donorTask][event.preferenceRegion];
+			outcome.generated++;
+			Double score = survivingFitness.get(entry.getKey());
+			if (score != null) {
+				outcome.survived++;
+				outcome.fitnessSum += score;
+				double baseline = baselineFitness[event.receivingTask];
+				if (Double.isFinite(baseline)) {
+					double improvement = (baseline - score) / Math.max(1.0e-12, Math.abs(baseline));
+					outcome.improvementSum += Math.max(-1.0, Math.min(1.0, improvement));
+					if (score >= baseline) {
+						outcome.nonImproving++;
+					}
+				}
+			}
+		}
 		double[][][] utilityBeforeUpdate = copyTransferUtility();
 		double[][][] utilityAfterUpdate = copyTransferUtility();
 		for (int receivingTask = 0; receivingTask < tasks; receivingTask++) {
 			for (int donorTask = 0; donorTask < tasks; donorTask++) {
 				for (int region = 0; region < preferenceRegions; region++) {
-					int transferCount = pendingTransferCounts[receivingTask][donorTask][region];
-					if (receivingTask == donorTask) {
+					TransferOutcome outcome = outcomes[receivingTask][donorTask][region];
+					if (receivingTask == donorTask || outcome.generated == 0) {
 						continue;
 					}
-					double currentBest = bestPSLFitnessForTask(receivingTask);
-					double previousBest = bestTaskRegionFitness[receivingTask][region];
-					double improvement = Double.isInfinite(previousBest) ? 0.0 : previousBest - currentBest;
-					double taskPopulationShare = (double) taskCounts[receivingTask] / Math.max(1, population.subpops[0].individuals.length);
-					double improvementComponent = 0.0;
-					double survivalComponent = 0.0;
-					double negativeTransferPenalty = 0.0;
-					double contribution = 0.0;
+					double contribution = (transferImprovementWeight * outcome.improvementSum
+							+ transferSurvivalWeight * outcome.survived
+							- transferNoImprovementPenalty * (outcome.generated - outcome.survived + outcome.nonImproving)) / outcome.generated;
 					double oldUtility = utilityBeforeUpdate[receivingTask][donorTask][region];
-					double newUtility = oldUtility;
-					if (transferCount > 0) {
-						improvementComponent = transferImprovementWeight * improvement;
-						survivalComponent = transferSurvivalWeight * taskPopulationShare;
-						negativeTransferPenalty = improvement <= 0.0 ? transferNoImprovementPenalty : 0.0;
-						contribution = improvementComponent + survivalComponent - negativeTransferPenalty;
-						newUtility = (1.0 - adaptiveTransferLearningRate) * oldUtility + adaptiveTransferLearningRate * contribution;
-					}
-					utilityAfterUpdate[receivingTask][donorTask][region] = newUtility;
+					utilityAfterUpdate[receivingTask][donorTask][region] =
+							(1.0 - adaptiveTransferLearningRate) * oldUtility + adaptiveTransferLearningRate * contribution;
 				}
 			}
 		}
@@ -598,14 +665,15 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 					if (receivingTask == donorTask) {
 						continue;
 					}
-					int transferCount = pendingTransferCounts[receivingTask][donorTask][region];
-					double currentBest = bestPSLFitnessForTask(receivingTask);
-					double previousBest = bestTaskRegionFitness[receivingTask][region];
-					double improvement = Double.isInfinite(previousBest) ? 0.0 : previousBest - currentBest;
+					TransferOutcome outcome = outcomes[receivingTask][donorTask][region];
+					int transferCount = outcome.generated;
+					double improvement = outcome.improvementSum / Math.max(1, transferCount);
+					double survivalRate = (double) outcome.survived / Math.max(1, transferCount);
 					double taskPopulationShare = (double) taskCounts[receivingTask] / Math.max(1, population.subpops[0].individuals.length);
-					double improvementComponent = transferCount > 0 ? transferImprovementWeight * improvement : 0.0;
-					double survivalComponent = transferCount > 0 ? transferSurvivalWeight * taskPopulationShare : 0.0;
-					double negativeTransferPenalty = transferCount > 0 && improvement <= 0.0 ? transferNoImprovementPenalty : 0.0;
+					double improvementComponent = transferImprovementWeight * improvement;
+					double survivalComponent = transferSurvivalWeight * survivalRate;
+					double negativeTransferPenalty = transferNoImprovementPenalty
+							* (outcome.generated - outcome.survived + outcome.nonImproving) / Math.max(1, transferCount);
 					double contribution = improvementComponent + survivalComponent - negativeTransferPenalty;
 					transferUtility[receivingTask][donorTask][region] = utilityAfterUpdate[receivingTask][donorTask][region];
 					transferDiagnosticRecords.add(new TransferDiagnosticRecord(generation, receivingTask, donorTask, region,
@@ -617,41 +685,30 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 							noTransferProbability(utilityBeforeUpdate, receivingTask, region),
 							noTransferProbability(utilityAfterUpdate, receivingTask, region),
 							utilityBeforeUpdate[receivingTask][donorTask][region],
-							utilityAfterUpdate[receivingTask][donorTask][region], previousBest, currentBest,
+								utilityAfterUpdate[receivingTask][donorTask][region], baselineFitness[receivingTask],
+								outcome.survived == 0 ? Double.NaN : outcome.fitnessSum / outcome.survived,
 							improvement, improvementComponent, taskPopulationShare, survivalComponent,
 							negativeTransferPenalty, adaptiveTransferLearningRate, adaptiveTransferTemperature,
-							boundedMaxTransferProbability()));
+								boundedMaxTransferProbability(), outcome.survived, baselineCounts[receivingTask], survivalRate));
 				}
 			}
 		}
-		for (int task = 0; task < tasks; task++) {
-			int currentRegion = preferenceRegionForSubproblem(generation);
-			double currentBest = bestPSLFitnessForTask(task);
-			if (currentBest < bestTaskRegionFitness[task][currentRegion]) {
-				bestTaskRegionFitness[task][currentRegion] = currentBest;
-			}
-		}
-		clearPendingTransferCounts();
+		pendingTransferOffspring.clear();
 	}
 
-	private void clearPendingTransferCounts() {
-		for (int receivingTask = 0; receivingTask < pendingTransferCounts.length; receivingTask++) {
-			for (int donorTask = 0; donorTask < pendingTransferCounts[receivingTask].length; donorTask++) {
-				for (int region = 0; region < pendingTransferCounts[receivingTask][donorTask].length; region++) {
-					pendingTransferCounts[receivingTask][donorTask][region] = 0;
-				}
+	private double evaluatedScalarFitness(Individual individual) {
+		if (!individual.evaluated || (individual.fitness instanceof yimei.jss.niching.Clearable
+				&& ((yimei.jss.niching.Clearable) individual.fitness).isCleared())) {
+			return Double.POSITIVE_INFINITY;
+		}
+		PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) individual.fitness;
+		for (double objective : fitness.getObjectives()) {
+			if (!Double.isFinite(objective) || objective >= Double.MAX_VALUE) {
+				return Double.POSITIVE_INFINITY;
 			}
 		}
-	}
-
-	private double bestPSLFitnessForTask(int taskIndex) {
-		double best = Double.POSITIVE_INFINITY;
-		for (Individual individual : population.subpops[0].individuals) {
-			if (getTaskIndex(individual) == taskIndex && individual.fitness instanceof PSLMultiObjectiveFitness) {
-				best = Math.min(best, ((PSLMultiObjectiveFitness) individual.fitness).getPSLFitness());
-			}
-		}
-		return best;
+		return multitreeClearingFirstMPSLGP.calculatePSLFitnessWithPreferencesAndObjectives(this,
+				((PSLInitializer) initializer).weights[generation], fitness.getObjectives(), fitness.getTaskIndex());
 	}
 
 	public void assignTaskIndicesIfNeeded() {
@@ -708,6 +765,13 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			}
 		}
 		setTaskIndex(child, inheritedTask);
+		((PSLMultiObjectiveFitness) child.fitness).setTransferEventId(-1);
+		int primaryTask = getTaskIndex(primaryParent);
+		int secondaryTask = getTaskIndex(secondaryParent);
+		if (primaryTask != secondaryTask && primaryContribution > 0 && secondaryContribution > 0) {
+			int donorTask = inheritedTask == primaryTask ? secondaryTask : primaryTask;
+			recordTransferOffspring(child, inheritedTask, donorTask, preferenceRegionForSubproblem(generation + 1));
+		}
 	}
 
 	public void balanceTaskDistributionForSurvival(int subpop, int targetSize) {
@@ -1058,7 +1122,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 			allGenerationParentTaskIndex.add(parentTaskIndexCopy);
 		}
 		Individual[] individuals = this.population.subpops[0].individuals;
-		double[][][] pcBySubpop = phenotypicForSurrogateV1.phenotypicPopulationFixedDecisions(this, phenoCharacterisation, true);
+		double[][][] pcBySubpop = phenotypicForSurrogateV1.phenotypicPopulationFixedDecisions(this, phenoCharacterisation, false);
 		recordDiversityForPopulation("ALL", -1, individuals, pcBySubpop[0], parentIndex, bestIndi(0));
 		for (int task = 0; task < Math.max(1, numTasks); task++) {
 			Individual[] taskIndividuals = individualsForTask(task);
@@ -1160,9 +1224,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 		// Generate new instances if needed //modified by mengxu 2022.06.29
 //		RuleOptimizationProblem problem = (RuleOptimizationProblem)evaluator.p_problem;
-		if (problem.getEvaluationModel().isRotatable()) {
-			problem.rotateEvaluationModel();
-		}
+		((PSLEvaluator) evaluator).rotateEvaluationModels();
 //		evaluator.evaluatePopulation(this);//modified by mengxu 2022.06.29
 
 	    // BREEDING
@@ -1737,7 +1799,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		File transferFile = new File("job." + jobSeed + ".transferContribution.csv");
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(transferFile));
-			writer.write("Gen,ReceivingTask,ContributingTask,PreferenceRegion,TransferCount,Contribution,ProbabilityBeforeUpdate,ProbabilityAfterUpdate,TotalTransferProbabilityBeforeUpdate,TotalTransferProbabilityAfterUpdate,NoTransferProbabilityBeforeUpdate,NoTransferProbabilityAfterUpdate,UtilityBeforeUpdate,UtilityAfterUpdate,PreviousBestPSLFitness,CurrentBestPSLFitness,RawImprovement,ImprovementComponent,TaskPopulationShare,SurvivalComponent,NegativeTransferPenalty,LearningRate,Temperature,MaxTransferProbability");
+			writer.write("Gen,ReceivingTask,ContributingTask,PreferenceRegion,TransferCount,Contribution,ProbabilityBeforeUpdate,ProbabilityAfterUpdate,TotalTransferProbabilityBeforeUpdate,TotalTransferProbabilityAfterUpdate,NoTransferProbabilityBeforeUpdate,NoTransferProbabilityAfterUpdate,UtilityBeforeUpdate,UtilityAfterUpdate,BaselinePSLFitness,MeanOffspringPSLFitness,RelativeImprovementPerOffspring,ImprovementComponent,TaskPopulationShare,SurvivalComponent,NegativeTransferPenalty,LearningRate,Temperature,MaxTransferProbability,SurvivedCount,LocalBaselineCount,SurvivalRate");
 			writer.newLine();
 			for (TransferDiagnosticRecord record : transferDiagnosticRecords) {
 				writer.write(record.generation + "," + record.receivingTask + "," + record.contributingTask + ","
@@ -1745,11 +1807,11 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 						+ record.probabilityBeforeUpdate + "," + record.probabilityAfterUpdate + ","
 						+ record.totalTransferProbabilityBeforeUpdate + "," + record.totalTransferProbabilityAfterUpdate + ","
 						+ record.noTransferProbabilityBeforeUpdate + "," + record.noTransferProbabilityAfterUpdate + ","
-						+ record.utilityBeforeUpdate + "," + record.utilityAfterUpdate + "," + record.previousBest + ","
-						+ record.currentBest + "," + record.improvement + "," + record.improvementComponent + ","
+						+ record.utilityBeforeUpdate + "," + record.utilityAfterUpdate + "," + record.baselineFitness + ","
+						+ record.meanOffspringFitness + "," + record.improvement + "," + record.improvementComponent + ","
 						+ record.taskPopulationShare + "," + record.survivalComponent + ","
 						+ record.negativeTransferPenalty + "," + record.learningRate + "," + record.temperature + ","
-						+ record.maxTransferProbability);
+						+ record.maxTransferProbability + "," + record.survivedCount + "," + record.localBaselineCount + "," + record.survivalRate);
 				writer.newLine();
 			}
 			writer.close();

@@ -9,6 +9,7 @@ public class PSLMultiObjectiveFitness extends MultiObjectiveFitness{
     public double PSLFitness;
 
     private int taskIndex = -1;
+    private long transferEventId = -1;
 
     public boolean betterThan(Fitness fitness)
     {
@@ -32,12 +33,19 @@ public class PSLMultiObjectiveFitness extends MultiObjectiveFitness{
         this.taskIndex = taskIndex;
     }
 
+    long getTransferEventId() {
+        return transferEventId;
+    }
+
+    void setTransferEventId(long transferEventId) {
+        this.transferEventId = transferEventId;
+    }
 
     public void calculatePSLFitness(EvolutionState state)
     {
         int index = state.generation;
 
-        PSLInitializer init = (PSLInitializer) state.initializer;
+        PSLInitializer init = ((PSLInitializer) state.initializer).forTask(taskIndex);
         double fit;
         if(init.tchebycheff == 3){//PBI add by mengxu 2024.6.10
             fit = init.calculatePenaltyBoundaryIntersectionScore(this, index);

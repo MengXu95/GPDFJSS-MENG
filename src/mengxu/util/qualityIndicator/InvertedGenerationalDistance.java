@@ -50,6 +50,20 @@ public class InvertedGenerationalDistance {
   public InvertedGenerationalDistance() {
     utils_ = new mengxu.util.qualityIndicator.util.MetricsUtil();
   } // GenerationalDistance
+
+  public double invertedGenerationalDistance(double[][] front, double[][] referenceFront,
+                                            double[] maximumValues, double[] minimumValues) {
+    if (front.length == 0 || referenceFront.length == 0) {
+      return Double.POSITIVE_INFINITY;
+    }
+    double[][] normalizedFront = utils_.getNormalizedFront(front, maximumValues, minimumValues);
+    double[][] normalizedReference = utils_.getNormalizedFront(referenceFront, maximumValues, minimumValues);
+    double sum = 0.0;
+    for (double[] point : normalizedReference) {
+      sum += Math.pow(utils_.distanceToClosedPoint(point, normalizedFront), pow_);
+    }
+    return Math.pow(sum, 1.0 / pow_) / normalizedReference.length;
+  }
   
   /**
    * Returns the inverted generational distance value for a given front

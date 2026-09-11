@@ -39,9 +39,30 @@ When `mpslgp.contribution-aware-task-inheritance = true`, crossover offspring in
 
 Adaptive transfer uses a no-transfer baseline utility in the softmax decision. This prevents two-task experiments from degenerating into a fixed always-one-donor distribution: positive contribution increases the task-region transfer probability, while negative contribution decreases it toward same-task selection. In adaptive mode, `mpslgp.max-transfer-probability` is the transfer budget; `mpslgp.transfer-probability` is used by the fixed-transfer baseline. When `mpslgp.scale-transfer-budget-by-donor-count = true`, the adaptive transfer budget is divided by `mpslgp.num-tasks - 1`, making three-or-more-task runs more conservative without adding validation evaluations or training time.
 
-Adaptive-transfer diagnostics are written to `job.<seed>.transferContribution.csv`. Each row records a receiving task, contributing task, and preference region at a generation, including transfer count, contribution, pairwise and total transfer probability before and after the utility update, no-transfer probability, utility before and after the update, raw region improvement, task population share, survival component, and negative-transfer penalty. These fields support later heatmaps and ablations for whether transfer succeeds because of task relatedness, preference-region fit, or simply high transfer frequency.
+Adaptive-transfer credit is attached to actual crossover offspring, not parent-selection attempts. Failed crossover and same-task mating do not create transfer events. Each offspring has a unique event ID that survives cloning and sorting, and can receive credit once. The receiving task is the offspring's inherited task; the other contributing parent supplies the donor task. Selection and feedback use the preference region of the next generation, when the offspring is evaluated.
+
+For each receiving-task/donor-task/preference-region group, let `N` be the number of generated transfer offspring and `S` the number retained after preselection and evaluation with valid, uncleared fitness. Each surviving offspring is compared against the best valid non-transfer individual of the same task in the same generation, using the current preference and real objective values. The relative improvement is `clip((baseline - offspring) / max(abs(baseline), 1e-12), -1, 1)`. This avoids comparing different training seeds or proxy scores. If no non-transfer baseline survives, improvement and the non-improvement penalty for evaluated offspring are omitted; survival is still observable.
+
+The contribution is `improvementWeight * sum(relativeImprovement) / N + survivalWeight * S / N - penaltyWeight * (N - S + nonImprovingSurvivors) / N`. No additional simulation evaluations are required. A donor's utility is updated only when it generated offspring. Task population share is retained as a diagnostic and is not used as offspring survival.
+
+Adaptive-transfer diagnostics are written to `job.<seed>.transferContribution.csv`. `TransferCount` now counts actual generated offspring. `BaselinePSLFitness`, `MeanOffspringPSLFitness`, and `RelativeImprovementPerOffspring` replace the former cross-generation best-fitness fields. `SurvivedCount`, `LocalBaselineCount`, and `SurvivalRate` expose the evidence behind each donor's reward. An absent baseline is recorded as infinity; a group without surviving offspring has a NaN mean offspring fitness. Utility and probability fields remain finite.
 
 The original `mengxu.algorithm.multiobjective.ParetoSetLearning` package is not modified by this implementation.
+
+## Task isolation and regression checks
+
+Task count is read before ECJ initializes the evaluator. Multi-task configurations must supply every `eval.problem.<task>` entry; missing entries fail initialization instead of silently using the default problem. Every task rotates its own scheduling set according to its `rotate-sim-seed` setting.
+
+Surrogate caches contain independent, aligned snapshots of phenotypes, fitnesses, and task labels. Diversity statistics reuse the current phenotype reference rules instead of changing the representation after caching. Nearest-neighbor lookup and duplicate clearing operate within a task. Pareto ranking, normalization references, and HV/GD/IGD reference fronts are task-local. HV receives copies of reference ranges, so computing one individual's indicator cannot change the next individual's reference point. Phenotype decision situations remain shared, while objective samples are task-specific.
+
+`test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPRegressionTest.java` is a dependency-free Java regression runner. After compiling the project classes and this test with `libraries/*` on the classpath, run:
+
+```powershell
+java -cp "<compiled-classes>;libraries/*" mengxu.algorithm.multiobjective.MPSLGP.MPSLGPRegressionTest
+java -cp "<compiled-classes>;libraries/*" mengxu.algorithm.multiobjective.MPSLGP.MPSLGPRegressionTest --smoke
+```
+
+The smoke checks use 24 individuals, 200 recorded jobs, and three generations, including heterogeneous objectives, adaptive transfer, fixed transfer, no transfer, and single-task operation. They stop before final statistics are written. Run from the repository root, or set `-Dmpslgp.params=<absolute-path-to-3tasks-params>` and use absolute classpath entries.
 
 ## Shared-reference HV screening from printed logs
 

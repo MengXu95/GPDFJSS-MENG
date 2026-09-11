@@ -16,6 +16,7 @@ import yimei.jss.jobshop.SchedulingSet;
 import yimei.jss.ruleevaluation.AbstractEvaluationModel;
 import yimei.jss.ruleevaluation.MultipleRuleEvaluationModel;
 import yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem;
+import yimei.jss.ruleoptimisation.RuleOptimizationProblem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class PSLEvaluator extends SimpleEvaluator{
 
         if (state instanceof GPRuleEvolutionStatePSL) {
             int numTasks = ((GPRuleEvolutionStatePSL) state).numTasks;
-            if (numTasks > 1 && state.parameters.exists(base.push(P_PROBLEM).push("0"), null)) {
+            if (numTasks > 1) {
                 mpslgpProblems = new Problem[numTasks];
                 for (int task = 0; task < numTasks; task++) {
                     Parameter taskProblemParameter = base.push(P_PROBLEM).push("" + task);
@@ -110,6 +111,26 @@ public class PSLEvaluator extends SimpleEvaluator{
 //        System.out.println("evaluatePopulation");
     }
 
+
+    RuleOptimizationProblem problemForTask(int taskIndex) {
+        return (RuleOptimizationProblem) (mpslgpProblems == null ? p_problem : mpslgpProblems[taskIndex]);
+    }
+
+    public void rotateEvaluationModels() {
+        rotateEvaluationModel(p_problem);
+        if (mpslgpProblems != null) {
+            for (Problem problem : mpslgpProblems) {
+                rotateEvaluationModel(problem);
+            }
+        }
+    }
+
+    private void rotateEvaluationModel(Problem problem) {
+        RuleOptimizationProblem ruleProblem = (RuleOptimizationProblem) problem;
+        if (ruleProblem.getEvaluationModel().isRotatable()) {
+            ruleProblem.rotateEvaluationModel();
+        }
+    }
 
     protected void evaluatePopulationByTask(final EvolutionState state) {
         GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;

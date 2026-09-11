@@ -26,7 +26,7 @@ public class PSLParentSelection extends TournamentSelection {
 			GPRuleEvolutionStatePSL mpslgpState = (GPRuleEvolutionStatePSL) state;
 			int firstIndex = produceMOEAD(start, subpopulation, state, thread);
 			int firstTask = mpslgpState.getTaskIndex(state.population.subpops[subpopulation].individuals[firstIndex]);
-			int preferenceRegion = mpslgpState.preferenceRegionForSubproblem(state.generation);
+			int preferenceRegion = mpslgpState.preferenceRegionForSubproblem(state.generation + 1);
 			boolean usePeerTaskTransfer = false;
 			int donorTask = -1;
 			if (mpslgpState.useAdaptiveTransfer()) {
@@ -43,7 +43,6 @@ public class PSLParentSelection extends TournamentSelection {
 			int secondIndex;
 			if (usePeerTaskTransfer && donorTask >= 0) {
 				secondIndex = produceMOEADFromTask(start, subpopulation, state, thread, donorTask, firstIndex);
-				mpslgpState.recordTransferEvent(firstTask, donorTask, preferenceRegion);
 			}
 			else if (usePeerTaskTransfer) {
 				secondIndex = produceMOEADFromDifferentTask(start, subpopulation, state, thread, firstTask, firstIndex);

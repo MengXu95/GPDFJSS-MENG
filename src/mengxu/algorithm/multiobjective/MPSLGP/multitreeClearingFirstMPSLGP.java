@@ -111,8 +111,8 @@ public class multitreeClearingFirstMPSLGP {
 //        double[][][][] fitnessOfIntermedidatePopPSL = fitnessPopulationPreferenceFixedDecisions(state, preferences, phenotypicOfIntermedidatePopPSL);
         double[][][][] fitnessOfIntermedidatePopPSL = fitnessPopulationPreferenceFixedDecisionsConsiderAverageRank(state, preferences, phenotypicOfIntermedidatePopPSL);
         if(((GPRuleEvolutionStatePSL)state).useBroodRecombination){
-            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).lastGenPhenotypicOfIntermedidatePopPSL = phenotypicOfIntermedidatePopPSL;
-            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).lastGenFitnessOfIntermedidatePopPSL = fitnessOfIntermedidatePopPSL;
+            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).cacheSurrogatePopulation(
+                    state, phenotypicOfIntermedidatePopPSL, fitnessOfIntermedidatePopPSL);
         }
         String compareCriteria = ((ClearingPSLMultiObjectiveFitness)state.population.subpops[0].individuals[0].fitness).compareCriteria;
 
@@ -201,40 +201,7 @@ public class multitreeClearingFirstMPSLGP {
 
             boolean clear = ((GPRuleEvolutionStatePSL)state).doNichingClear;
             if(clear){
-                // clear this subpopulation
-                for (int i = 0; i < sortedPop.length; i++) {
-                    // skip the cleared individuals
-                    if (((Clearable)sortedPop[i].fitness).isCleared()) {
-                        continue;
-                    }
-
-                    int numWinners = 1;
-                    for (int j = i+1; j < sortedPop.length; j++) {
-                        // skip the cleared individuals
-                        if (((Clearable)sortedPop[j].fitness).isCleared()) {
-                            continue;
-                        }
-
-                        // calculate the distance between individuals i and j
-                        double distance = PhenoCharacterisation.distance(
-                                sortedPopCharLists.get(i), sortedPopCharLists.get(j));
-                        if (distance > radius) {
-                            // Individual j is not in the niche
-                            continue; //if distance, means two individuals are the same, clear (below) the individual, get out of current loop
-                        }
-
-                        if (numWinners < capacity) { //when set capacity to 1, the code will never go to here
-                            numWinners ++;
-                        }
-                        else {
-                            // Clear the fitness of individual j
-                            ((Clearable)sortedPop[j].fitness).clear();
-                            //fzhang 2019.9.11
-                            sortedPop[j].evaluated = true;
-                            clearedInds++;
-                        }
-                    }
-                }
+                clearedInds = clearTaskDuplicates(sortedPop, phenotypicOfIntermedidatePopPSL[subpopNum], radius, capacity);
                 clearedIndsArray.add(clearedInds);//save the number of cleared individuals of each subpop
                 System.out.println("Cleared number: " + clearedInds);
             }
@@ -332,137 +299,73 @@ public class multitreeClearingFirstMPSLGP {
 
     public static double[][] HVPopulationPreferenceDecisions(final EvolutionState state,
                                                                   double[][][][] fitnessOfIntermedidatePopPSL){
-        int HVEstimateStrategy = ((GPRuleEvolutionStatePSL)state).HVEstimateStrategy;
-        double[] maxObj = ((PSLInitializer) state.initializer).maxObjectives;
-        double[] minObj = ((PSLInitializer) state.initializer).minObjectives;
-        int numObj = minObj.length;
-        double[] manualObj = new double[maxObj.length];
-        //todo: need modify to fit different normalisation strategy, for examply ideal-nadir point normalisation instead of only manual normalisation
-        //      2024.9.19
-        if(((PSLInitializer) state.initializer).normalisation==1 || ((PSLInitializer) state.initializer).normalisation==2){
-            for(int i=0; i< maxObj.length; i++){
-                manualObj[i] = ((PSLInitializer) state.initializer).curSchedulingSetObjectiveLowerBoundMtx.getEntry(i,0);
-            }
-        }
-        double[][] HV = new double[fitnessOfIntermedidatePopPSL.length][fitnessOfIntermedidatePopPSL[0].length];
+        int strategy = ((GPRuleEvolutionStatePSL) state).HVEstimateStrategy;
+        double[][] values = new double[fitnessOfIntermedidatePopPSL.length][];
         for (int subpop = 0; subpop < fitnessOfIntermedidatePopPSL.length; subpop++) {
-            for (int ind = 0; ind < fitnessOfIntermedidatePopPSL[0].length; ind++){
-//                double[][] nonDup = clearDuplicatedPoint(fitnessOfIntermedidatePopPSL[subpop][ind]);
-                double[][] nonDup = getNonDominatedPoints(fitnessOfIntermedidatePopPSL[subpop][ind],numObj);//modified by mengxu 2024.5.27
-                //todo: should get the non-dominated results
-                Hypervolume HVIndicator = new Hypervolume();
-                if(HVEstimateStrategy==0 || HVEstimateStrategy==2){//max-min normalisation
-                    double value = HVIndicator.hypervolume_MaxMin(nonDup, maxObj, minObj);
-//                double value = HVIndicator.hypervolume(nonDup, trueParetofront,2);
-                    HV[subpop][ind] = value;
-                }
-                else if(HVEstimateStrategy==1 && (((PSLInitializer) state.initializer).normalisation==1 || ((PSLInitializer) state.initializer).normalisation==2)){//manual rule normalisation
-                    double value = HVIndicator.hypervolume_Manual(nonDup, manualObj);
-                    HV[subpop][ind] = value;
+            values[subpop] = new double[fitnessOfIntermedidatePopPSL[subpop].length];
+            for (int individual = 0; individual < values[subpop].length; individual++) {
+                PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) state.population.subpops[subpop].individuals[individual].fitness;
+                PSLInitializer context = ((PSLInitializer) state.initializer).forTask(fitness.getTaskIndex());
+                double[][] front = getNonDominatedPoints(fitnessOfIntermedidatePopPSL[subpop][individual], context.numObjectives);
+                Hypervolume indicator = new Hypervolume();
+                if (strategy == 0 || strategy == 2) {
+                    values[subpop][individual] = indicator.hypervolume_MaxMin(front,
+                            context.maxObjectives.clone(), context.minObjectives.clone());
+                } else if (strategy == 1 && (context.normalisation == 1 || context.normalisation == 2)) {
+                    values[subpop][individual] = indicator.hypervolume_Manual(front, manualObjectives(context, fitness));
                 }
             }
         }
-        return HV;
+        return values;
     }
 
     public static double[][] IGDPopulationPreferenceDecisions(final EvolutionState state,
                                                               double[][][][] fitnessOfIntermedidatePopPSL) {
-        // Retrieve the true Pareto front and other necessary parameters from the state
-        double[][] trueParetoFront = ((KNNsurrogateClearingPSLEvaluatorbasedonHV)
-                ((GPRuleEvolutionStatePSL) state).evaluator).trueParetofront;
-        int HVEstimateStrategy = ((GPRuleEvolutionStatePSL)state).HVEstimateStrategy;
-        double[] maxObj = ((PSLInitializer) state.initializer).maxObjectives;
-        double[] minObj = ((PSLInitializer) state.initializer).minObjectives;
-        int numObj = minObj.length;
-
-        // Manual objectives initialization
-        double[] manualObj = new double[maxObj.length];
-        if (((PSLInitializer) state.initializer).normalisation == 1 ||
-                ((PSLInitializer) state.initializer).normalisation == 2) {
-            for (int i = 0; i < maxObj.length; i++) {
-                manualObj[i] = ((PSLInitializer) state.initializer)
-                        .curSchedulingSetObjectiveLowerBoundMtx.getEntry(i, 0);
-            }
-        }
-
-        // IGD calculation array
-        double[][] IGDValues = new double[fitnessOfIntermedidatePopPSL.length][fitnessOfIntermedidatePopPSL[0].length];
-
-        for (int subpop = 0; subpop < fitnessOfIntermedidatePopPSL.length; subpop++) {
-            for (int ind = 0; ind < fitnessOfIntermedidatePopPSL[0].length; ind++) {
-                // Get non-dominated points
-//                double[][] nonDup = getNonDominatedPoints(fitnessOfIntermedidatePopPSL[subpop][ind], numObj);
-
-                // Get all points
-                double[][] allPoints = fitnessOfIntermedidatePopPSL[subpop][ind];
-                // todo: require normalisation
-
-                // IGD calculation based on true Pareto front and non-dominated points
-                InvertedGenerationalDistance IGDCalculator = new InvertedGenerationalDistance();
-                if(HVEstimateStrategy==0 || HVEstimateStrategy==2) {//max-min normalisation
-                    double igdValue = IGDCalculator.invertedGenerationalDistance_MaxMin(
-                            state, allPoints, trueParetoFront, numObj);
-                    IGDValues[subpop][ind] = igdValue;
-                }
-                else if(HVEstimateStrategy==1 && (((PSLInitializer) state.initializer).normalisation==1 || ((PSLInitializer) state.initializer).normalisation==2)){//manual rule normalisation
-                    double igdValue = IGDCalculator.invertedGenerationalDistance_Manual(
-                            state, allPoints, trueParetoFront, manualObj, numObj);
-                    IGDValues[subpop][ind] = igdValue;
-                }
-            }
-        }
-
-        return IGDValues;
+        return distancePopulationPreferenceDecisions(state, fitnessOfIntermedidatePopPSL, true);
     }
 
     public static double[][] GDPopulationPreferenceDecisions(final EvolutionState state,
                                                               double[][][][] fitnessOfIntermedidatePopPSL) {
-        // Retrieve the true Pareto front and other necessary parameters from the state
-        double[][] trueParetoFront = ((KNNsurrogateClearingPSLEvaluatorbasedonHV)
-                ((GPRuleEvolutionStatePSL) state).evaluator).trueParetofront;
-        int HVEstimateStrategy = ((GPRuleEvolutionStatePSL)state).HVEstimateStrategy;
-        double[] maxObj = ((PSLInitializer) state.initializer).maxObjectives;
-        double[] minObj = ((PSLInitializer) state.initializer).minObjectives;
-        int numObj = minObj.length;
+        return distancePopulationPreferenceDecisions(state, fitnessOfIntermedidatePopPSL, false);
+    }
 
-        // Manual objectives initialization
-        double[] manualObj = new double[maxObj.length];
-        if (((PSLInitializer) state.initializer).normalisation == 1 ||
-                ((PSLInitializer) state.initializer).normalisation == 2) {
-            for (int i = 0; i < maxObj.length; i++) {
-                manualObj[i] = ((PSLInitializer) state.initializer)
-                        .curSchedulingSetObjectiveLowerBoundMtx.getEntry(i, 0);
+    private static double[] manualObjectives(PSLInitializer context, PSLMultiObjectiveFitness fitness) {
+        double[] bounds = new double[context.numObjectives];
+        for (int objective = 0; objective < bounds.length; objective++) {
+            bounds[objective] = context.objectiveLowerBoundForFitness(fitness, objective);
+        }
+        return bounds;
+    }
+
+    private static double[][] distancePopulationPreferenceDecisions(EvolutionState state, double[][][][] estimates,
+                                                                    boolean inverted) {
+        KNNsurrogateClearingPSLEvaluatorbasedonHV evaluator = (KNNsurrogateClearingPSLEvaluatorbasedonHV) state.evaluator;
+        double[][] values = new double[estimates.length][];
+        for (int subpop = 0; subpop < estimates.length; subpop++) {
+            values[subpop] = new double[estimates[subpop].length];
+            for (int individual = 0; individual < values[subpop].length; individual++) {
+                PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) state.population.subpops[subpop].individuals[individual].fitness;
+                int task = fitness.getTaskIndex();
+                PSLInitializer context = ((PSLInitializer) state.initializer).forTask(task);
+                double[][] reference = evaluator.taskParetofronts[task];
+                double[] maximum = context.nadirPoint.clone();
+                double[] minimum = context.idealPoint.clone();
+                if (((GPRuleEvolutionStatePSL) state).HVEstimateStrategy == 1
+                        && (context.normalisation == 1 || context.normalisation == 2)) {
+                    maximum = manualObjectives(context, fitness);
+                    minimum = new double[maximum.length];
+                }
+                for (int objective = 0; objective < maximum.length; objective++) {
+                    if (Math.abs(maximum[objective] - minimum[objective]) < 1.0e-12) {
+                        maximum[objective] = minimum[objective] + 1.0;
+                    }
+                }
+                values[subpop][individual] = inverted
+                        ? new InvertedGenerationalDistance().invertedGenerationalDistance(estimates[subpop][individual], reference, maximum, minimum)
+                        : new GenerationalDistance().generationalDistance(estimates[subpop][individual], reference, maximum, minimum);
             }
         }
-
-        // IGD calculation array
-        double[][] IGDValues = new double[fitnessOfIntermedidatePopPSL.length][fitnessOfIntermedidatePopPSL[0].length];
-
-        for (int subpop = 0; subpop < fitnessOfIntermedidatePopPSL.length; subpop++) {
-            for (int ind = 0; ind < fitnessOfIntermedidatePopPSL[0].length; ind++) {
-                // Get non-dominated points
-//                double[][] nonDup = getNonDominatedPoints(fitnessOfIntermedidatePopPSL[subpop][ind], numObj);
-
-                // Get all points
-                double[][] allPoints = fitnessOfIntermedidatePopPSL[subpop][ind];
-                // todo: require normalisation
-
-                // IGD calculation based on true Pareto front and non-dominated points
-                GenerationalDistance GDCalculator = new GenerationalDistance();
-                if(HVEstimateStrategy==0 || HVEstimateStrategy==2) {//max-min normalisation
-                    double igdValue = GDCalculator.generationalDistance_MaxMin(
-                            state, allPoints, trueParetoFront, numObj);
-                    IGDValues[subpop][ind] = igdValue;
-                }
-                else if(HVEstimateStrategy==1 && (((PSLInitializer) state.initializer).normalisation==1 || ((PSLInitializer) state.initializer).normalisation==2)){//manual rule normalisation
-                    double igdValue = GDCalculator.generationalDistance_Manual(
-                            state, allPoints, trueParetoFront, manualObj, numObj);
-                    IGDValues[subpop][ind] = igdValue;
-                }
-            }
-        }
-
-        return IGDValues;
+        return values;
     }
 
 
@@ -582,11 +485,68 @@ public class multitreeClearingFirstMPSLGP {
         return strictlyBetter;
     }
 
+    static int[] taskIndices(Individual[] individuals) {
+        int[] tasks = new int[individuals.length];
+        for (int index = 0; index < individuals.length; index++) {
+            tasks[index] = ((PSLMultiObjectiveFitness) individuals[index].fitness).getTaskIndex();
+        }
+        return tasks;
+    }
+
+    static int nearestNeighbor(double[] phenotype, double[][][] samples, int[] tasks, int requiredTask) {
+        double bestDistance = Double.POSITIVE_INFINITY;
+        int nearest = -1;
+        for (int index = 0; index < samples.length; index++) {
+            if (tasks[index] != requiredTask) {
+                continue;
+            }
+            double distance = PhenoCharacterisation.distance(phenotype, samples[index][0]);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                nearest = index;
+                if (distance == 0.0) {
+                    break;
+                }
+            }
+        }
+        return nearest;
+    }
+
+    static int clearTaskDuplicates(Individual[] individuals, double[][][] phenotypes, double radius, int capacity) {
+        int cleared = 0;
+        int[] tasks = taskIndices(individuals);
+        for (int winner = 0; winner < individuals.length; winner++) {
+            if (((Clearable) individuals[winner].fitness).isCleared()) {
+                continue;
+            }
+            int winners = 1;
+            for (int candidate = winner + 1; candidate < individuals.length; candidate++) {
+                if (tasks[winner] != tasks[candidate] || ((Clearable) individuals[candidate].fitness).isCleared()) {
+                    continue;
+                }
+                if (PhenoCharacterisation.distance(phenotypes[winner][0], phenotypes[candidate][0]) > radius) {
+                    continue;
+                }
+                if (winners < capacity) {
+                    winners++;
+                } else {
+                    ((Clearable) individuals[candidate].fitness).clear();
+                    individuals[candidate].evaluated = true;
+                    cleared++;
+                }
+            }
+        }
+        return cleared;
+    }
+
     public static double calculatePSLFitnessWithPreferencesAndObjectives(EvolutionState state, double[] preferences, double[] objectives)
     {
-        int index = state.generation;
+        return calculatePSLFitnessWithPreferencesAndObjectives(state, preferences, objectives, -1);
+    }
 
-        PSLInitializer init = (PSLInitializer) state.initializer;
+    static double calculatePSLFitnessWithPreferencesAndObjectives(EvolutionState state, double[] preferences,
+                                                                  double[] objectives, int taskIndex) {
+        PSLInitializer init = ((PSLInitializer) state.initializer).forTask(taskIndex);
         double fit;
         if(init.tchebycheff == 3){//augmented Tchebtcheff
             fit = init.calculatePenaltyBoundaryIntersectionScoreWithPreferencesAndObjectives(preferences, objectives);
@@ -609,6 +569,7 @@ public class multitreeClearingFirstMPSLGP {
             //this is the baseline PhenoCharacterisation with baseline rule "SPT" "WIQ", it will be set again by the best rule, so it is useful here
             Individual[] inds = state.population.subpops[subpop].individuals; //only one subpop now
             double[][][] indsPCsSubpop = phenotypicOfIntermedidatePopPSL[subpop];
+            int[] tasks = taskIndices(inds);
             for(int i=0; i<indsPCsSubpop.length; i++){
                 double[] objectives = ((PSLMultiObjectiveFitness)inds[i].fitness).objectives;
                 double PSLFitness = ((PSLMultiObjectiveFitness)inds[i].fitness).getPSLFitness();
@@ -621,26 +582,15 @@ public class multitreeClearingFirstMPSLGP {
                     }
                     else{
                         double[] pc_i_j = eachIndPCsSubpop[j];
-                        double min_dis = Double.MAX_VALUE;
-                        int min_index = -1;
-                        for(int m=0; m<indsPCsSubpop.length; m++){
-                            double[] pc_m_0 = indsPCsSubpop[m][0];
-                            double dis  = PhenoCharacterisation.distance(pc_i_j, pc_m_0);
-                            if(dis==0){
-                                min_dis = dis;
-                                min_index = m;
-                                break;
-                            }
-                            if(dis < min_dis){
-                                min_dis = dis;
-                                min_index = m;
-                            }
+                        int min_index = nearestNeighbor(pc_i_j, indsPCsSubpop, tasks, tasks[i]);
+                        if (min_index < 0) {
+                            min_index = i;
                         }
                         double[] objectives_min_index = ((PSLMultiObjectiveFitness)inds[min_index].fitness).objectives;
                         double[] preference = preferences[j];
                         indsFitnessesMultiTree[subpop][i][j][0] = objectives_min_index[0];
                         indsFitnessesMultiTree[subpop][i][j][1] = objectives_min_index[1];
-                        indsFitnessesMultiTree[subpop][i][j][2] = calculatePSLFitnessWithPreferencesAndObjectives(state, preference, objectives_min_index);
+                        indsFitnessesMultiTree[subpop][i][j][2] = calculatePSLFitnessWithPreferencesAndObjectives(state, preference, objectives_min_index, tasks[i]);
                     }
                 }
             }
@@ -656,6 +606,7 @@ public class multitreeClearingFirstMPSLGP {
             //this is the baseline PhenoCharacterisation with baseline rule "SPT" "WIQ", it will be set again by the best rule, so it is useful here
             Individual[] inds = state.population.subpops[subpop].individuals; //only one subpop now
             double[][][] indsPCsSubpop = phenotypicOfIntermedidatePopPSL[subpop];
+            int[] tasks = taskIndices(inds);
             for(int i=0; i<indsPCsSubpop.length; i++){
                 double[] objectives = ((PSLMultiObjectiveFitness)inds[i].fitness).objectives;
                 double PSLFitness = ((PSLMultiObjectiveFitness)inds[i].fitness).getPSLFitness();
@@ -670,29 +621,16 @@ public class multitreeClearingFirstMPSLGP {
                     }
                     else{
                         double[] pc_i_j = eachIndPCsSubpop[j];
-                        double min_dis = Double.MAX_VALUE;
-                        int min_index = -1;
-                        for(int m=0; m<indsPCsSubpop.length; m++){
-                            double[] pc_m_0 = indsPCsSubpop[m][0];
-                            double dis  = PhenoCharacterisation.distance(pc_i_j, pc_m_0);
-                            if(dis==0){
-                                min_dis = dis;
-                                min_index = m;
-                                break;
-                            }
-                            if(dis < min_dis){
-                                //todo: should rank the population first before here? 2024.8.12
-                                //todo: should double check the fitness estimation and HV calculation 2024.8.12
-                                min_dis = dis;
-                                min_index = m;
-                            }
+                        int min_index = nearestNeighbor(pc_i_j, indsPCsSubpop, tasks, tasks[i]);
+                        if (min_index < 0) {
+                            min_index = i;
                         }
                         double[] objectives_min_index = ((PSLMultiObjectiveFitness)inds[min_index].fitness).objectives;
                         double rank_min_index = ((ClearingPSLMultiObjectiveFitness)inds[min_index].fitness).getRank();
                         double[] preference = preferences[j];
                         indsFitnessesMultiTree[subpop][i][j][0] = objectives_min_index[0];
                         indsFitnessesMultiTree[subpop][i][j][1] = objectives_min_index[1];
-                        indsFitnessesMultiTree[subpop][i][j][2] = calculatePSLFitnessWithPreferencesAndObjectives(state, preference, objectives_min_index);
+                        indsFitnessesMultiTree[subpop][i][j][2] = calculatePSLFitnessWithPreferencesAndObjectives(state, preference, objectives_min_index, tasks[i]);
                         indsFitnessesMultiTree[subpop][i][j][3] = rank_min_index;
                     }
                 }

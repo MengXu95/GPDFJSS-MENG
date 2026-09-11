@@ -27,7 +27,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
@@ -47,6 +49,8 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
     protected int capacity;
 
     public double[][] trueParetofront;
+
+    double[][][] taskParetofronts;
 
     public Object[] trueParetofrontIndividuals;
 
@@ -74,6 +78,7 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
 
     public double[][][][] lastGenPhenotypicOfIntermedidatePopPSL = null;
     public double[][][][] lastGenFitnessOfIntermedidatePopPSL = null;
+    int[][] lastGenTaskIndices;
     //original for PSL
 //    public int originalPopSize = -1;
 
@@ -114,6 +119,32 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
         // as baseline to very the multi-criteria selection 2024.11.04
     }
 
+    void cacheSurrogatePopulation(EvolutionState state, double[][][][] phenotypes, double[][][][] fitnesses) {
+        lastGenPhenotypicOfIntermedidatePopPSL = copySamples(phenotypes);
+        lastGenFitnessOfIntermedidatePopPSL = copySamples(fitnesses);
+        lastGenTaskIndices = new int[state.population.subpops.length][];
+        for (int subpop = 0; subpop < state.population.subpops.length; subpop++) {
+            Individual[] individuals = state.population.subpops[subpop].individuals;
+            lastGenTaskIndices[subpop] = new int[individuals.length];
+            for (int index = 0; index < individuals.length; index++) {
+                lastGenTaskIndices[subpop][index] = ((PSLMultiObjectiveFitness) individuals[index].fitness).getTaskIndex();
+            }
+        }
+    }
+
+    private double[][][][] copySamples(double[][][][] samples) {
+        double[][][][] copy = new double[samples.length][][][];
+        for (int subpop = 0; subpop < samples.length; subpop++) {
+            copy[subpop] = new double[samples[subpop].length][][];
+            for (int individual = 0; individual < samples[subpop].length; individual++) {
+                copy[subpop][individual] = new double[samples[subpop][individual].length][];
+                for (int preference = 0; preference < samples[subpop][individual].length; preference++) {
+                    copy[subpop][individual][preference] = samples[subpop][individual][preference].clone();
+                }
+            }
+        }
+        return copy;
+    }
 
     public void evaluatePopulation(final EvolutionState state)
     {
@@ -177,6 +208,7 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
         ((PSLInitializer) state.initializer).updateNadirPoint(sortedParetoFront);
         ((PSLInitializer) state.initializer).updateMaxObjectives(state);
         ((PSLInitializer) state.initializer).updateMinObjectives(state);
+        updateTaskReferencePoints(state);
 
         //add by mengxu 2024.8.13
         if(this.useKneePoint){
@@ -379,26 +411,15 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
             for(int i=0; i<inds.length; i++){
                 Individual ind = inds[i];
                 double[] eachIndPCSubpop = indsPCsSubpop[i][0];
-                double min_dis = Double.MAX_VALUE;
-                int min_index = -1;
-                for(int j=0; j<lastGenIndsPCsSubpop.length; j++){
-                    double[] lastGenEachIndPCSubpop = lastGenIndsPCsSubpop[j][0];
-                    double dis  = PhenoCharacterisation.distance(eachIndPCSubpop, lastGenEachIndPCSubpop);
-                    if(dis==0){
-                        min_dis = dis;
-                        min_index = j;
-                        break;
-                    }
-                    if(dis < min_dis){
-                        min_dis = dis;
-                        min_index = j;
-                    }
-                }
-                ((ClearingPSLMultiObjectiveFitness)ind.fitness).rank = this.lastGenFitnessOfIntermedidatePopPSL[subpop][min_index][0][3];
+                int min_index = multitreeClearingFirstMPSLGP.nearestNeighbor(eachIndPCSubpop,
+                        lastGenIndsPCsSubpop, lastGenTaskIndices[subpop], ((PSLMultiObjectiveFitness) ind.fitness).getTaskIndex());
+                ((ClearingPSLMultiObjectiveFitness)ind.fitness).rank = min_index < 0 ? Double.POSITIVE_INFINITY
+                        : this.lastGenFitnessOfIntermedidatePopPSL[subpop][min_index][0][3];
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setHVvalue(Double.NEGATIVE_INFINITY);
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setIGDvalue(Double.POSITIVE_INFINITY);
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setGDvalue(Double.POSITIVE_INFINITY);
-                ((ClearingPSLMultiObjectiveFitness)ind.fitness).setPSLFitness(this.lastGenFitnessOfIntermedidatePopPSL[subpop][min_index][0][2]);
+                ((ClearingPSLMultiObjectiveFitness)ind.fitness).setPSLFitness(min_index < 0 ? Double.POSITIVE_INFINITY
+                    : this.lastGenFitnessOfIntermedidatePopPSL[subpop][min_index][0][2]);
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setPreferenceDiversity(Double.NEGATIVE_INFINITY);
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setMeanDominatedBy(Double.NEGATIVE_INFINITY);
                 ((ClearingPSLMultiObjectiveFitness)ind.fitness).setMeanPreferenceRank(Double.POSITIVE_INFINITY);
@@ -423,40 +444,8 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
                     sortedPopCharLists.add(charList);
                 }
 
-                int clearedInds = 0;
-                // clear this subpopulation
-                for (int i = 0; i < sortedPop.length; i++) {
-                    // skip the cleared individuals
-                    if (((Clearable) sortedPop[i].fitness).isCleared()) {
-                        continue;
-                    }
-
-                    int numWinners = 1;
-                    for (int j = i + 1; j < sortedPop.length; j++) {
-                        // skip the cleared individuals
-                        if (((Clearable) sortedPop[j].fitness).isCleared()) {
-                            continue;
-                        }
-
-                        // calculate the distance between individuals i and j
-                        double distance = PhenoCharacterisation.distance(
-                                sortedPopCharLists.get(i), sortedPopCharLists.get(j));
-                        if (distance > radius) {
-                            // Individual j is not in the niche
-                            continue; //if distance, means two individuals are the same, clear (below) the individual, get out of current loop
-                        }
-
-                        if (numWinners < capacity) { //when set capacity to 1, the code will never go to here
-                            numWinners++;
-                        } else {
-                            // Clear the fitness of individual j
-                            ((Clearable) sortedPop[j].fitness).clear();
-                            //fzhang 2019.9.11
-                            sortedPop[j].evaluated = true;
-                            clearedInds++;
-                        }
-                    }
-                }
+                int clearedInds = multitreeClearingFirstMPSLGP.clearTaskDuplicates(
+                        sortedPop, phenotypicOfIntermedidatePopPSL[subpop], radius, capacity);
                 System.out.println("Preselection cleared number: " + clearedInds);
             }
         }
@@ -530,17 +519,46 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
 
 
     public ArrayList assignFrontRanks(Subpopulation subpop) {
-        Individual[] inds = subpop.individuals; //inds includes all individuals
-        ArrayList frontsByRank = MultiObjectiveFitness.partitionIntoRanks(inds);
-
-        int numRanks = frontsByRank.size();
-        for (int rank = 0; rank < numRanks; rank++) {
-            ArrayList front = (ArrayList) (frontsByRank.get(rank));
-            int numInds = front.size();
-            for (int ind = 0; ind < numInds; ind++)
-                ((ClearingPSLMultiObjectiveFitness) (((Individual) (front.get(ind))).fitness)).rank = rank;
+        Map<Integer, List<Individual>> taskIndividuals = new LinkedHashMap<>();
+        for (Individual individual : subpop.individuals) {
+            int task = ((PSLMultiObjectiveFitness) individual.fitness).getTaskIndex();
+            taskIndividuals.computeIfAbsent(task, ignored -> new ArrayList<>()).add(individual);
+        }
+        ArrayList<ArrayList<Individual>> frontsByRank = new ArrayList<>();
+        for (List<Individual> individuals : taskIndividuals.values()) {
+            ArrayList taskRanks = MultiObjectiveFitness.partitionIntoRanks(individuals.toArray(new Individual[0]));
+            for (int rank = 0; rank < taskRanks.size(); rank++) {
+                if (frontsByRank.size() <= rank) {
+                    frontsByRank.add(new ArrayList<>());
+                }
+                for (Object member : (ArrayList) taskRanks.get(rank)) {
+                    Individual individual = (Individual) member;
+                    ((ClearingPSLMultiObjectiveFitness) individual.fitness).rank = rank;
+                    frontsByRank.get(rank).add(individual);
+                }
+            }
         }
         return frontsByRank;
+    }
+
+    void updateTaskReferencePoints(EvolutionState state) {
+        int tasks = Math.max(1, ((GPRuleEvolutionStatePSL) state).numTasks);
+        Individual[][] fronts = new Individual[tasks][];
+        taskParetofronts = new double[tasks][][];
+        for (int task = 0; task < tasks; task++) {
+            List<Individual> front = new ArrayList<>();
+            for (Subpopulation subpopulation : state.population.subpops) {
+                for (Individual individual : subpopulation.individuals) {
+                    ClearingPSLMultiObjectiveFitness fitness = (ClearingPSLMultiObjectiveFitness) individual.fitness;
+                    if (fitness.getTaskIndex() == task && fitness.rank == 0.0) {
+                        front.add(individual);
+                    }
+                }
+            }
+            fronts[task] = front.toArray(new Individual[0]);
+            taskParetofronts[task] = transferParetofront(fronts[task]);
+        }
+        ((PSLInitializer) state.initializer).updateTaskReferences(state, fronts);
     }
 
     public void calculatePC(final EvolutionState state){

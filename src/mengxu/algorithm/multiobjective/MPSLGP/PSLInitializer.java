@@ -36,6 +36,7 @@ public class PSLInitializer extends GPInitializer {
 	public RealMatrix curSchedulingSetObjectiveLowerBoundMtx;// add by mengxu 2022.10.02
 
 	public RealMatrix[] taskSchedulingSetObjectiveLowerBoundMtx;
+	private PSLInitializer[] taskInitializers;
 
 
 	public void setup(final EvolutionState state, final Parameter base) {
@@ -80,6 +81,77 @@ public class PSLInitializer extends GPInitializer {
 
 		if(normalisation == 1 || normalisation == 2){ //add by mengxu 2022.10.02 //todo:double-check for normalisation==2
 			curSchedulingSetObjectiveLowerBoundMtx = new Array2DRowRealMatrix(numObjectives, 1);
+		}
+	}
+
+	public PSLInitializer forTask(int taskIndex) {
+		if (taskInitializers != null && taskIndex >= 0 && taskIndex < taskInitializers.length
+				&& taskInitializers[taskIndex] != null) {
+			return taskInitializers[taskIndex];
+		}
+		return this;
+	}
+
+	void updateTaskReferences(EvolutionState state, Individual[][] taskFronts) {
+		if (taskInitializers == null || taskInitializers.length != taskFronts.length) {
+			taskInitializers = new PSLInitializer[taskFronts.length];
+		}
+		if (normalisation == 2) {
+			taskSchedulingSetObjectiveLowerBoundMtx = new RealMatrix[taskFronts.length];
+		}
+		for (int task = 0; task < taskFronts.length; task++) {
+			PSLInitializer context = taskInitializers[task];
+			if (context == null) {
+				context = new PSLInitializer();
+				context.numObjectives = numObjectives;
+				context.initIdealPoint();
+				context.initMinObjectives();
+				context.initMaxObjectives();
+				context.initNadirPoint();
+				taskInitializers[task] = context;
+			}
+			context.normalisation = normalisation;
+			context.tchebycheff = tchebycheff;
+			context.weights = weights;
+			context.curSchedulingSetObjectiveLowerBoundMtx = taskSchedulingSetObjectiveLowerBoundMtx == null
+					? curSchedulingSetObjectiveLowerBoundMtx : taskSchedulingSetObjectiveLowerBoundMtx[task];
+			RuleOptimizationProblem problem = ((PSLEvaluator) state.evaluator).problemForTask(task);
+			boolean rotate = problem != null && problem.getEvaluationModel().isRotatable();
+			context.updateNadirPoint(taskFronts[task]);
+			for (int objective = 0; objective < numObjectives; objective++) {
+				ArrayList<Double> values = new ArrayList<>();
+				for (ec.Subpopulation subpopulation : state.population.subpops) {
+					for (Individual individual : subpopulation.individuals) {
+						PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) individual.fitness;
+						double value = fitness.getObjective(objective);
+						if (fitness.getTaskIndex() == task && Double.isFinite(value) && value < Double.MAX_VALUE) {
+							values.add(value);
+						}
+					}
+				}
+				Collections.sort(values);
+				context.minObjectives[objective] = values.isEmpty() ? 0.0 : values.get(0);
+				context.maxObjectives[objective] = values.isEmpty() ? 1.0 : values.get(values.size() - 1);
+				if (!values.isEmpty() && ((GPRuleEvolutionStatePSL) state).HVEstimateStrategy == 2) {
+					int middle = values.size() / 2;
+					double median = values.size() % 2 == 0
+							? (values.get(middle - 1) + values.get(middle)) / 2.0 : values.get(middle);
+					context.maxObjectives[objective] = median * 4.0;
+				}
+				context.idealPoint[objective] = (rotate ? context.minObjectives[objective]
+						: Math.min(context.idealPoint[objective], context.minObjectives[objective])) * 0.9;
+				if (!Double.isFinite(context.nadirPoint[objective])) {
+					context.nadirPoint[objective] = context.maxObjectives[objective];
+				}
+			}
+			if (normalisation == 2) {
+				context.curSchedulingSetObjectiveLowerBoundMtx = new Array2DRowRealMatrix(numObjectives, 1);
+				for (int objective = 0; objective < numObjectives; objective++) {
+					context.curSchedulingSetObjectiveLowerBoundMtx.setEntry(objective, 0,
+							Math.max(1.0e-12, context.minObjectives[objective]));
+				}
+				taskSchedulingSetObjectiveLowerBoundMtx[task] = context.curSchedulingSetObjectiveLowerBoundMtx;
+			}
 		}
 	}
 

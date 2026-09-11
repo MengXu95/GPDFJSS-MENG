@@ -49,6 +49,20 @@ public class GenerationalDistance {
   public GenerationalDistance() {
     utils_ = new mengxu.util.qualityIndicator.util.MetricsUtil();
   } // GenerationalDistance
+
+  public double generationalDistance(double[][] front, double[][] referenceFront,
+                                    double[] maximumValues, double[] minimumValues) {
+    if (front.length == 0 || referenceFront.length == 0) {
+      return Double.POSITIVE_INFINITY;
+    }
+    double[][] normalizedFront = utils_.getNormalizedFront(front, maximumValues, minimumValues);
+    double[][] normalizedReference = utils_.getNormalizedFront(referenceFront, maximumValues, minimumValues);
+    double sum = 0.0;
+    for (double[] point : normalizedFront) {
+      sum += Math.pow(utils_.distanceToClosedPoint(point, normalizedReference), pow_);
+    }
+    return Math.pow(sum, 1.0 / pow_) / normalizedFront.length;
+  }
   
   /**
    * Returns the generational distance value for a given front
