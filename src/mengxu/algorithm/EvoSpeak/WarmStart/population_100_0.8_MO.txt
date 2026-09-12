@@ -1,0 +1,800 @@
+Number of Individuals: i100|
+Individual Number: i0|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(- (- (/ (Min (* PT TIS) (+ W NOR)) (* (- TIS NOR) (+ WKR MWT))) (Max (Min (Max NIQ TRANT) (/ WIQ WKR)) (Max (+ NIQ MWT) (Min NIQ WKR)))) (- (* (Max NIQ PT) (- (* NOR MWT) (+ NIQ NIQ))) (+ (Max (- WKR W) (Min OWT NOR)) (+ (Max OWT OWT) (* WIQ NIQ)))))
+Tree 1:
+(Max (+ (+ TRANT (+ (+ (+ NPT PT) (+ (/ NIQ MWT) (+ TRANT WIQ))) (Min OWT (+ NPT PT)))) (+ NPT PT)) (Min (Min OWT (Min OWT (+ NPT PT))) NOR))
+
+Individual Number: i1|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) (Min (Max WKR WKR) TIS)) (Min (* WKR WKR) PT))
+Tree 1:
+(- (Max (Min (Max NIQ WKR) WKR) PT) (Min WIQ WKR))
+
+Individual Number: i2|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ TRANT) PT) (Min (* WKR WIQ) TRANT))
+Tree 1:
+(- (Max (Min (Max NIQ WKR) WKR) PT) (Min WIQ WKR))
+
+Individual Number: i3|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max NIQ WKR) PT) WKR) (Min NIQ WKR))
+Tree 1:
+(- (* WKR (Max NIQ PT)) (Min (Max WKR MWT) TIS))
+
+Individual Number: i4|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ WKR) PT) (Max (Min NIQ PT) WIQ))
+Tree 1:
+(- (* (Max WKR WKR) PT) (Max NIQ TRANT))
+
+Individual Number: i5|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Min NIQ WKR) PT) (Max (Min WKR TRANT) WIQ))
+Tree 1:
+(- (* (Min NIQ WKR) WIQ) (Min (Max WKR NIQ) PT))
+
+Individual Number: i6|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Min PT WKR) WIQ) (Min (Max NIQ WKR) TIS))
+Tree 1:
+(- (* (Max WKR TRANT) WKR) (Max (Min PT NIQ) WIQ))
+
+Individual Number: i7|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* WKR PT) (Min (Max NIQ TRANT) WIQ))
+Tree 1:
+(- (Min (* WKR MWT) TRANT) (Max NIQ WKR))
+
+Individual Number: i8|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Min WKR TRANT) PT) (Min (Max WKR WKR) NIQ))
+Tree 1:
+(- (* (Max NIQ PT) TRANT) (Max (Min WKR WIQ) PT))
+
+Individual Number: i9|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max NIQ WKR) (Min (* (Max WIQ WKR) PT) TIS))
+Tree 1:
+(- (Max (* WKR MWT) TRANT) (Min (Max WKR NIQ) WIQ))
+
+Individual Number: i10|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) (Min (Max WKR WKR) TIS)) (Max NIQ WKR))
+Tree 1:
+(- (* (Min WKR MWT) PT) (Min (Max WIQ NIQ) WKR))
+
+Individual Number: i11|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min NIQ WKR) PT) TRANT) (Max (Min WKR WIQ) PT))
+Tree 1:
+(- (Min (* (Max WKR WKR) PT) WIQ) (Max NIQ TRANT))
+
+Individual Number: i12|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min PT WKR) TRANT) (Max NIQ WKR))
+Tree 1:
+(- (* (Max NIQ WKR) PT) (Min (Max WKR WIQ) NIQ))
+
+Individual Number: i13|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max WKR NIQ) PT) WKR) (Min WIQ TIS))
+Tree 1:
+(- (* (Min PT TRANT) WKR) (Max WKR WIQ))
+
+Individual Number: i14|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ WKR) WKR) (Max (Min WKR PT) TIS))
+Tree 1:
+(- (* (Min NIQ PT) WIQ) (Max (Max WKR WKR) TRANT))
+
+Individual Number: i15|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min WKR WKR) PT) TRANT) (Min (Max WKR NIQ) WKR))
+Tree 1:
+(- (* (Max NIQ PT) WIQ) (Min (Max WKR WKR) TRANT))
+
+Individual Number: i16|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR NIQ) PT) (Max (Min WKR WKR) TRANT))
+Tree 1:
+(- (* (Min (Max PT WKR) TRANT) WKR) (Max (Max NIQ NIQ) PT))
+
+Individual Number: i17|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min (Max PT WKR) WKR) TRANT) (Max (Min WKR WKR) NIQ))
+Tree 1:
+(- (* (Max NIQ PT) WKR) (Min WIQ TIS))
+
+Individual Number: i18|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max WKR WKR) PT) TRANT) (Max NIQ TIS))
+Tree 1:
+(- (* (Min (Max PT WKR) WIQ) TRANT) (Min (Max NIQ WKR) TIS))
+
+Individual Number: i19|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min WKR WKR) PT) TRANT) (Max WIQ PT))
+Tree 1:
+(- (* (Min (Max NIQ WKR) PT) WKR) (Max (Min WKR NIQ) TRANT))
+
+Individual Number: i20|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min NIQ WKR) PT) WIQ) (Max WKR PT))
+Tree 1:
+(- (* (Min (Max WKR WIQ) NIQ) PT) (Min TRANT WKR))
+
+Individual Number: i21|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) NIQ) (Min WIQ PT))
+Tree 1:
+(- (* (Min WKR PT) (Max NIQ WKR)) (Min (Max PT TRANT) TIS))
+
+Individual Number: i22|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min (Max WIQ NIQ) WKR) PT) (Max (Max WKR WKR) TIS))
+Tree 1:
+(- (* (Max WKR NIQ) PT) (Min (Max WKR WKR) WIQ))
+
+Individual Number: i23|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min NIQ PT) (Max WKR WKR)) (Min WKR WIQ))
+Tree 1:
+(- (* (Max (Min WKR WKR) PT) WIQ) (Max NIQ WKR))
+
+Individual Number: i24|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) (Min (Max WKR WKR) WKR)) (Max WIQ PT))
+Tree 1:
+(- (* (Min WKR WKR) PT) (Max NIQ WIQ))
+
+Individual Number: i25|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min WKR WIQ) PT) WKR) (Max WIQ NIQ))
+Tree 1:
+(- (* (Min NIQ PT) (Max WKR TRANT)) (Max WKR WKR))
+
+Individual Number: i26|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min (Max WKR PT) TRANT) WKR) (Max WKR WKR))
+Tree 1:
+(- (* (Max NIQ WKR) PT) (Min WKR WIQ))
+
+Individual Number: i27|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min PT WKR) (Max (Max WKR NIQ) WIQ)) (Min (Max WKR WKR) TRANT))
+Tree 1:
+(- (* (Max NIQ PT) WKR) (Max (Min WKR WKR) TIS))
+
+Individual Number: i28|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max WKR NIQ) PT) (Max WKR WIQ)) (Min (Max NIQ WKR) TRANT))
+Tree 1:
+(- (* (Max PT TRANT) WKR) (Min (Min WKR PT) WIQ))
+
+Individual Number: i29|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max WKR WKR) PT) WIQ) (Min NIQ PT))
+Tree 1:
+(- (* (Min WKR WKR) (Max NIQ PT)) (Max (Min WKR WKR) TRANT))
+
+Individual Number: i30|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min PT WKR) NIQ) (Min WKR WIQ)) (Max NIQ TIS))
+Tree 1:
+(- (* (Max WKR PT) (Max NIQ WKR)) (Min WIQ WKR))
+
+Individual Number: i31|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) (Min NIQ PT)) (Max WKR WKR))
+Tree 1:
+(- (* (Min WKR NIQ) PT) (Max NIQ WKR))
+
+Individual Number: i32|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Max WKR WKR) NIQ) PT) (Min WKR WIQ))
+Tree 1:
+(- (* (Min PT WIQ) (Max WKR TRANT)) (Max NIQ TIS))
+
+Individual Number: i33|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) PT) (Min (Max WIQ NIQ) TIS))
+Tree 1:
+(- (* (Max PT TRANT) NIQ) (Min WKR WKR))
+
+Individual Number: i34|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min (Max WKR WKR) WIQ) PT) (Max WKR PT))
+Tree 1:
+(- (* (Max WKR NIQ) (Min WKR PT)) (Min NIQ WIQ))
+
+Individual Number: i35|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) WIQ) (Min (Max WKR WKR) TIS))
+Tree 1:
+(- (* (Min NIQ PT) (Max WKR WIQ)) (Min TRANT WKR))
+
+Individual Number: i36|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WIQ) PT) (Min (Max WKR PT) TIS))
+Tree 1:
+(- (* (Min WKR WKR) (Max NIQ TIS)) (Max WKR PT))
+
+Individual Number: i37|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min PT WKR) (Max WKR WKR)) (Max WKR NIQ))
+Tree 1:
+(- (* (Min (Max WKR WKR) PT) WIQ) (Max TIS NIQ))
+
+Individual Number: i38|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR NIQ) PT) (Min (Max WKR WKR) WKR))
+Tree 1:
+(- (* (Min WKR WIQ) TIS) (Max PT NIQ))
+
+Individual Number: i39|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) PT) (Min WKR WIQ))
+Tree 1:
+(- (* (Max NIQ WKR) PT) (Max TIS WKR))
+
+Individual Number: i40|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max (Min NIQ MWT) TRANT) WKR) (Min WKR NIQ))
+Tree 1:
+(- (* (Max WKR TIS) (Min WKR PT)) (Max WIQ MWT))
+
+Individual Number: i41|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) (Min WKR WKR)) (Max WKR WKR))
+Tree 1:
+(- (* (Max (Min WKR NIQ) PT) TRANT) (Min WIQ WKR))
+
+Individual Number: i42|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR PT) (Max NIQ TRANT)) (Max WKR NIQ))
+Tree 1:
+(- (* (Min NIQ PT) (Max WKR WKR)) (Max WKR TIS))
+
+Individual Number: i43|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) PT) (Min WKR NIQ))
+Tree 1:
+(- (* (Max (Min NIQ PT) WIQ) (Max WKR NIQ)) (Min TRANT WKR))
+
+Individual Number: i44|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR TIS) PT) (Max WKR WIQ))
+Tree 1:
+(- (* (Max WKR WKR) (Min WIQ WKR)) (Max NIQ TIS))
+
+Individual Number: i45|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) NIQ) (Min (Max WKR WKR) TIS))
+Tree 1:
+(- (* (Min WIQ PT) (Max WKR NIQ)) (Min WKR WKR))
+
+Individual Number: i46|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) TIS) (Max NIQ WIQ))
+Tree 1:
+(- (* (Min WKR WIQ) (Max TIS NIQ)) (Min WKR PT))
+
+Individual Number: i47|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ WKR) PT) (Min (Max WKR WKR) TIS))
+Tree 1:
+(- (* (Min WKR PT) (Max WKR NIQ)) (Max NIQ WIQ))
+
+Individual Number: i48|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) WIQ) (Min WKR WKR))
+Tree 1:
+(- (* (Min NIQ TIS) (Max WKR NIQ)) (Max PT WKR))
+
+Individual Number: i49|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR WKR) PT) (Max WIQ WKR))
+Tree 1:
+(- (* (Max NIQ WKR) TRANT) (Min WKR NIQ))
+
+Individual Number: i50|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR NIQ) PT) (Min WKR TIS))
+Tree 1:
+(- (* (Min WKR WKR) (Max WIQ NIQ)) (Max WKR PT))
+
+Individual Number: i51|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR PT) (Max WIQ TRANT)) (Max WKR NIQ))
+Tree 1:
+(- (* (Max WKR WKR) (Min NIQ TIS)) (Max PT WKR))
+
+Individual Number: i52|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) WKR) (Min WKR TIS))
+Tree 1:
+(- (* (Min WKR WKR) (Max NIQ WKR)) (Max TRANT WIQ))
+
+Individual Number: i53|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) (Min NIQ PT)) (Max WKR TRANT))
+Tree 1:
+(- (* (Min WKR PT) (Max WIQ NIQ)) (Max WKR NIQ))
+
+Individual Number: i54|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR WKR) (Max NIQ WKR)) (Max WKR WIQ))
+Tree 1:
+(- (* (Max WKR PT) (Min WKR TIS)) (Max WIQ TRANT))
+
+Individual Number: i55|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) WIQ) (Min WKR WKR))
+Tree 1:
+(- (* (Min NIQ TIS) (Max WKR WKR)) (Max WKR NIQ))
+
+Individual Number: i56|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max NIQ PT) WKR) (Min WKR WIQ))
+Tree 1:
+(- (* (Min WKR WKR) (Max WKR TIS)) (Max WKR NIQ))
+
+Individual Number: i57|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR PT) (Max WKR NIQ)) (Max WIQ TRANT))
+Tree 1:
+(- (* (Max WKR WKR) (Min NIQ TIS)) (Max WKR WKR))
+
+Individual Number: i58|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR TIS) (Max NIQ PT)) (Min WKR NIQ))
+Tree 1:
+(- (* (Max WKR WKR) (Min WIQ WKR)) (Max PT NIQ))
+
+Individual Number: i59|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR PT) (Min WIQ WKR)) (Min WKR TIS))
+Tree 1:
+(- (* (Min WKR WKR) (Max WKR PT)) (Max NIQ TIS))
+
+Individual Number: i60|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max PT WKR) (Min WIQ NIQ)) (Min WKR PT))
+Tree 1:
+(- (* (Min WKR WKR) (Max NIQ TIS)) (Max PT TRANT))
+
+Individual Number: i61|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) (Min PT TIS)) (Max WKR NIQ))
+Tree 1:
+(- (* (Min WKR WKR) (Max TIS WIQ)) (Min NIQ WKR))
+
+Individual Number: i62|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min NIQ PT) (Max WIQ WKR)) (Min WKR WKR))
+Tree 1:
+(- (* (Max WKR PT) (Min WKR NIQ)) (Max WKR WIQ))
+
+Individual Number: i63|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WKR) (Min NIQ WKR)) (Max PT TRANT))
+Tree 1:
+(- (* (Max WKR PT) (Min WKR WIQ)) (Max NIQ WKR))
+
+Individual Number: i64|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min WKR TIS) (Max NIQ WKR)) (Max PT NIQ))
+Tree 1:
+(- (* (Max PT WKR) (Min WKR WIQ)) (Min WKR NIQ))
+
+Individual Number: i65|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min PT WKR) (Max WIQ WKR)) (Max WKR NIQ))
+Tree 1:
+(- (* (Max WKR WKR) (Min TIS NIQ)) (Max PT WKR))
+
+Individual Number: i66|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR TIS) (Min WIQ NIQ)) (Max PT WKR))
+Tree 1:
+(- (* (Max PT WKR) (Min WKR TIS)) (Max NIQ WKR))
+
+Individual Number: i67|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR WIQ) (Min PT NIQ)) (Max WKR PT))
+Tree 1:
+(- (* (Max NIQ WKR) (Min WKR WKR)) (Max PT WKR))
+
+Individual Number: i68|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Min PT TIS) (Max WKR WKR)) (Min NIQ WIQ))
+Tree 1:
+(- (* (Max WKR NIQ) (Min WKR WKR)) (Max PT TIS))
+
+Individual Number: i69|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max WKR NIQ) (Min PT TIS)) (Max WKR TIS))
+Tree 1:
+(- (* (Min WKR WKR) (Max NIQ PT)) (Max WKR WIQ))
+
+Individual Number: i70|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max (Min NIQ WKR) PT) (Max TIS WKR))
+Tree 1:
+(Max (Min (Max PT WKR) (Max WIQ NIQ)) (Max MWT PT))
+
+Individual Number: i71|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max PT WKR) (Min (Max WKR NIQ) (Min TIS NIQ)))
+Tree 1:
+(+ (Max (Min PT WKR) (Max WKR NIQ)) (Min (Max TIS WKR) (Max NIQ PT)))
+
+Individual Number: i72|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max PT WKR) (Min (Max WKR NIQ) (Max TIS WIQ)))
+Tree 1:
+(+ (* (Max TIS WKR) (Min WKR PT)) (Min NIQ WIQ))
+
+Individual Number: i73|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Min PT NIQ) (Max WKR WKR)) (Min (Max MWT WKR) PT))
+Tree 1:
+(* (Min (Max NIQ WKR) (Max TIS WIQ)) (Min PT TIS))
+
+Individual Number: i74|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Max (Min WKR NIQ) (Min PT TIS))
+Tree 1:
+(+ (* (Max WKR WKR) (Min PT WKR)) (Min (Max NIQ TIS) PT))
+
+Individual Number: i75|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (* (Max WKR PT) (Min WKR NIQ)) (Max TIS WKR))
+Tree 1:
+(+ (Max (Min PT WKR) (Max NIQ TIS)) (Max MWT WKR))
+
+Individual Number: i76|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Max PT NIQ) (Min WKR WIQ)) (Max TIS WKR))
+Tree 1:
+(Min (Max (Min WKR PT) (Max WKR WIQ)) (Max TIS NIQ))
+
+Individual Number: i77|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max (Min WKR PT) (Max TIS WKR)) (Min WIQ NIQ))
+Tree 1:
+(+ (Max (Max WKR WKR) PT) (Min (Max MWT WKR) WIQ))
+
+Individual Number: i78|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max (Max WKR TIS) PT) (Max WKR NIQ))
+Tree 1:
+(+ (Min PT WIQ) (* (Max WKR WKR) (Min TIS WKR)))
+
+Individual Number: i79|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (Max WKR PT) (Max TIS NIQ)) (* (Max WKR WKR) (Max PT WIQ)))
+Tree 1:
+(Min (Max TIS PT) (Max WKR WKR))
+
+Individual Number: i80|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (Max PT TIS) WKR) (Max (Min WKR NIQ) PT))
+Tree 1:
+(* (Max PT WKR) (Min (Max NIQ WKR) (Min WKR NIQ)))
+
+Individual Number: i81|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (* (Max PT WKR) (Max WKR TIS)) (Max WKR NIQ))
+Tree 1:
+(+ (Min (Max WKR WKR) (Min PT TIS)) (Max MWT NIQ))
+
+Individual Number: i82|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Max NIQ PT) (Min WKR WIQ)) (Max (Min WKR PT) (Max TIS WIQ)))
+Tree 1:
+(Min (Max WKR NIQ) (Max PT WKR))
+
+Individual Number: i83|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max (Max WKR NIQ) (Max PT NIQ)) (Min (Max TIS WKR) (Max WKR PT)))
+Tree 1:
+(+ (Min PT WKR) (Max (Max MWT TIS) WKR))
+
+Individual Number: i84|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max WKR WKR) (Min (Max PT NIQ) (Min TIS WKR)))
+Tree 1:
+(* (Max PT WKR) (Max (Min TIS WKR) (Min WKR NIQ)))
+
+Individual Number: i85|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Min (Max WKR TIS) (Max NIQ PT)) (Max (Min WKR PT) (Max MWT WIQ)))
+Tree 1:
+(+ (Min (Max WKR WKR) (Min PT WKR)) (Max (Min NIQ WKR) WKR))
+
+Individual Number: i86|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max (Min PT WKR) (Max TIS WKR)) (Max NIQ TIS))
+Tree 1:
+(+ (Max (Max WKR PT) (Max TIS WKR)) (Min (Max WKR WIQ) PT))
+
+Individual Number: i87|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max WKR PT) (* (Max TIS WKR) (Min WKR WIQ)))
+Tree 1:
+(+ (Max (Max WKR TIS) PT) (Min (Max WKR PT) WKR))
+
+Individual Number: i88|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max (Min WKR TIS) PT) (Max TIS WKR))
+Tree 1:
+(+ (Min (Max WKR WKR) (Max PT NIQ)) (Min (Max MWT WKR) PT))
+
+Individual Number: i89|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max PT WKR) (Max (Min TIS WKR) WKR))
+Tree 1:
+(+ (Min (Max TIS WKR) (Min WKR WKR)) (Max PT WKR))
+
+Individual Number: i90|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (* (Max PT WIQ) (Max WKR TIS)) (Min WKR NIQ))
+Tree 1:
+(Min (+ (Max WKR PT) (Min WIQ TIS)) (Max (Max TIS WKR) WKR))
+
+Individual Number: i91|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (Max WKR WKR) (Max PT WIQ)) (Max WKR TIS))
+Tree 1:
+(* (Max (Max NIQ WKR) PT) (Min (Max WIQ WKR) TIS))
+
+Individual Number: i92|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Min (Max NIQ WKR) (Max TIS WKR)) (Max PT WKR))
+Tree 1:
+(+ (Min (Max PT NIQ) (Max WKR TIS)) (Max (Min PT TIS) WKR))
+
+Individual Number: i93|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (* (Max WKR PT) WKR) (Max (Min WKR TIS) (Max PT WKR)))
+Tree 1:
+(+ (Min (Max WKR TIS) PT) (Max (Min WIQ WKR) WKR))
+
+Individual Number: i94|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Min (Max PT WKR) (Min WKR WKR)) (Max TIS NIQ))
+Tree 1:
+(+ (Min (Max WKR TIS) PT) (Max WKR WKR))
+
+Individual Number: i95|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Max TIS WKR) PT) (Min (Max WKR WIQ) PT))
+Tree 1:
+(* (Max (Min WKR NIQ) PT) (Min (Max WKR TIS) WIQ))
+
+Individual Number: i96|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max WKR WKR) (+ (Max TIS PT) (Min NIQ TIS)))
+Tree 1:
+(+ (Max PT WKR) (Min (Max TIS WKR) (Max WKR WIQ)))
+
+Individual Number: i97|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Max TIS PT) (Max WKR NIQ)) (Min (Max PT WKR) WKR))
+Tree 1:
+(* (Max (Min WIQ TIS) WKR) (Max (Min WKR PT) TIS))
+
+Individual Number: i98|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max (Max WKR TIS) PT) (Min (Max TIS WKR) WKR))
+Tree 1:
+(+ (Min (Max WKR NIQ) (Max PT WKR)) (Max (Max WKR WKR) PT))
+
+Individual Number: i99|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(Min (Max (Max WKR PT) WKR) (Max WKR WIQ))
+Tree 1:
+(+ (Max (Min WKR PT) (Max WKR TIS)) (Min (Max WKR NIQ) PT))

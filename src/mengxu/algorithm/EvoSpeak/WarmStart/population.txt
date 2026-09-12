@@ -1,0 +1,22 @@
+Number of Individuals: i3|
+Individual Number: i0|
+Evaluated: T
+Fitness: [d4657686992190098912|2486.8209567905724|]
+Tree 0:
+ (+ PT NOR)
+Tree 1:
+ (+ WIQ NOR)
+Individual Number: i1|
+Evaluated: T
+Fitness: [d4657962634334779440|2612.168491876706|]
+Tree 0:
+ (+ PT NOR)
+Tree 1:
+ (+ (+ (+ WIQ NOR) (+ (+ (+ (+ WIQ NOR) (+ (+ WIQ NOR) (/ PT TIS))) (/ OWT TIS)) (/ PT TIS))) (/ OWT TIS))
+Individual Number: i2|
+Evaluated: T
+Fitness: [d4657962634334779440|2612.168491876706|]
+Tree 0:
+ (+ PT NOR)
+Tree 1:
+ (+ (+ (+ WIQ NOR) (/ PT TIS)) (/ OWT TIS))

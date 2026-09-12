@@ -1,0 +1,113 @@
+Number of Individuals: i14|
+Individual Number: i0|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(- (- (/ (Min (* PT TIS) (+ W NOR)) (* (- TIS NOR) (+ WKR MWT))) (Max (Min (Max NIQ TRANT) (/ WIQ WKR)) (Max (+ NIQ MWT) (Min NIQ WKR)))) (- (* (Max NIQ PT) (- (* NOR MWT) (+ NIQ NIQ))) (+ (Max (- WKR W) (Min OWT NOR)) (+ (Max OWT OWT) (* WIQ NIQ)))))
+Tree 1:
+(+ (+ WIQ TRANT) (- WIQ NPT))
+
+Individual Number: i1|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(- (- (/ (Min WIQ (+ W NOR)) (* WKR (+ WKR MWT))) (Max (Min (+ W NOR) PT) (Max (+ NIQ MWT) (Min NIQ WKR)))) (- (* (Max NIQ PT) (- (* NOR MWT) (+ NIQ NIQ))) (+ (Max (* (/ PT NIQ) WKR) (Min (Max (Min W NPT) (Min WIQ PT)) NOR)) (+ (Max OWT OWT) (* WIQ NIQ)))))
+Tree 1:
+(- (+ (+ WIQ TRANT) (+ (+ (/ TIS (* (* TIS WKR) (+ MWT TRANT))) (/ (/ (Max OWT TRANT) (Max NIQ WKR)) (/ (Max TRANT WIQ) (- TIS TIS)))) (+ (Max PT NIQ) (Min NPT OWT)))) (* (- OWT W) (/ NPT TIS)))
+
+Individual Number: i2|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (* (/ (+ (* (/ WIQ NPT) (+ W W)) (Max (* WKR TRANT) (* NIQ PT))) TRANT) (Max NOR PT)) (- (* PT (+ PT WKR)) (* NIQ TRANT))) W)
+Tree 1:
+(- (+ (+ WIQ TRANT) (+ (+ (/ TIS (* (* TIS WKR) (+ MWT TRANT))) (/ (/ (Max OWT TRANT) (Max NIQ WKR)) (/ (Max TRANT WIQ) (- TIS TIS)))) (+ (Max PT NIQ) (Min NPT OWT)))) (* (- OWT W) (/ NPT TIS)))
+
+Individual Number: i3|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (* (- NOR WKR) (+ W MWT)) (/ (* WKR NOR) (+ NIQ TRANT))) (- (* (+ PT TIS) (+ WKR OWT)) (Max (/ TRANT WIQ) (+ PT NPT))))
+Tree 1:
+(+ (Max (Min WIQ WKR) (Min NIQ PT)) (- (/ OWT TRANT) (+ MWT TIS)))
+
+Individual Number: i4|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0|]
+Tree 0:
+(- (Max (+ (* PT TRANT) (/ WKR TIS)) (+ NIQ PT)) (Min (/ WKR NIQ) (Min (+ MWT WIQ) (- WKR PT))))
+Tree 1:
+(+ (+ (+ TIS WIQ) (Max (Min OWT TRANT) (/ NOR PT))) (+ (Min OWT TRANT) (* NOR PT)))
+
+Individual Number: i5|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(* (Max (Min (+ NOR TIS) PT) (+ NIQ WKR)) (- (+ (* NOR WIQ) PT) (Min (/ WKR PT) (* WIQ TIS))))
+Tree 1:
+(- (Max (+ WKR NPT) (/ W NIQ)) (+ (/ WIQ TRANT) (+ PT TIS)))
+
+Individual Number: i6|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (/ (+ WIQ TRANT) (+ PT WKR)) (- (* NIQ NOR) (/ TIS W))) (Max (+ WKR OWT) (Min (+ NIQ MWT) (* NOR TRANT))))
+Tree 1:
+(- (+ (* PT WKR) (+ W NIQ)) (Max (Min (+ WIQ TIS) (* PT TRANT)) (/ NOR MWT)))
+
+Individual Number: i7|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(- (Max (* (+ NIQ PT) (/ WKR NOR)) (+ W TIS)) (Min (/ WIQ TRANT) (- (+ NOR OWT) (/ MWT PT))))
+Tree 1:
+(+ (Min (+ TIS WIQ) (Max (/ TRANT WKR) (+ PT MWT))) (- (Max NIQ PT) (* OWT NOR)))
+
+Individual Number: i8|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (Min (+ WKR OWT) (/ NIQ PT)) (- (* NOR TIS) (+ WIQ TRANT))) (* (+ MWT PT) (Min NOR WKR)))
+Tree 1:
+(- (/ (* NIQ TRANT) (+ PT TIS)) (Max (+ WIQ OWT) (Min (/ MWT NOR) (* W WKR))))
+
+Individual Number: i9|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (- (Max (+ WIQ MWT) (/ PT WKR)) (Min (* NOR TIS) (+ WKR OWT))) (Max (/ NIQ PT) (- TRANT TIS)))
+Tree 1:
+(- (+ (* PT NIQ) (/ WKR NOR)) (Min (+ TRANT WIQ) (Max (/ OWT MWT) (+ PT NOR))))
+
+Individual Number: i10|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(- (Min (/ (* WIQ NOR) (+ NIQ PT)) (Max (- WKR TIS) (* NOR TRANT))) (Max (+ MWT PT) (/ NIQ WKR)))
+Tree 1:
+(+ (Max (Min (+ WIQ TRANT) (/ PT NOR)) (- (* NIQ TIS) (+ WKR OWT))) (Min (+ PT WKR) (/ NOR MWT)))
+
+Individual Number: i11|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Max (* NOR TRANT) (/ WKR PT)) (Min (- (+ WIQ TIS) (/ MWT NOR)) (* NIQ OWT)))
+Tree 1:
+(- (Min (+ PT WKR) (/ WIQ TRANT)) (Max (* NOR TIS) (- (+ NIQ MWT) (/ PT OWT))))
+
+Individual Number: i12|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(- (Max (/ WIQ PT) (+ NOR OWT)) (Min (* NIQ TIS) (/ TRANT WKR)))
+Tree 1:
+(+ (Min (- (* MWT NOR) (+ WKR OWT)) (/ PT NIQ)) (Max (/ WIQ TRANT) (+ PT TIS)))
+
+Individual Number: i13|
+Evaluated: F
+Fitness: [d12345678901234560104|2570.0| d12345678901234560104|2570.0|]
+Tree 0:
+(+ (Min (+ NIQ PT) (/ WKR NOR)) (- (Max (* WIQ TRANT) (+ PT TIS)) (/ NOR OWT)))
+Tree 1:
+(- (Max (- (+ MWT WIQ) (/ NIQ NOR)) (* PT TRANT)) (Min (+ WKR OWT) (/ PT TIS)))
+

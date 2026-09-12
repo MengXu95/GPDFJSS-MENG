@@ -4,6 +4,8 @@ out/
 test/**
 !test/**/
 !test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPRegressionTest.java
+!test/mengxu/algorithm/EvoSpeakV1/EvoSpeakV1RegressionTest.java
+src/mengxu/algorithm/EvoSpeakV1/runs/
 *.csv
 *.stat
 *.pdf

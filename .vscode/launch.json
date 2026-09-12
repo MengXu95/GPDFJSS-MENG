@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "EvoSpeakV1: LLM Generate and Train",
+      "request": "launch",
+      "mainClass": "mengxu.algorithm.EvoSpeakV1.EvoSpeakMain",
+      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "cwd": "${workspaceFolder}",
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/evospeak.params"],
+      "console": "integratedTerminal",
+      "preLaunchTask": "EvoSpeakV1: Compile"
+    },
+    {
+      "type": "java",
+      "name": "EvoSpeakV1: Offline Smoke",
+      "request": "launch",
+      "mainClass": "mengxu.algorithm.EvoSpeakV1.EvoSpeakMain",
+      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "cwd": "${workspaceFolder}",
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/smoke.params"],
+      "console": "integratedTerminal",
+      "preLaunchTask": "EvoSpeakV1: Compile"
+    },
+    {
+      "type": "java",
+      "name": "EvoSpeakV1: Explain Latest Population",
+      "request": "launch",
+      "mainClass": "mengxu.algorithm.EvoSpeakV1.RuleAnalysisMain",
+      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "cwd": "${workspaceFolder}",
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/evospeak.params"],
+      "console": "integratedTerminal",
+      "preLaunchTask": "EvoSpeakV1: Compile"
+    }
+  ]
+}

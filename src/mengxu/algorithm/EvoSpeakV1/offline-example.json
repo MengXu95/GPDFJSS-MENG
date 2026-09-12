@@ -1,0 +1,6 @@
+{
+  "individuals": [
+    {"sequencing": "PT", "routing": "WIQ"},
+    {"sequencing": "(/ PT W)", "routing": "(+ WIQ TRANT)"}
+  ]
+}

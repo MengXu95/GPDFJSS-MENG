@@ -1,0 +1,10 @@
+parent.0 = evospeak.params
+evospeak.source = file
+evospeak.population-file = offline-example.json
+pop.subpop.0.size = 2
+breed.elite.0 = 1
+generations = 3
+evospeak.validation.jobs = 200
+evospeak.validation.warmup = 20
+eval.problem.eval-model.sim-models.0.num-jobs = 200
+eval.problem.eval-model.sim-models.0.warmup-jobs = 20
