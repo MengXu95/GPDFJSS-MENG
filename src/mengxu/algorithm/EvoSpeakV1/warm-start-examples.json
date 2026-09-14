@@ -1,0 +1,30 @@
+{
+  "provenance": "Five input heuristics supplied by the user, not the 100 generated examples in the pasted answer. Reported scalar fitness values are unverified historical observations; simulation seeds, normalization and evaluation context were not supplied.",
+  "individuals": [
+    {
+      "reportedFitness": 2369.6979342608247,
+      "sequencing": "(- (/ (* NIQ NIQ) (- (/ (Max (+ MWT (- NIQ MWT)) (+ WKR OWT)) (Max (/ MWT NIQ) (/ NIQ W))) (+ (/ (- (+ NIQ OWT) WIQ) W) (+ (- PT TIS) (* MWT PT))))) (Min (Min WIQ W) (/ (Max (Min (Min WIQ W) (+ OWT NOR)) (+ MWT WIQ)) (Max (/ MWT NIQ) (/ (- NIQ MWT) W)))))",
+      "routing": "(Max (+ (+ TRANT (+ (+ (+ NPT PT) (+ (/ NIQ MWT) (+ TRANT WIQ))) (Min OWT (+ NPT PT)))) (+ NPT PT)) (Min (Min OWT (Min OWT (+ NPT PT))) NOR))"
+    },
+    {
+      "reportedFitness": 2471.4937905563856,
+      "sequencing": "(- MWT W)",
+      "routing": "(- (+ (+ (- WKR (Min (- WKR PT) (- (- WKR PT) TRANT))) WIQ) PT) (- (Max (/ (+ (Min WKR W) (+ TRANT WIQ)) (Max (/ WKR (- WKR PT)) (- (- WKR PT) TRANT))) OWT) TRANT))"
+    },
+    {
+      "reportedFitness": 2301.3751267925254,
+      "sequencing": "(+ (Max (/ (Min (+ (* MWT TRANT) (* NOR TIS)) (* (Max WKR WKR) (Max NIQ NPT))) MWT) (+ WIQ MWT)) (/ (Max (Min (Max (/ WKR W) (/ WKR W)) (/ WKR W)) (/ WKR W)) WKR))",
+      "routing": "(Max (* (Max (Max PT NOR) (Min TRANT TRANT)) (+ (Min NOR (- (/ TIS W) (/ NOR WIQ))) (+ TRANT WIQ))) (/ (Min WIQ (* (Max PT NIQ) (+ (Min WIQ WKR) (Min TRANT TRANT)))) (/ TIS W)))"
+    },
+    {
+      "reportedFitness": 2501.8730516696523,
+      "sequencing": "(* (Min (+ NOR (- W NOR)) WKR) (- (- (- (+ MWT TRANT) (+ (+ TRANT WIQ) (+ TIS WKR))) (Max (+ WKR (Max MWT (+ WIQ NIQ))) (- W NOR))) (- (+ TIS WKR) (+ (Min (+ NOR (- W NOR)) WKR) (Max TRANT NPT)))))",
+      "routing": "(* (* (Max (Max TRANT PT) PT) (+ (Min (Max NOR (+ NPT TRANT)) (Max TRANT PT)) (+ WIQ TRANT))) (Max (Min (Max NIQ TRANT) WIQ) PT))"
+    },
+    {
+      "reportedFitness": 2248.62368499086,
+      "sequencing": "(Min (/ (Min (* (- MWT W) (+ (+ (Max MWT WKR) W) TIS)) (* (Min NPT W) (- NIQ NIQ))) (* (Min (/ NPT NPT) (Min NIQ PT)) (* (+ (Min (/ NPT NPT) (Min NIQ PT)) (/ NIQ W)) (Max WIQ W)))) (+ (+ (* (Min NPT W) (- NIQ NIQ)) (/ (+ NIQ NIQ) W)) (Min (/ (* PT WKR) (+ TRANT NPT)) (+ (Min (/ NPT NPT) (Min NIQ PT)) (/ (+ NIQ NIQ) W)))))",
+      "routing": "(+ (Max TRANT NIQ) (Max (+ TIS WIQ) (+ (+ (+ TIS WIQ) (Max (Min OWT TRANT) (/ NOR PT))) (+ (Min OWT TRANT) (* NOR PT)))))"
+    }
+  ]
+}

@@ -5,8 +5,8 @@ An independently runnable derivative of EvoSpeak's offline LLM warm start. It re
 The workflow is:
 
 1. Load the scheduling scenario, objective mode, weights and LLM settings from params.
-2. Ask the selected LLM for a small JSON batch of sequencing/routing expression pairs.
-3. Parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate pairs, and run bounded scheduling simulations on validation seeds.
+2. Load the provided reference heuristics and ask the selected LLM to extract terminal-grounded insights, then generate a small JSON batch of new pairs with explanations of their expected objective trade-offs.
+3. Check the response schema and reference IDs, parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate/reference-copy pairs, and run bounded scheduling simulations on validation seeds.
 4. Feed rejection evidence back to the LLM and request replacements within the configured budget.
 5. Publish a correctly serialized ECJ population only when the required population is complete, then run GP automatically.
 
@@ -86,6 +86,63 @@ Only objective 0 is evaluated and its weight is 1. Supported objective names com
 
 With normalization enabled, each objective is divided by the current scenario's benchmark-rule score, recomputed under the current training seed. A zero benchmark is replaced with denominator 1; negative/non-finite benchmarks stop the run. With normalization disabled, the score is the weighted sum of raw objectives. Every generation reevaluates all individuals, including elites and reproductions, so rotated seeds do not leave stale fitness values.
 
+## Example-Guided Warm Starts
+
+The default generation prompt now follows the supplied **Insights Extraction -> New Heuristic Generation -> Expected Objective Effects** workflow. `warm-start-examples.json` contains the five input heuristics from that prompt, not the 100 individuals in the pasted model answer. Each example retains its reported scalar score as unverified historical metadata. Those scores are not comparable training observations without their original scenario, seeds and normalization, and are never loaded into GP fitness.
+
+```properties
+evospeak.examples-file = warm-start-examples.json
+evospeak.max-examples = 10
+evospeak.generation-language = English
+```
+
+The reference file can be a standalone ECJ population file or JSON with an `individuals` array. JSON individuals require `sequencing` and `routing` strings and may include a finite nonnegative `reportedFitness`. Use a small set of selected reference pairs, not a document combining a prompt, prose and a model answer. A missing/malformed reference file or too many examples stops before any generation request. An empty `evospeak.examples-file` disables references. Offline `evospeak.source=file` does not load or require examples.
+
+References are parsed with the actual terminal/function grammar and bounded to depth 32 and 2047 nodes per tree. This allows source heuristics to be more complex than newly generated trees, which still obey `evospeak.max-tree-depth` and `evospeak.max-tree-nodes`. Reference parsing does not establish performance or simulation feasibility. Whole reference pairs are excluded from new LLM-generated populations; reusable substructures are encouraged.
+
+Each batch prompt includes the five canonical pairs, per-tree terminal meanings/counts and structural warnings, the real scheduling scenario, normalized configured weights and the exact raw or benchmark-normalized score. The model must discuss context-dependent terms and cancellation rather than assume, for example, that additive `MWT` changes job ordering within one machine queue or that `TIS` directly encodes a due date. It must propose varied strategies, not just a long series of terminal substitutions. Exact duplicates/copies are checked in code; semantic novelty and explanation correctness still need scientific review.
+
+To reproduce the attachment's raw `lambda1 * Fmean + lambda2 * WTmean`, where `lambda2 = 1 - lambda1`, explicitly select:
+
+```properties
+evospeak.objective-mode = multi
+evospeak.objective.0 = mean-flowtime
+evospeak.objective.1 = mean-weighted-tardiness
+evospeak.weight.0 = 0.5
+evospeak.weight.1 = 0.5
+evospeak.normalization = false
+```
+
+The existing normalization default is unchanged. Different weights or single-objective settings are carried into the prompt, rather than overwritten by the attachment's illustrative 0.5/0.5 choice. `Fmean` and `WTmean` are identified as aliases for the corresponding configured objectives.
+
+The LLM returns structured content rather than fabricating ECJ `Fitness` numbers:
+
+```json
+{
+	"insights": [
+		{"observation": "In reference 1, MWT is constant in one sequencing queue, so (- MWT W) favors larger W for finite values.", "referenceIds": [1]}
+	],
+	"individuals": [
+		{
+			"sequencing": "(/ PT W)",
+			"routing": "(+ WIQ TRANT)",
+			"explanation": {
+				"sequencing": "Smaller PT/W favors short operations and higher positive job weights.",
+				"routing": "Smaller WIQ+TRANT balances queued work with transport time.",
+				"objectiveTradeOff": "These priorities may reduce flow time and protect important jobs, but their tardiness effect depends on due dates and congestion; improvement requires testing.",
+				"referenceIds": [1]
+			}
+		}
+	]
+}
+```
+
+This one-pair example shows the schema, not a complete 100-individual response. Actual responses must contain exactly the requested batch count, 1-12 nonempty insights (up to 2000 characters each), and three nonempty explanation fields per pair (up to 4000 characters each). Reference IDs are zero-based, distinct and must exist in the supplied set; when references are disabled, use empty ID arrays. Insights and explanations are requested in the same content call, with no additional insight-only request.
+
+Malformed batch structure/count/insights rejects the batch. A missing or malformed individual explanation rejects that pair. All failures are retained as corrective feedback for replacement batches, within the same bounded generation budget. Accepted rules and their explanations stay aligned after candidate rejection. The native ECJ population remains in the original `Number of Individuals`, `Individual Number`, `Evaluated: F`, `Fitness`, `Tree 0` and `Tree 1` style, serialized by ECJ itself.
+
+Completed online generation also produces `warm-start-report.md` with bullet-point insights and the validated rule pairs plus sequencing, routing and expected-objective explanations. `reference-heuristics.json` snapshots the exact reference facts sent to the model; `generated-rules.json` preserves the explanations, task score and batch insights. Both generated population formats remain readable by the existing offline and independent analysis tools. These narrative fields are LLM interpretations, not measured performance or a proof of feasibility.
+
 ## Generation and Feasibility
 
 ```properties
@@ -102,7 +159,7 @@ evospeak.validation.timeout-seconds = 20
 evospeak.validation.max-decisions = 1000000
 ```
 
-The supported grammar uses the actual `relative` terminals and binary `+`, `-`, `*`, `/`, `Min`, `Max` nodes. Validation rejects unknown terminals/functions, incorrect arity, missing/extra parentheses, trailing expressions, overlarge trees, repeated pairs, non-finite priorities, invalid scheduling objectives, or exhausted simulation budgets. The two trees must both be exercised.
+The supported grammar uses the actual `relative` terminals and binary `+`, `-`, `*`, `/`, `Min`, `Max` nodes. Validation rejects unknown terminals/functions, incorrect arity, missing/extra parentheses, trailing expressions, overlarge trees, repeated pairs, exact copies of reference pairs in online generation, non-finite priorities, invalid scheduling objectives, or exhausted simulation budgets. The two trees must both be exercised.
 
 Feasible means feasible on these bounded validation scenarios, not a mathematical guarantee for every possible future queue, seed or GP offspring. Use larger validation workloads/seeds for stronger screening. Validation uses separate simulations and does not cache validation fitness as training fitness.
 
@@ -143,7 +200,7 @@ Invalid expressions are marked in the report without being sent to the LLM. Inte
 
 ## Outputs
 
-Each run directory contains `status.json`, `validation-report.json`, `generated-population.txt` and `generated-rules.json`. Online runs also save generation prompts and responses for inspection. GP runs add `evolution.out.stat`, `generations.jsonl`, `final-population.txt` and `best-rules.txt` (best in the final generation). The statistics log separately contains ECJ's best-of-run record.
+Each completed run directory contains `status.json`, `validation-report.json`, `generated-population.txt` and `generated-rules.json`. Online runs save generation prompts/responses and a `reference-heuristics.json` snapshot. Completed online generation also saves `warm-start-report.md`; generation insights remain in the batch records of both the validation report and enriched rules JSON. Failed validation does not publish a complete population or warm-start report. GP runs add `evolution.out.stat`, `generations.jsonl`, `final-population.txt` and `best-rules.txt` (best in the final generation). The statistics log separately contains ECJ's best-of-run record.
 
 `status.json` stores the objective settings, configured weights, normalized weights, scenario, validation controls, seed, provider/model and completion state, without API keys. `generations.jsonl` stores raw objectives, scalar fitness, normalization denominators, elapsed time and the current best rule pair. An inactive objective that becomes non-finite after breeding is represented as JSON null rather than invalid JSON.
 
@@ -163,6 +220,6 @@ The supplied `population_100_0.5_MO.txt` has 100 pairs that pass strict depth-8 
 
 ## Verification
 
-The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict parsing, the original file format, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation.
+The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict parsing, the original file format, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Example-guided checks cover the supplied five references, unequal/single-objective prompt settings, raw versus normalized score descriptions, invalid citations, empty/missing insights and explanations, wrong batch counts, exact reference copying, malformed reference files, example-free generation and explanation alignment after retries.
 
 No cloud API keys were available in the development environment. HTTP provider behavior was tested with a local mock server, while GP and scheduling checks used the real Java implementation. Live account/deployment access and model quality must be verified after configuring credentials. The offline smoke configuration completes three generations without a model. Full-size research experiments and claims of performance improvement are outside these smoke checks.

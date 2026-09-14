@@ -45,6 +45,7 @@ public final class EvoSpeakMain {
                 "evospeak.weight.0", "evospeak.weight.1", "evospeak.normalization", "pop.subpop.0.size", "generations",
                 "evospeak.validation.jobs", "evospeak.validation.warmup", "evospeak.validation.seeds",
                 "evospeak.max-tree-depth", "evospeak.max-tree-nodes", "evospeak.batch-size", "evospeak.max-batches",
+                "evospeak.examples-file", "evospeak.max-examples", "evospeak.generation-language",
                 "eval.problem.eval-model.sim-models.0.util-level", "eval.problem.eval-model.sim-models.0.due-date-factor",
                 "eval.problem.eval-model.sim-models.0.num-jobs", "eval.problem.eval-model.sim-models.0.warmup-jobs",
                 "eval.problem.eval-model.sim-models.0.num-machines", "eval.problem.eval-model.rotate-sim-seed"}) {

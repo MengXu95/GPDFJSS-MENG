@@ -145,6 +145,11 @@ evospeak.population-file = ../EvoSpeak/WarmStart/population_100_0.5_MO.txt
 evospeak.output-directory = runs
 evospeak.batch-size = 10
 evospeak.max-batches = 40
+# Five input examples from the supplied prompt, not its 100-rule generated answer.
+# Leave examples-file empty for example-free generation. ECJ population or JSON is accepted.
+evospeak.examples-file = warm-start-examples.json
+evospeak.max-examples = 10
+evospeak.generation-language = English
 evospeak.max-tree-depth = 8
 evospeak.max-tree-nodes = 255
 evospeak.validation.jobs = 500
