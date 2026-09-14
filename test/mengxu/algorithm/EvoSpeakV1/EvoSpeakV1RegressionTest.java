@@ -26,10 +26,21 @@ import org.json.JSONArray;
 
 public class EvoSpeakV1RegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--auth-only")) {
+            testLlmProviders();
+            System.out.println("EvoSpeakV1 authentication regression tests passed.");
+            return;
+        }
+        if (args.length == 1 && args[0].equals("--network-only")) {
+            testProxyTransport();
+            System.out.println("EvoSpeakV1 network regression tests passed.");
+            return;
+        }
         testWeightedFitness();
         testParameterProfiles();
         testPopulationParsing();
         testLlmProviders();
+        testProxyTransport();
         testOfflinePipeline();
         testGPMainRuns();
         testOnlinePipelineAndFailureGate();
@@ -327,6 +338,85 @@ public class EvoSpeakV1RegressionTest {
         }
     }
 
+    private static void testProxyTransport() throws Exception {
+        AtomicReference<String> requestedUri = new AtomicReference<>();
+        AtomicReference<String> probeAuthorization = new AtomicReference<>();
+        AtomicInteger probeBodyLength = new AtomicInteger(-1);
+        HttpServer proxy = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        proxy.createContext("/", exchange -> {
+            requestedUri.set(exchange.getRequestURI().toString());
+            byte[] requestBody = exchange.getRequestBody().readAllBytes();
+            if (exchange.getRequestMethod().equals("HEAD")) {
+                probeAuthorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                probeBodyLength.set(requestBody.length);
+                exchange.sendResponseHeaders(401, -1);
+                exchange.close();
+                return;
+            }
+            byte[] response = new JSONObject().put("choices", new JSONArray().put(new JSONObject().put("finish_reason", "stop")
+                    .put("message", new JSONObject().put("content", "proxy-ok")))).toString().getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        java.net.ProxySelector originalSelector = java.net.ProxySelector.getDefault();
+        proxy.start();
+        try (java.net.ServerSocket unavailableOrigin = new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+            int unavailablePort = unavailableOrigin.getLocalPort();
+            unavailableOrigin.close();
+            String endpoint = "http://127.0.0.1:" + unavailablePort + "/chat";
+            EvoSpeakConfig config = new EvoSpeakConfig(Paths.get(EvoSpeakConfig.DEFAULT_PARAMS),
+                    "llm.endpoint=" + endpoint, "llm.proxy=http://127.0.0.1:" + proxy.getAddress().getPort(),
+                    "llm.max-attempts=1", "llm.connect-timeout-seconds=2", "llm.timeout-seconds=3");
+            LlmClient client = new LlmClient(config, name -> "network-test-key");
+            require(client.complete("Test", "Test").equals("proxy-ok"), "Explicit proxy must deliver the request without a reachable origin.");
+            require(endpoint.equals(requestedUri.get()), "The HTTP proxy must receive the full target URI.");
+                config.set("llm.api-key", "network-probe-test-key");
+                String check = LlmClient.checkConnection(config);
+                require(check.contains("HTTP 401") && check.contains("not API-key validity"), "A connection probe must distinguish transport from authentication.");
+                require(probeAuthorization.get() == null && probeBodyLength.get() == 0, "Connection checks must never send keys or prompts.");
+                Path unusedOutput = Files.createTempDirectory("evospeak-network-check-").resolve("not-created");
+                EvoSpeakMain.main(new String[]{"--check-connection", "-file", EvoSpeakConfig.DEFAULT_PARAMS,
+                    "-p", "llm.endpoint=" + endpoint, "-p", "llm.proxy=http://127.0.0.1:" + proxy.getAddress().getPort(),
+                    "-p", "llm.api-key-env=", "-p", "evospeak.output-directory=" + unusedOutput});
+                require(!Files.exists(unusedOutput), "The check-only entry point must not create GP runs or require a key.");
+            java.net.ProxySelector.setDefault(java.net.ProxySelector.of(new InetSocketAddress("127.0.0.1", proxy.getAddress().getPort())));
+            config.set("llm.proxy", "system");
+            require(new LlmClient(config, name -> "network-test-key").complete("Test", "Test").equals("proxy-ok"),
+                    "System mode must honor the JVM proxy selector.");
+            config.set("llm.proxy", "direct");
+            requestedUri.set(null);
+            boolean connectionFailed = false;
+            try {
+                new LlmClient(config, name -> "network-test-key").complete("Test", "Test");
+            } catch (java.io.IOException expected) {
+                connectionFailed = expected.getMessage().contains("direct connection")
+                        && expected.getMessage().contains("llm.proxy=") && !expected.getMessage().contains("network-test-key");
+            }
+            require(connectionFailed && requestedUri.get() == null, "Direct mode must bypass system proxies and report actionable connection errors.");
+            for (String invalid : new String[]{"socks5://127.0.0.1:1080", "http://127.0.0.1", "http://127.0.0.1:65536",
+                    "http://name:private-password@localhost:7890", "http://localhost:7890/path", "http://localhost:7890?token=secret"}) {
+                config.set("llm.proxy", invalid);
+                boolean rejected = false;
+                try {
+                    new LlmClient(config, name -> "network-test-key");
+                } catch (IllegalArgumentException expected) {
+                    rejected = expected.getMessage().contains("llm.proxy") && !expected.getMessage().contains("private-password");
+                }
+                require(rejected, "Unsupported or credential-bearing proxy URLs must be rejected safely.");
+            }
+            require(client.transportFailure(new java.net.http.HttpConnectTimeoutException("test")).getMessage().contains("TCP connection"),
+                    "Connect timeout must not be misreported as model response latency.");
+            require(client.transportFailure(new java.net.http.HttpTimeoutException("test")).getMessage().contains("request timed out"),
+                    "Request timeout guidance must differ from TCP connection guidance.");
+            require(client.transportFailure(new javax.net.ssl.SSLHandshakeException("test")).getMessage().contains("JVM trust store"),
+                    "TLS failures must not suggest bypassing certificate validation.");
+        } finally {
+            java.net.ProxySelector.setDefault(originalSelector);
+            proxy.stop(0);
+        }
+    }
+
     private static void testLlmProviders() throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -358,6 +448,53 @@ public class EvoSpeakV1RegressionTest {
                 String response = new LlmClient(config, name -> "test-key").complete("Test instructions", "Test prompt");
                 require(response.equals("provider-ok"), "Provider response decoding: " + provider);
             }
+                AtomicInteger authStatus = new AtomicInteger(200);
+                AtomicInteger authRequests = new AtomicInteger();
+                AtomicReference<String> authMethod = new AtomicReference<>();
+                AtomicReference<String> authHeader = new AtomicReference<>();
+                AtomicInteger authBodyLength = new AtomicInteger(-1);
+                server.createContext("/v1/models", exchange -> {
+                authRequests.incrementAndGet();
+                authMethod.set(exchange.getRequestMethod());
+                authHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                authBodyLength.set(exchange.getRequestBody().readAllBytes().length);
+                JSONObject body = authStatus.get() == 200 ? new JSONObject().put("data", new JSONArray())
+                    : new JSONObject().put("error", new JSONObject().put("code", "invalid_api_key")
+                        .put("message", "Never print probe-test-key"));
+                byte[] response = body.toString().getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(authStatus.get(), response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+                });
+                EvoSpeakConfig authConfig = new EvoSpeakConfig(Paths.get(EvoSpeakConfig.DEFAULT_PARAMS),
+                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/v1/chat/completions",
+                    "llm.proxy=direct", "llm.timeout-seconds=3");
+                authConfig.set("llm.api-key", "probe-test-key");
+                String authResult = LlmClient.checkAuthentication(authConfig);
+                require(authResult.contains("model-list request was accepted") && !authResult.contains("probe-test-key"),
+                    "Authentication check must return safe success guidance without echoing credentials.");
+                require(authMethod.get().equals("GET") && authHeader.get().equals("Bearer probe-test-key") && authBodyLength.get() == 0,
+                    "Auth check must use the same authentication header with a read-only request and no prompt.");
+                for (int status : new int[]{401, 403, 404}) {
+                authStatus.set(status);
+                int requestsBefore = authRequests.get();
+                try {
+                    LlmClient.checkAuthentication(authConfig);
+                    throw new AssertionError("Failed authentication/permission checks must not report success.");
+                } catch (java.io.IOException expected) {
+                    require(!expected.getMessage().contains("probe-test-key"), "Auth probe errors must be sanitized.");
+                    require(status == 401 ? expected.getMessage().contains("invalid_api_key")
+                            : expected.getMessage().contains("restricted or unsupported"),
+                        "Differentiate invalid credentials from model-list permission or endpoint support.");
+                }
+                require(authRequests.get() == requestsBefore + 1, "Auth checks must make a single request without generation retries.");
+                }
+                authStatus.set(200);
+                Path checkOutput = Files.createTempDirectory("evospeak-auth-check-").resolve("not-created");
+                EvoSpeakMain.main(new String[]{"--check-auth", "-file", EvoSpeakConfig.DEFAULT_PARAMS, "-p", "llm.api-key=probe-test-key",
+                    "-p", "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/v1/chat/completions",
+                    "-p", "llm.proxy=direct", "-p", "evospeak.output-directory=" + checkOutput});
+                require(!Files.exists(checkOutput), "Auth-only entry point must not initialize GP or create run files.");
             Path localParams = Files.createTempFile("evospeak-api-", ".local.params");
             try {
                 String parent = Paths.get("src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStartMO.params")
@@ -400,6 +537,17 @@ public class EvoSpeakV1RegressionTest {
                     unsafeKeyRejected = !expected.getMessage().contains(unsafeKey);
                 }
                 require(unsafeKeyRejected, "Reject invalid header characters without echoing the credential.");
+                for (String malformed : new String[]{"\"local-test-key\"", "'local-test-key'", "Bearer local-test-key"}) {
+                    local.set("llm.api-key", malformed);
+                    boolean formatRejected = false;
+                    try {
+                        new LlmClient(local, name -> null);
+                    } catch (IllegalArgumentException expected) {
+                        formatRejected = expected.getMessage().contains("without quotes or a Bearer prefix")
+                                && !expected.getMessage().contains("local-test-key");
+                    }
+                    require(formatRejected, "Reject quoted tokens and duplicated Bearer prefixes before sending a request.");
+                }
             } finally {
                 Files.deleteIfExists(localParams);
             }
@@ -443,6 +591,42 @@ public class EvoSpeakV1RegressionTest {
                     rejected = expected.getMessage().contains("401") && !expected.getMessage().contains("do-not-log-test-key");
                 }
                 require(rejected && unauthorized.requestCount() == 1, "Authentication failures must fail without retrying or exposing response bodies.");
+                require(unauthorized.httpFailure(401, "<html>test-key</html>").getMessage().contains("Authentication was rejected"),
+                    "Non-JSON errors still need actionable authentication guidance.");
+                server.createContext("/invalid-key", exchange -> {
+                    exchange.getRequestBody().readAllBytes();
+                    byte[] response = new JSONObject().put("error", new JSONObject().put("code", "invalid_api_key")
+                        .put("type", "invalid_request_error").put("message", "Incorrect API key: local-test-key"))
+                        .toString().getBytes(StandardCharsets.UTF_8);
+                    exchange.sendResponseHeaders(401, response.length);
+                    exchange.getResponseBody().write(response);
+                    exchange.close();
+                });
+                analysis.set("llm.endpoint", "http://127.0.0.1:" + server.getAddress().getPort() + "/invalid-key");
+                analysis.set("llm.api-key", "local-test-key");
+                LlmClient invalid = new LlmClient(analysis, name -> "different-environment-key");
+                try {
+                    invalid.complete("Test", "Test");
+                    throw new AssertionError("HTTP 401 must stop generation.");
+                } catch (java.io.IOException expected) {
+                    String message = expected.getMessage();
+                    require(message.contains("invalid_api_key") && message.contains("llm.api-key in the selected params")
+                        && message.contains("overrides the environment key") && !message.contains("local-test-key"),
+                        "Expose only safe error codes and credential-source guidance, never echoed keys.");
+                    require(invalid.requestCount() == 1, "Never retry a rejected credential.");
+                }
+                String reflectedSecret = new JSONObject().put("error", new JSONObject().put("code", "local-test-key")
+                    .put("type", "another-secret").put("message", "local-test-key")).toString();
+                require(!invalid.httpFailure(401, reflectedSecret).getMessage().contains("local-test-key")
+                    && !invalid.httpFailure(401, reflectedSecret).getMessage().contains("another-secret"),
+                    "Unrecognized provider code/type fields must not leak arbitrary response text.");
+                require(invalid.httpFailure(407, "local-test-key").getMessage().contains("proxy requires authentication"),
+                    "Proxy authentication is different from endpoint authentication.");
+                EvoSpeakConfig official = new EvoSpeakConfig(Paths.get(EvoSpeakConfig.DEFAULT_PARAMS));
+                String officialFailure = new LlmClient(official, name -> "test-key").httpFailure(401, "{}").getMessage();
+                require(officialFailure.contains("official OpenAI API") && officialFailure.contains("DeepSeek"),
+                    "Official OpenAI failures must explain that other providers' keys are not interchangeable.");
+                analysis.set("llm.api-key", "");
                 boolean missingKey = false;
                 try {
                     new LlmClient(analysis, name -> null);

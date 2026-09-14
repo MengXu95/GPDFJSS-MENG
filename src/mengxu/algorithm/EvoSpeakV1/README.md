@@ -114,6 +114,8 @@ llm.provider = openai-compatible
 llm.model = gpt-4.1-mini
 llm.api-key =
 llm.api-key-env = OPENAI_API_KEY
+llm.proxy = system
+llm.connect-timeout-seconds = 20
 llm.timeout-seconds = 120
 llm.max-output-tokens = 8000
 llm.max-attempts = 3
@@ -122,6 +124,64 @@ llm.max-attempts = 3
 For providers requiring `max_completion_tokens`, set `llm.token-parameter=max_completion_tokens`. Temperature is omitted unless `llm.temperature` is explicitly set, because some models do not support it. The adapter supports text chat completions/messages, not every provider's Responses API or streaming API.
 
 Only HTTPS endpoints are accepted except loopback HTTP for local services. Redirects are not followed. Transient transport/429/5xx failures have a bounded retry count; authentication and other client errors fail immediately. Truncated model responses are rejected with instructions to reduce batch size or increase output tokens.
+
+## Network and Proxy Setup
+
+`ConnectException: Connection timed out` means the Java process could not establish a connection to the API endpoint or proxy. It is not an API-key rejection: no usable HTTP response has been received yet. Browser connectivity or IDEA's own HTTP proxy settings do not establish connectivity for the application's JVM. Java's HTTP client does not automatically interpret `HTTP_PROXY`/`HTTPS_PROXY` environment variables.
+
+Configure the route explicitly in the selected private params file when needed:
+
+```properties
+llm.proxy = http://127.0.0.1:7890
+llm.connect-timeout-seconds = 20
+llm.timeout-seconds = 120
+```
+
+Port 7890 is an example, not a universally correct default. Use the running proxy application's **HTTP or mixed** port, not a SOCKS-only port. The proxy must support HTTP CONNECT for HTTPS destinations. Keep the proxy application running while generating or analyzing rules. The original TLS certificate verification remains enabled.
+
+Supported `llm.proxy` values:
+
+- `system` (default): use the JVM's default `ProxySelector`. For JVM properties such as `-Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=7890`, configure IDEA's **VM options** before launch. Reading Windows system settings via `-Djava.net.useSystemProxies=true` also requires JVM startup configuration and enabled system proxy settings; it is not the same as configuring IDEA's proxy UI.
+- `direct`: force a direct connection, bypassing the JVM proxy selector.
+- `http://host:port`: always use that explicit HTTP proxy. Proxy credentials, SOCKS URLs, non-root paths, query strings and fragments are rejected. Proxy authentication is not implemented; a 407 response is a proxy issue rather than an LLM API-key issue.
+
+`llm.connect-timeout-seconds` limits connection establishment independently of `llm.timeout-seconds`, which bounds the overall request including the model response. Increasing model response time cannot fix an unavailable network route. Diagnostics distinguish TCP/connect failures, DNS failures, TLS failures and request timeouts, and include the endpoint host/port, selected route and timeout settings without credentials or prompt content. Repair trust-store/certificate issues instead of disabling TLS verification.
+
+### Check Connectivity Without LLM Generation
+
+From the repository root, this uses the same Java proxy/TLS settings but sends only one **unauthenticated HEAD request** to the configured endpoint:
+
+```powershell
+.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action check -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
+```
+
+To check a public endpoint without loading a private file:
+
+```powershell
+.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action check -Overrides @('llm.proxy=http://127.0.0.1:7890','llm.connect-timeout-seconds=5','llm.timeout-seconds=10')
+```
+
+In IDEA, use an **EvoSpeakMain** configuration with program arguments `--check-connection -file <selected-params-file>`. This option belongs to `EvoSpeakMain`, not the batch `GPMain` entry point. It does not send an API key or prompt, request model generation, or create a GP run. A response such as HTTP 401/403/404/405 confirms that an HTTP response was received; it does not prove that the key, model, account or requested inference endpoint is authorized. Resolve response-specific authorization problems separately after transport works.
+
+For the reported workstation on 2026-09-14, Windows system proxy settings were disabled and Java direct access timed out. An explicit HTTP proxy at `127.0.0.1:7890` returned HTTP 404 over HTTPS in about two seconds. Only that verified proxy setting was added to the selected single-objective `.local.params`; the key was not printed or sent. Other machines/profiles must use their own actual reachable proxy or direct route.
+
+### HTTP 401 and Credential Checks
+
+An inference request returning HTTP 401 has received a server response but failed authentication. Check the service that issued the key before changing proxy or GP settings. `api.openai.com` requires an official OpenAI API key; Azure resource keys, third-party gateway keys, another provider's tokens and ChatGPT login/session credentials are not interchangeable. For a compatible third-party API, use that provider's documented full chat-completions URL and supported model instead of sending its token to the official OpenAI host.
+
+A nonempty `llm.api-key` in the selected private params takes precedence over the environment key. Replacing only `OPENAI_API_KEY` will not change the credential being sent while a local key is present. Enter the full active token without quotes or a `Bearer ` prefix; the client adds the correct authentication header. Revoke/rotate an invalid or deactivated key at its issuing service, then update the private file. Never paste keys into chat, logs or committed files. This code does not automatically switch credentials after a rejection.
+
+401 diagnostics include the endpoint host, credential source and recognized standard error codes such as `invalid_api_key` or `authentication_error`. They suppress the raw response message and unknown code/type fields because providers can echo the token there. A 407 is proxy authentication and is reported separately. Neither response triggers generation retries.
+
+For an OpenAI-compatible endpoint ending in `/chat/completions` without query parameters, check the credential before launching a full population:
+
+```powershell
+.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action auth -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
+```
+
+In IDEA use **EvoSpeakMain**, with program arguments `--check-auth -file <selected-params-file>`. This sends one authenticated **GET** to the same service's `/models` endpoint using the same proxy and headers as generation, with no prompt, inference request or GP run. The key is sent only in the provider's authentication header and is not printed. Unlike `--check-connection`, this check requires the configured credential. A successful model-list response does not prove access to a particular inference model or available billing quota. HTTP 403/404/405 can indicate restricted model-list permissions or an unsupported route, so those outcomes alone do not establish inference-token validity. Azure and Anthropic configurations are not supported by this model-list check.
+
+During investigation of the reported 401 on 2026-09-14, a single read-only check against the configured official OpenAI model-list endpoint returned `invalid_api_key`. Local format checks found no quotes, Bearer prefix or whitespace. The token's issuing service could not be confirmed, so no key or endpoint was changed. A valid token for the selected service is required to proceed.
 
 ## Objectives and Weights
 
@@ -285,4 +345,4 @@ The supplied `population_100_0.5_MO.txt` has 100 pairs that pass strict depth-8 
 
 The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict parsing, the original file format, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Example-guided checks cover the supplied five references, unequal/single-objective prompt settings, raw versus normalized score descriptions, invalid citations, empty/missing insights and explanations, wrong batch counts, exact reference copying, malformed reference files, example-free generation and explanation alignment after retries. Launcher checks run two IDs through `GPMain`, verify `GPRun` fallback, isolate arguments/configuration and timing totals, honor explicit result paths, and reject existing result-file collisions.
 
-No cloud API keys were available in the development environment. HTTP provider behavior was tested with a local mock server, while GP and scheduling checks used the real Java implementation. Live account/deployment access and model quality must be verified after configuring credentials. The offline smoke configuration completes three generations without a model. Full-size research experiments and claims of performance improvement are outside these smoke checks.
+Provider protocol behavior was tested with a local mock server, while GP and scheduling checks used the real Java implementation. Network regression checks exercise explicit HTTP proxies, JVM proxy selection, direct bypass, malformed proxy settings, categorized errors and the key-free HEAD entry point. Authentication regressions cover header formatting, known error-code filtering without leaking echoed credentials, no retry on 401, and the authenticated GET check's 200/401/403/404 outcomes without starting GP. Live diagnostics verified the proxy route with an unauthenticated HEAD request and subsequently confirmed `invalid_api_key` with one authenticated model-list GET. No real token was displayed or modified, and no live prompt or inference request was submitted during these checks. Successful inference authorization and model quality remain unverified. The offline smoke configuration completes three generations without a model. Full-size research experiments and claims of performance improvement are outside these smoke checks.

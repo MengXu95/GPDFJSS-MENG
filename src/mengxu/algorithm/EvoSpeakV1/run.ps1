@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('build', 'train', 'analyze', 'test')]
+    [ValidateSet('build', 'train', 'analyze', 'test', 'check', 'auth')]
     [string]$Action = 'train',
     [string]$ParamsFile = (Join-Path $PSScriptRoot 'evospeak.params'),
     [string[]]$Overrides = @(),
@@ -57,6 +57,8 @@ try {
         'train' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
         'analyze' { 'mengxu.algorithm.EvoSpeakV1.RuleAnalysisMain' }
         'test' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakV1RegressionTest' }
+        'check' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
+        'auth' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
     }
     $arguments = @('-cp', $classPath, $mainClass)
     if ($Action -ne 'test') {
@@ -64,6 +66,12 @@ try {
         foreach ($override in $Overrides) {
             $arguments += @('-p', $override)
         }
+    }
+    if ($Action -eq 'check') {
+        $arguments += '--check-connection'
+    }
+    if ($Action -eq 'auth') {
+        $arguments += '--check-auth'
     }
     $arguments += $ExtraArgs
     & $java @arguments

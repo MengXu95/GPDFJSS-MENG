@@ -11,18 +11,38 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public final class EvoSpeakMain {
     private EvoSpeakMain() { }
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1 && args[0].equals("--help")) {
-            System.out.println("EvoSpeakMain [-file <params>] [-p name=value ...]\n"
+            System.out.println("EvoSpeakMain [--check-connection | --check-auth] [-file <params>] [-p name=value ...]\n"
                     + "No arguments: src/mengxu/algorithm/EvoSpeakV1/evospeak.params.\n"
-                    + "Set llm.provider/model/endpoint and the API-key environment variable; or evospeak.source=file.");
+                    + "Set llm.provider/model/endpoint and llm.api-key in private local params or its environment variable.\n"
+                    + "--check-connection sends only an unauthenticated HEAD request.\n"
+                    + "--check-auth sends an authenticated GET to the same OpenAI-compatible service's models endpoint.\n"
+                    + "Neither check submits prompts, model generation or a GP run.");
             return;
         }
-        EvoSpeakConfig config = EvoSpeakConfig.fromArgs(args);
+        List<String> configurationArgs = new ArrayList<>(Arrays.asList(args));
+        boolean checkConnection = configurationArgs.remove("--check-connection");
+        boolean checkAuthentication = configurationArgs.remove("--check-auth");
+        if (checkConnection && checkAuthentication) {
+            throw new IllegalArgumentException("Select only one of --check-connection or --check-auth.");
+        }
+        EvoSpeakConfig config = EvoSpeakConfig.fromArgs(configurationArgs.toArray(new String[0]));
+        if (checkConnection) {
+            System.out.println(LlmClient.checkConnection(config));
+            return;
+        }
+        if (checkAuthentication) {
+            System.out.println(LlmClient.checkAuthentication(config));
+            return;
+        }
         LlmClient client = config.text("evospeak.source", "llm").equals("llm") ? new LlmClient(config) : null;
         Path result = run(config, client);
         System.out.println("EvoSpeakV1 completed: " + result);
@@ -64,6 +84,7 @@ public final class EvoSpeakMain {
                 "evospeak.validation.jobs", "evospeak.validation.warmup", "evospeak.validation.seeds",
                 "evospeak.max-tree-depth", "evospeak.max-tree-nodes", "evospeak.batch-size", "evospeak.max-batches",
                 "evospeak.examples-file", "evospeak.max-examples", "evospeak.generation-language",
+                "llm.proxy", "llm.connect-timeout-seconds", "llm.timeout-seconds",
                 "eval.problem.eval-model.sim-models.0.util-level", "eval.problem.eval-model.sim-models.0.due-date-factor",
                 "eval.problem.eval-model.sim-models.0.num-jobs", "eval.problem.eval-model.sim-models.0.warmup-jobs",
                 "eval.problem.eval-model.sim-models.0.num-machines", "eval.problem.eval-model.rotate-sim-seed"}) {

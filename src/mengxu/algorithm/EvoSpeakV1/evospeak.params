@@ -165,10 +165,14 @@ evospeak.validation.max-decisions = 1000000
 llm.provider = openai-compatible
 llm.model = gpt-4.1-mini
 llm.api-key-env = OPENAI_API_KEY
+llm.proxy = system
+llm.connect-timeout-seconds = 20
 llm.timeout-seconds = 120
 llm.max-output-tokens = 8000
 llm.max-attempts = 3
 # Optional: llm.endpoint = https://api.openai.com/v1/chat/completions
+# Proxy choices: system (JVM defaults), direct, or http://127.0.0.1:<actual-HTTP-proxy-port>.
+# An HTTPS endpoint uses an HTTP CONNECT tunnel; do not use a SOCKS-only port here.
 # Azure: full https://.../openai/deployments/.../chat/completions?api-version=... URL.
 # Optional: llm.temperature = 0.7 (omit for models without temperature support).
 # Optional: llm.token-parameter = max_completion_tokens (OpenAI-compatible only).
