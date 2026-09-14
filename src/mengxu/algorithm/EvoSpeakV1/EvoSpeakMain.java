@@ -2,6 +2,7 @@ package mengxu.algorithm.EvoSpeakV1;
 
 import ec.EvolutionState;
 import ec.Evolve;
+import ec.util.Parameter;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -28,14 +29,31 @@ public final class EvoSpeakMain {
     }
 
     public static Path run(EvoSpeakConfig config, LlmClient client) throws IOException {
+        config = config.copy();
         if (config.text("evospeak.source", "llm").equals("llm") && client == null) {
             throw new IllegalArgumentException("A configured LLM client is required for evospeak.source=llm.");
         }
+        long runId = Long.parseLong(config.text("seed.0", "0"));
+        String prefix = "job." + runId;
         Path root = config.path("evospeak.output-directory", "runs");
         Files.createDirectories(root);
-        Path directory = Files.createTempDirectory(root, "run-");
-        config.set("stat.file", directory.resolve("evolution.out.stat"));
+        Path directory = Files.createTempDirectory(root, prefix + "-");
+        Path statisticsFile = config.text("stat.file", "$out.stat").equals("$out.stat")
+            ? directory.resolve(prefix + ".out.stat")
+            : config.parameters.getFile(new Parameter("stat.file"), null).toPath().toAbsolutePath().normalize();
+        Path timeFile = statisticsFile.resolveSibling(prefix + ".time.csv");
+        Path cumulativeTimeFile = statisticsFile.resolveSibling(prefix + ".timeSumGen.csv");
+        for (Path resultFile : new Path[]{statisticsFile, timeFile, cumulativeTimeFile}) {
+            if (Files.exists(resultFile)) {
+                throw new java.nio.file.FileAlreadyExistsException(resultFile.toString(), null,
+                        "Choose a different run ID or results directory to avoid replacing existing results.");
+            }
+        }
+        Files.createDirectories(statisticsFile.getParent());
+        config.set("stat.file", statisticsFile);
         JSONObject status = new JSONObject().put("started", Instant.now().toString()).put("state", "preparing")
+            .put("runId", runId).put("statisticsFile", statisticsFile.toString()).put("artifactDirectory", directory.toString())
+            .put("timeFile", timeFile.toString()).put("cumulativeTimeFile", cumulativeTimeFile.toString())
                 .put("objectiveMode", config.text("evospeak.objective-mode", "multi"))
                 .put("source", config.text("evospeak.source", "llm"))
                 .put("provider", config.text("llm.provider", "" )).put("model", config.text("llm.model", ""))
@@ -60,7 +78,7 @@ public final class EvoSpeakMain {
             state.config = config;
             state.client = client;
             state.directory = directory;
-            state.job = new Object[]{0};
+            state.job = new Object[]{runId};
             state.output.message("EvoSpeakV1 output directory: " + directory);
             state.run(EvolutionState.C_STARTED_FRESH);
             status.put("normalizedWeights", new JSONArray(((WeightedFitness) state.population.subpops[0].species.f_prototype).getWeights()));

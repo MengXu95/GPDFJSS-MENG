@@ -1,0 +1,45 @@
+# EvoSpeakV1 weighted two objectives, based on EvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStartMO.params.
+# Inherit V1's corrected state, evaluator, dual-tree grammar and LLM validation workflow.
+parent.0 = evospeak.params
+
+generations = 51
+pop.subpop.0.size = 100
+breed.elite.0 = 2
+select.tournament.size = 4
+expect-training-time = 50000
+
+# Equivalent to the original weight-objective0=0.8 and manual-normalization=true.
+evospeak.objective-mode = multi
+evospeak.objective.0 = mean-flowtime
+evospeak.objective.1 = mean-weighted-tardiness
+evospeak.weight.0 = 0.8
+evospeak.weight.1 = 0.2
+evospeak.normalization = true
+pop.subpop.0.species.fitness.num-objectives = 2
+eval.problem.eval-model.objectives = 2
+eval.problem.eval-model.objectives.0 = mean-flowtime
+eval.problem.eval-model.objectives.1 = mean-weighted-tardiness
+
+eval.problem.eval-model.sim-models.0.util-level = 0.85
+eval.problem.eval-model.sim-models.0.due-date-factor = 1.5
+eval.problem.eval-model.sim-models.0.num-jobs = 5000
+eval.problem.eval-model.sim-models.0.warmup-jobs = 1000
+eval.problem.eval-model.rotate-sim-seed = true
+
+# The original offline filename contains 0.2; the active objective-0 weight remains 0.8.
+# V1 uses these rules only if source=file, and never trusts their stored fitness values.
+evospeak.source = llm
+evospeak.population-file = ../EvoSpeak/WarmStart/population_100_0.2_MO.txt
+evospeak.output-directory = runs/multi-objective
+evospeak.examples-file = warm-start-examples.json
+
+llm.provider = openai-compatible
+llm.model = gpt-4.1-mini
+llm.endpoint = https://api.openai.com/v1/chat/completions
+# Keep this shared file secret-free. Enter a key in the corresponding .local.params file.
+# A blank key falls back to the environment variable below.
+llm.api-key =
+llm.api-key-env = OPENAI_API_KEY
+llm.timeout-seconds = 120
+llm.max-output-tokens = 8000
+llm.max-attempts = 3

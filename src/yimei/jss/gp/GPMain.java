@@ -1,11 +1,17 @@
 package yimei.jss.gp;
 
-import java.io.File;
+import ec.Evolve;
+import ec.util.Parameter;
+import ec.util.ParameterDatabase;
+import mengxu.algorithm.EvoSpeakV1.EvoSpeakEvolutionState;
+import mengxu.algorithm.EvoSpeakV1.EvoSpeakMain;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import static yimei.jss.FJSSMain.getFileNames;
 
 /**
  * Created by dyska on 21/05/17.
@@ -14,8 +20,10 @@ public class GPMain {
 
     public static void main(String[] args) {
         List<String> gpRunArgs = new ArrayList<>();
-        boolean isTest = true;
         int maxTests = 29;
+        int firstRunId = 22;
+        int lastRunId = 22;
+        Path resultsDirectory = Paths.get(".");
 
         //include path to params file
         gpRunArgs.add("-file");
@@ -38,20 +46,48 @@ public class GPMain {
 //            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params");
         //Multitask Pareto set learning GP - 2026.5.7
 //            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP.params");
-        gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params");
+//        gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params");
+        gpRunArgs.add("./src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStart.local.params");
         //GP with multi-case fitness -- need to set useLS = true; and warmupSame = true; in Simulation.java
 //        gpRunArgs.add("./src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params");
 
-        gpRunArgs.add("-p");
-
-        for (int i = 23; i <= 23 && i <= maxTests; ++i) {
-            gpRunArgs.add("seed.0="+String.valueOf(i-1));
-            gpRunArgs.add("-p");
-            gpRunArgs.add("stat.file="+"job."+String.valueOf(i-1)+".out.stat");
-            //convert list to array
-            GPRun.main(gpRunArgs.toArray(new String[0]));
-            //now remove the seed, we will add new value in next loop
-            gpRunArgs.remove(gpRunArgs.size()-3);
+                for (int runId = firstRunId; runId <= lastRunId && runId <= maxTests; runId++) {
+                        try {
+                                runExperiment(gpRunArgs.toArray(new String[0]), runId, resultsDirectory);
+                        } catch (Exception error) {
+                                throw new IllegalStateException("GP run " + runId + " failed.", error);
+                        }
         }
     }
+
+        public static void runExperiment(String[] baseArguments, int runId, Path resultsDirectory) throws Exception {
+                if (runId < 0) {
+                        throw new IllegalArgumentException("Run IDs must be nonnegative.");
+                }
+                Path directory = resultsDirectory.toAbsolutePath().normalize();
+                Files.createDirectories(directory);
+                List<String> runArguments = new ArrayList<>(Arrays.asList(baseArguments));
+                runArguments.add("-p");
+                runArguments.add("seed.0=" + runId);
+                runArguments.add("-p");
+                runArguments.add("stat.file=" + directory.resolve("job." + runId + ".out.stat"));
+                String[] arguments = runArguments.toArray(new String[0]);
+                ParameterDatabase parameters = Evolve.loadParameterDatabase(arguments);
+                if (EvoSpeakEvolutionState.class.getName().equals(parameters.getString(new Parameter("state"), null))) {
+                        String prefix = "job." + runId;
+                        boolean existingResults = Files.exists(directory.resolve(prefix + ".out.stat"))
+                                || Files.exists(directory.resolve(prefix + ".time.csv"))
+                                || Files.exists(directory.resolve(prefix + ".timeSumGen.csv"));
+                        if (existingResults) {
+                                System.out.println("EvoSpeakV1 run " + runId + " already has results in " + directory
+                                        + ". Existing files will be kept; this attempt will use a new " + prefix
+                                        + "-<unique-suffix> directory under evospeak.output-directory with the same seed.");
+                                runArguments.add("-p");
+                                runArguments.add("stat.file=$out.stat");
+                        }
+                        EvoSpeakMain.main(runArguments.toArray(new String[0]));
+                } else {
+                        GPRun.main(arguments);
+                }
+        }
 }

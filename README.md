@@ -69,7 +69,11 @@ java yimei.jss.gp.GPRun -file <path-to-params-file> -p seed.0=0 -p stat.file=job
 Key switches in `GPMain.java`:
 
 - `int maxTests = 29;`
-  - controls the maximum number of seed-based runs.
+  - caps the maximum run ID.
+- `firstRunId` and `lastRunId`
+  - select the inclusive range of IDs/seeds; both currently default to 22.
+- `resultsDirectory`
+  - selects the statistics directory, defaulting to the working directory.
 
 ---
 
@@ -80,7 +84,7 @@ For dynamic experiments, `GPMain.java` works by:
 1. adding `-file`,
 2. selecting exactly one parameter file,
 3. appending `-p` overrides such as seed and output file name,
-4. then calling `GPRun.main(...)`.
+4. then calling `GPRun.main(...)`, or `EvoSpeakMain.main(...)` for the EvoSpeakV1 evolution state so LLM warm-start generation and validation run first.
 
 ### Run through the IDE
 
@@ -176,6 +180,8 @@ The most common outputs are:
 
 These outputs are usually written to the project root unless redirected in the parameter file.
 
+EvoSpeakV1 launched through `GPMain` follows the same `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` naming in `resultsDirectory`. Its additional LLM/validation artifacts are grouped under `evospeak.output-directory/job.<id>-<unique-suffix>/`; `status.json` links the run ID to the result paths. If any of the three result files already exists, `GPMain` saves all new results in that fresh artifact directory instead, preserving both the requested seed and previous files. See [the EvoSpeakV1 guide](src/mengxu/algorithm/EvoSpeakV1/README.md) for model configuration and offline smoke testing.
+
 ---
 
 ## 9. Recommended workflow for researchers
@@ -245,6 +251,7 @@ The following dynamic methods are explicitly listed in `GPMain.java`.
 
 | Method in `GPMain.java` | Related paper / purpose | Parameter file |
 |---|---|---|
+| EvoSpeakV1 | Online LLM warm-start generation, validation and weighted GP | `src/mengxu/algorithm/EvoSpeakV1/evospeak.params` |
 | ensembleGP | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming for dynamic flexible job shop scheduling: Evolution with single individuals and ensembles” | `src/mengxu/algorithm/multicaseEnsemble/ensembleContribution/multipletreegp-dynamicEnsembleContributionCrossover.params` |
 | GP with lexicase selection | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming with lexicase selection for large-scale dynamic flexible job shop scheduling” | `src/mengxu/algorithm/lexicaseselection/multipletreegp-dynamicOneInstanceMultiCase.params` |
 | NSGPII with semantic diversity and semantic similarity | Xu et al., 2023, *AI 2023*, “A semantic genetic programming approach to evolving heuristics for multi-objective dynamic scheduling” | `src/mengxu/algorithm/multiobjective/phenotypeNSGPII/improvedCompareOne/multipletreegp-dynamic-NSGA2-no-environmental-selection-phenotypeBreeding-improved.params` |
@@ -255,6 +262,6 @@ The following dynamic methods are explicitly listed in `GPMain.java`.
 | Pareto set learning GP | Xu et al., 2025, *IEEE Transactions on Evolutionary Computation*, “Pareto set learning through genetic programming for multi-objective dynamic scheduling” | `/src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params` |
 | GP with multi-case fitness | Xu et al., 2022, *CEC*, “Genetic programming with multi-case fitness for dynamic flexible job shop scheduling” | `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params` |
 
-> In the current `GPMain.java`, the active line points to the multi-case fitness configuration:
+> In the current `GPMain.java`, the active line points to EvoSpeakV1:
 >
-> `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params`
+> `src/mengxu/algorithm/EvoSpeakV1/evospeak.params`

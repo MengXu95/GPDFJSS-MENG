@@ -14,6 +14,7 @@ public final class EvoSpeakConfig {
     public static final String DEFAULT_PARAMS = "src/mengxu/algorithm/EvoSpeakV1/evospeak.params";
     public final ParameterDatabase parameters;
     public final Path parameterFile;
+    private String apiKey;
 
     public EvoSpeakConfig(Path file, String... overrides) throws IOException {
         parameterFile = file.toAbsolutePath().normalize();
@@ -23,6 +24,15 @@ public final class EvoSpeakConfig {
             arguments.add(override);
         }
         parameters = new ParameterDatabase(parameterFile.toFile(), arguments.toArray(new String[0]));
+        Parameter apiKeyParameter = new Parameter("llm.api-key");
+        int originalPrintState = parameters.printState;
+        parameters.printState = ParameterDatabase.PS_NONE;
+        try {
+            apiKey = parameters.getStringWithDefault(apiKeyParameter, null, "").trim();
+        } finally {
+            parameters.removeDeeply(apiKeyParameter);
+            parameters.printState = originalPrintState;
+        }
         String mode = text("evospeak.objective-mode", "multi");
         if (!mode.equals("single") && !mode.equals("multi")) {
             throw new IllegalArgumentException("evospeak.objective-mode must be single or multi.");
@@ -88,9 +98,6 @@ public final class EvoSpeakConfig {
                 || integer("evospeak.max-tree-depth", 8) > integer("gp.koza.mutate.maxdepth", 8)) {
             throw new IllegalArgumentException("Warm-start tree depth cannot exceed GP operator depth limits.");
         }
-        if (parameters.exists(new Parameter("llm.api-key"), null)) {
-            throw new IllegalArgumentException("Use llm.api-key-env and an environment variable, not a plaintext API key in params.");
-        }
     }
 
     public static EvoSpeakConfig fromArgs(String[] args) throws IOException {
@@ -112,6 +119,7 @@ public final class EvoSpeakConfig {
         parameterFile = source.parameterFile;
         parameters = new ParameterDatabase();
         parameters.addParent(source.parameters);
+        apiKey = source.apiKey;
     }
 
     public EvoSpeakConfig copy() {
@@ -139,7 +147,16 @@ public final class EvoSpeakConfig {
         return (path.isAbsolute() ? path : parameterFile.getParent().resolve(path)).normalize();
     }
 
+    String configuredApiKey() {
+        return apiKey;
+    }
+
     public void set(String key, Object value) {
+        if (key.equals("llm.api-key")) {
+            apiKey = String.valueOf(value).trim();
+            parameters.removeDeeply(new Parameter(key));
+            return;
+        }
         parameters.set(new Parameter(key), String.valueOf(value));
     }
 }

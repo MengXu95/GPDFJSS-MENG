@@ -160,7 +160,8 @@ evospeak.validation.max-decisions = 1000000
 # Optional extra generation instructions: evospeak.prompt-file = generation-prompt.txt
 
 # openai-compatible, azure-openai, anthropic, or ollama.
-# A full endpoint URL can override the provider default; no secrets in this file.
+# A full endpoint URL can override the provider default; keep this shared file secret-free.
+# Private .local.params profiles may supply llm.api-key instead of an environment variable.
 llm.provider = openai-compatible
 llm.model = gpt-4.1-mini
 llm.api-key-env = OPENAI_API_KEY

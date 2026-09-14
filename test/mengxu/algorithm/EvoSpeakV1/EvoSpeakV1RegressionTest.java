@@ -7,6 +7,7 @@ import ec.util.Output;
 import ec.util.Parameter;
 import ec.util.ParameterDatabase;
 import yimei.jss.gp.GPRuleEvolutionState;
+import yimei.jss.gp.GPMain;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,9 +27,11 @@ import org.json.JSONArray;
 public class EvoSpeakV1RegressionTest {
     public static void main(String[] args) throws Exception {
         testWeightedFitness();
+        testParameterProfiles();
         testPopulationParsing();
         testLlmProviders();
         testOfflinePipeline();
+        testGPMainRuns();
         testOnlinePipelineAndFailureGate();
         System.out.println("EvoSpeakV1 regression tests passed.");
     }
@@ -68,6 +71,60 @@ public class EvoSpeakV1RegressionTest {
             rejected = true;
         }
         require(rejected, "All-zero weights must be rejected.");
+    }
+
+    private static void testParameterProfiles() throws Exception {
+        String base = "src/mengxu/algorithm/EvoSpeakV1/";
+        String[] filenames = {"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"};
+        for (int index = 0; index < filenames.length; index++) {
+            EvoSpeakConfig config = new EvoSpeakConfig(Paths.get(base + filenames[index]));
+            int count = index + 1;
+            require(config.integer("eval.problem.eval-model.objectives", 0) == count, "Profile evaluation dimensions");
+            require(config.integer("pop.subpop.0.species.fitness.num-objectives", 0) == count, "Profile fitness dimensions");
+            require(config.text("evospeak.objective.0", "").equals(index == 0 ? "mean-weighted-tardiness" : "mean-flowtime"),
+                    "Profiles must preserve the original objectives.");
+            require(config.flag("evospeak.normalization", true) == (index == 1), "Profiles must preserve raw single and normalized multi fitness.");
+            require(config.integer("pop.subpop.0.size", 0) == 100 && config.integer("generations", 0) == 51, "Original GP budget");
+            require(config.text("state", "").equals(EvoSpeakEvolutionState.class.getName()), "Profiles must use the V1 pipeline.");
+            require(Files.isRegularFile(config.path("evospeak.examples-file", "")), "Relative profile references must resolve.");
+            EvolutionState state = new EvolutionState();
+            state.parameters = config.parameters;
+            state.output = new Output(true);
+            WeightedFitness fitness = new WeightedFitness();
+            fitness.setup(state, new Parameter("pop.subpop.0.species.fitness"));
+            requireClose(index == 0 ? 1.0 : 0.8, fitness.getWeights()[0], "Original objective-0 weight");
+            if (index == 1) {
+                requireClose(0.2, fitness.getWeights()[1], "Complementary objective-1 weight");
+            }
+            require(!config.parameters.exists(new Parameter("llm.api-key"), null), "ECJ must not retain the API-key parameter.");
+            state.output.close();
+            Path output = Files.createTempDirectory("evospeak-profile-smoke-");
+            EvoSpeakConfig smoke = new EvoSpeakConfig(Paths.get(base + filenames[index]),
+                    "evospeak.source=file", "evospeak.population-file=offline-example.json",
+                    "evospeak.output-directory=" + output.toString().replace('\\', '/'),
+                    "pop.subpop.0.size=2", "breed.elite.0=1", "generations=2",
+                    "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
+                    "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
+            Path run = EvoSpeakMain.run(smoke, null);
+            List<String> generations = Files.readAllLines(run.resolve("generations.jsonl"));
+            require(generations.size() == 2, "Both new profiles must complete a real two-generation GP run.");
+            for (String row : generations) {
+                JSONObject metrics = new JSONObject(row);
+                require(metrics.getJSONArray("objectives").length() == count, "Runtime objectives must match the selected profile.");
+                JSONArray actualWeights = metrics.getJSONArray("weights");
+                JSONArray baselines = metrics.getJSONArray("normalizationBaselines");
+                double expectedScore = 0.0;
+                for (int objective = 0; objective < count; objective++) {
+                    requireClose(fitness.getWeights()[objective], actualWeights.getDouble(objective), "Runtime profile weights");
+                    expectedScore += actualWeights.getDouble(objective) * metrics.getJSONArray("objectives").getDouble(objective)
+                            / baselines.getDouble(objective);
+                }
+                requireClose(expectedScore, metrics.getDouble("weightedFitness"), "Runtime profile scoring");
+                if (index == 0) {
+                    requireClose(1.0, baselines.getDouble(0), "Single-objective profile must use the raw objective.");
+                }
+            }
+        }
     }
 
     private static GPRuleEvolutionState parsingState() throws Exception {
@@ -271,8 +328,10 @@ public class EvoSpeakV1RegressionTest {
     }
 
     private static void testLlmProviders() throws Exception {
+        AtomicReference<String> authorization = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/chat", exchange -> {
+            authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
             JSONObject body = new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             String response;
             if (exchange.getRequestHeaders().containsKey("x-api-key")) {
@@ -298,6 +357,51 @@ public class EvoSpeakV1RegressionTest {
                         "llm.provider=" + provider, "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/chat");
                 String response = new LlmClient(config, name -> "test-key").complete("Test instructions", "Test prompt");
                 require(response.equals("provider-ok"), "Provider response decoding: " + provider);
+            }
+            Path localParams = Files.createTempFile("evospeak-api-", ".local.params");
+            try {
+                String parent = Paths.get("src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStartMO.params")
+                        .toAbsolutePath().toString().replace('\\', '/');
+                Files.writeString(localParams, "parent.0 = " + parent + "\nllm.api-key = local-test-key\nprint-params = true\n");
+                java.io.ByteArrayOutputStream trace = new java.io.ByteArrayOutputStream();
+                java.io.PrintStream previousErrors = System.err;
+                EvoSpeakConfig local;
+                try (java.io.PrintStream errors = new java.io.PrintStream(trace, true, StandardCharsets.UTF_8.name())) {
+                    System.setErr(errors);
+                    local = new EvoSpeakConfig(localParams,
+                        "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/chat");
+                } finally {
+                    System.setErr(previousErrors);
+                }
+                require(!trace.toString(StandardCharsets.UTF_8.name()).contains("local-test-key"),
+                    "Reading local credentials must not expose them through print-params diagnostics.");
+                local.parameters.printState = ParameterDatabase.PS_NONE;
+                local.set("print-params", false);
+                require(!local.parameters.exists(new Parameter("llm.api-key"), null), "Strip local API keys from the ECJ database.");
+                new LlmClient(local.copy(), name -> "environment-test-key").complete("Test", "Test");
+                require("Bearer local-test-key".equals(authorization.get()), "Local keys must survive config copying and take precedence.");
+                local.set("llm.api-key", "");
+                new LlmClient(local, name -> "environment-test-key").complete("Test", "Test");
+                require("Bearer environment-test-key".equals(authorization.get()), "An empty local key must fall back to the environment.");
+                local.set("llm.api-key", "REPLACE_WITH_YOUR_API_KEY");
+                boolean placeholderRejected = false;
+                try {
+                    new LlmClient(local, name -> null);
+                } catch (IllegalArgumentException expected) {
+                    placeholderRejected = true;
+                }
+                require(placeholderRejected, "The editable placeholder must never be sent as a real API key.");
+                String unsafeKey = "local-test\u0001-key";
+                local.set("llm.api-key", unsafeKey);
+                boolean unsafeKeyRejected = false;
+                try {
+                    new LlmClient(local, name -> null);
+                } catch (IllegalArgumentException expected) {
+                    unsafeKeyRejected = !expected.getMessage().contains(unsafeKey);
+                }
+                require(unsafeKeyRejected, "Reject invalid header characters without echoing the credential.");
+            } finally {
+                Files.deleteIfExists(localParams);
             }
                 server.createContext("/analysis", exchange -> {
                 JSONObject request = new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
@@ -379,11 +483,144 @@ public class EvoSpeakV1RegressionTest {
             "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
             "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
         Path run = EvoSpeakMain.run(config, null);
+        require(run.getFileName().toString().startsWith("job.0-"), "Artifact directories must identify the run seed.");
+        require(Files.exists(run.resolve("job.0.out.stat")), "Default statistics must use the original job-ID naming convention.");
+        require(config.text("stat.file", "").equals("$out.stat"), "Running must not modify the caller's statistics configuration.");
         require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2, "Validated warm-start size");
         require(Files.readAllLines(run.resolve("generations.jsonl")).size() == 2, "GP must run after validation.");
+        checkTimingFiles(run, run, 0);
         require(Files.exists(run.resolve("best-rules.txt")), "Final interpretable rules must be saved.");
         require(new JSONObject(Files.readString(run.resolve("status.json"))).getString("state").equals("completed"), "Run completion status");
+        config.set("seed.0", 7);
+        Path explicitStatistics = directory.resolve("job.7.out.stat");
+        config.set("stat.file", explicitStatistics);
+        Path nextRun = EvoSpeakMain.run(config, null);
+        require(Files.exists(explicitStatistics), "An explicitly requested statistics path must be honored.");
+        require(nextRun.getFileName().toString().startsWith("job.7-"), "The next run must have its own artifact ID.");
+        JSONObject status = new JSONObject(Files.readString(nextRun.resolve("status.json")));
+        require(status.getLong("runId") == 7 && status.getString("seed").equals("7"), "Run metadata must match its seed.");
+        require(Paths.get(status.getString("statisticsFile")).equals(explicitStatistics), "Record the actual statistics file location.");
+        checkTimingFiles(directory, nextRun, 7);
+        byte[] previousResults = Files.readAllBytes(explicitStatistics);
+        boolean collisionRejected = false;
+        try {
+            EvoSpeakMain.run(config, null);
+        } catch (java.nio.file.FileAlreadyExistsException expected) {
+            collisionRejected = true;
         }
+        require(collisionRejected && Arrays.equals(previousResults, Files.readAllBytes(explicitStatistics)),
+                "Existing run statistics must never be silently overwritten.");
+        config.set("seed.0", 8);
+        config.set("stat.file", directory.resolve("job.8.out.stat"));
+        Path existingTiming = directory.resolve("job.8.time.csv");
+        Files.writeString(existingTiming, "existing timing results");
+        boolean timingCollisionRejected = false;
+        try {
+            EvoSpeakMain.run(config, null);
+        } catch (java.nio.file.FileAlreadyExistsException expected) {
+            timingCollisionRejected = true;
+        }
+        require(timingCollisionRejected && Files.readString(existingTiming).equals("existing timing results")
+            && !Files.exists(directory.resolve("job.8.out.stat")), "Timing collisions must be rejected before starting GP.");
+        }
+
+    private static void testGPMainRuns() throws Exception {
+        Path directory = Files.createTempDirectory("evospeak-gpmain-test-");
+        Path artifacts = directory.resolve("artifacts");
+        String[] arguments = {"-file", "src/mengxu/algorithm/EvoSpeakV1/smoke.params", "-p", "generations=2",
+                "-p", "evospeak.validation.seeds=17001", "-p", "evospeak.output-directory=" + artifacts,
+                "-p", "seed.0=99", "-p", "stat.file=" + directory.resolve("unused.out.stat")};
+        String[] originalArguments = arguments.clone();
+        for (int runId = 31; runId <= 32; runId++) {
+            GPMain.runExperiment(arguments, runId, directory);
+            require(Files.exists(directory.resolve("job." + runId + ".out.stat")), "GPMain must preserve each run's statistics ID.");
+            try (java.util.stream.Stream<Path> entries = Files.list(artifacts)) {
+                String prefix = "job." + runId + "-";
+                Path run = entries.filter(path -> path.getFileName().toString().startsWith(prefix)).findFirst().orElseThrow();
+                JSONObject status = new JSONObject(Files.readString(run.resolve("status.json")));
+                require(status.getLong("runId") == runId && status.getString("seed").equals(String.valueOf(runId)),
+                        "The launcher must pass its current ID, not a stale override.");
+                require(status.getString("state").equals("completed") && Files.exists(run.resolve("generated-population.txt")),
+                        "GPMain must run the warm-start validation pipeline before GP.");
+                checkTimingFiles(directory, run, runId);
+            }
+        }
+        require(Arrays.equals(arguments, originalArguments), "Batch runs must not mutate shared arguments.");
+        require(!Files.exists(directory.resolve("unused.out.stat")), "A stale stat.file must not capture later runs.");
+        testGPMainResultCollisions(arguments, directory, artifacts);
+        require(Arrays.equals(arguments, originalArguments), "Collision handling must not change caller arguments.");
+        GPMain.runExperiment(new String[]{"-file", "src/mengxu/algorithm/EvoSpeakV1/smoke.params",
+                "-p", "state=" + GPLauncherProbeState.class.getName()}, 33, directory);
+        require(Files.readString(directory.resolve("job.33.out.stat")).equals("33"),
+                "Ordinary evolution states must still be dispatched through GPRun.");
+    }
+
+    private static void testGPMainResultCollisions(String[] arguments, Path directory, Path artifacts) throws Exception {
+        String[] suffixes = {".out.stat", ".time.csv", ".timeSumGen.csv"};
+        for (int index = 0; index < suffixes.length; index++) {
+            int runId = 22 + index;
+            String prefix = "job." + runId;
+            Path existing = directory.resolve(prefix + suffixes[index]);
+            String savedResult = "Previous experiment " + prefix + suffixes[index];
+            Files.writeString(existing, savedResult);
+            GPMain.runExperiment(arguments, runId, directory);
+            require(Files.readString(existing).equals(savedResult), "Existing experiment output must remain untouched.");
+            for (String suffix : suffixes) {
+                Path oldLocation = directory.resolve(prefix + suffix);
+                require(oldLocation.equals(existing) || !Files.exists(oldLocation),
+                        "A collided run must not mix new files with previous results.");
+            }
+            try (java.util.stream.Stream<Path> entries = Files.list(artifacts)) {
+                Path run = entries.filter(path -> path.getFileName().toString().startsWith(prefix + "-")).findFirst().orElseThrow();
+                JSONObject status = new JSONObject(Files.readString(run.resolve("status.json")));
+                require(status.getLong("runId") == runId && status.getString("seed").equals(String.valueOf(runId)),
+                        "Automatic result isolation must retain the requested run ID and seed.");
+                require(Paths.get(status.getString("statisticsFile")).equals(run.resolve(prefix + ".out.stat")),
+                        "The new statistics path must be recorded in the fresh artifact directory.");
+                require(status.getString("state").equals("completed") && Files.exists(run.resolve(prefix + ".out.stat")),
+                        "The collided run must complete normally in the new directory.");
+                checkTimingFiles(run, run, runId);
+            }
+        }
+    }
+
+    public static class GPLauncherProbeState extends EvolutionState {
+        @Override
+        public void run(int condition) {
+            require(condition == C_STARTED_FRESH && runtimeArguments != null && job != null,
+                    "GPRun must initialize the ordinary state's run metadata.");
+            try {
+                Files.writeString(parameters.getFile(new Parameter("stat.file"), null).toPath(),
+                        parameters.getString(new Parameter("seed.0"), null));
+            } catch (java.io.IOException error) {
+                throw new java.io.UncheckedIOException(error);
+            }
+        }
+    }
+
+    private static void checkTimingFiles(Path resultDirectory, Path artifactDirectory, long runId) throws Exception {
+        String prefix = "job." + runId;
+        List<String> times = Files.readAllLines(resultDirectory.resolve(prefix + ".time.csv"));
+        List<String> totals = Files.readAllLines(resultDirectory.resolve(prefix + ".timeSumGen.csv"));
+        List<String> metrics = Files.readAllLines(artifactDirectory.resolve("generations.jsonl"));
+        require(times.get(0).equals("Gen,Time") && totals.get(0).equals("Gen,timeSumGen"),
+                "Timing CSV headers must match the original GP output format.");
+        require(times.size() == metrics.size() + 1 && totals.size() == times.size(), "Every generation needs one timing row.");
+        double elapsed = 0.0;
+        for (int index = 0; index < metrics.size(); index++) {
+            JSONObject generation = new JSONObject(metrics.get(index));
+            String[] time = times.get(index + 1).split(",");
+            String[] total = totals.get(index + 1).split(",");
+            require(Integer.parseInt(time[0]) == index && Integer.parseInt(total[0]) == index, "Timing generation IDs must be sequential.");
+            require(generation.getLong("runId") == runId, "Generation metrics must carry the current run ID.");
+            double duration = Double.parseDouble(time[1]);
+            require(duration >= 0.0, "Generation times must be nonnegative.");
+            elapsed += duration;
+            requireClose(generation.getDouble("seconds"), duration, "CSV and JSON generation timing");
+            requireClose(elapsed, Double.parseDouble(total[1]), "Cumulative time must start from zero for each run");
+            requireClose(elapsed, generation.getDouble("cumulativeSeconds"), "CSV and JSON cumulative timing");
+        }
+    }
 
         private static void testOnlinePipelineAndFailureGate() throws Exception {
             AtomicInteger requests = new AtomicInteger();

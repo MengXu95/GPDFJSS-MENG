@@ -2,6 +2,7 @@ package mengxu.algorithm.EvoSpeakV1;
 
 import ec.Individual;
 import ec.gp.GPIndividual;
+import ec.util.Parameter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import yimei.jss.gp.GPRuleEvolutionState;
@@ -12,6 +13,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,6 +30,8 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
             throw new IllegalStateException("Run EvoSpeakMain to configure and validate the warm start before GP.");
         }
         totalTime = 0.0;
+        genTimes.clear();
+        sumGenTimes.clear();
         try {
             startFresh();
             List<GPIndividual> initial = new PopulationFactory(this, config, client, directory).create();
@@ -46,13 +50,16 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
                     result = evolve();
                     double elapsed = (System.nanoTime() - started) / 1_000_000_000.0;
                     totalTime += elapsed;
-                    generationRecord.put("seconds", elapsed);
+                    genTimes.add(elapsed);
+                    sumGenTimes.add(totalTime);
+                    generationRecord.put("seconds", elapsed).put("cumulativeSeconds", totalTime);
                     metrics.write(generationRecord.toString());
                     metrics.newLine();
                     metrics.flush();
                 }
             }
             finish(result);
+            writeTimingFiles();
             RulePopulation.write(directory.resolve("final-population.txt"), this, Arrays.asList(population.subpops[0].individuals));
             RulePopulation.write(directory.resolve("best-rules.txt"), this, Arrays.asList(bestOfGeneration));
         } catch (IOException error) {
@@ -60,6 +67,26 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("EvoSpeakV1 cancelled before completion.", error);
+        }
+    }
+
+    private void writeTimingFiles() throws IOException {
+        Path statistics = parameters.getFile(new Parameter("stat.file"), null).toPath();
+        String prefix = "job." + jobSeed;
+        try (BufferedWriter times = Files.newBufferedWriter(statistics.resolveSibling(prefix + ".time.csv"),
+                StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+             BufferedWriter cumulative = Files.newBufferedWriter(statistics.resolveSibling(prefix + ".timeSumGen.csv"),
+                     StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
+            times.write("Gen,Time");
+            times.newLine();
+            cumulative.write("Gen,timeSumGen");
+            cumulative.newLine();
+            for (int index = 0; index < genTimes.size(); index++) {
+                times.write(index + "," + genTimes.get(index));
+                times.newLine();
+                cumulative.write(index + "," + sumGenTimes.get(index));
+                cumulative.newLine();
+            }
         }
     }
 
@@ -84,7 +111,7 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
         for (double value : fitness.getObjectives()) {
             objectiveValues.put(Double.isFinite(value) ? value : JSONObject.NULL);
         }
-        generationRecord = new JSONObject().put("generation", generation).put("validIndividuals", valid)
+        generationRecord = new JSONObject().put("runId", jobSeed).put("generation", generation).put("validIndividuals", valid)
                 .put("populationSize", individuals.length).put("weightedFitness", fitness.fitness())
             .put("objectives", objectiveValues).put("weights", new JSONArray(fitness.getWeights()))
                 .put("normalizationBaselines", new JSONArray(baselines)).put("bestRules", RulePopulation.rules(bestOfGeneration).json());

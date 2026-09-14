@@ -56,10 +56,17 @@ public final class LlmClient {
             throw new IllegalArgumentException("LLM endpoints require HTTPS, except HTTP on localhost. Embedded credentials are not allowed.");
         }
         String keyName = config.text("llm.api-key-env", provider.equals("anthropic") ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY");
-        apiKey = keyName.isEmpty() ? null : environment.apply(keyName);
+        String configuredKey = config.configuredApiKey();
+        if (configuredKey.isEmpty() || configuredKey.equals("REPLACE_WITH_YOUR_API_KEY")) {
+            configuredKey = keyName.isEmpty() ? null : environment.apply(keyName);
+        }
+        apiKey = configuredKey == null ? null : configuredKey.trim();
         if (!provider.equals("ollama") && (apiKey == null || apiKey.isBlank())) {
-            throw new IllegalArgumentException("Missing API key environment variable " + keyName
-                    + ". Set it outside source control and restart the IDE, or configure ollama.");
+            throw new IllegalArgumentException("Missing API key. Set llm.api-key in a Git-ignored .local.params file, "
+                    + "or set environment variable " + keyName + " and restart the IDE, or configure ollama.");
+        }
+        if (apiKey != null && apiKey.chars().anyMatch(character -> character < 33 || character > 126)) {
+            throw new IllegalArgumentException("Invalid API key format. Use a printable ASCII token without spaces, control characters or line breaks.");
         }
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(config.integer("llm.timeout-seconds", 120)))
                 .followRedirects(HttpClient.Redirect.NEVER).build();

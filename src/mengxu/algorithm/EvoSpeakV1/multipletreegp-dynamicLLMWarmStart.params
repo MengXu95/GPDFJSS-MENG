@@ -1,0 +1,42 @@
+# EvoSpeakV1 single objective, based on EvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStart.params.
+# Inherit V1's corrected state, evaluator, dual-tree grammar and LLM validation workflow.
+parent.0 = evospeak.params
+
+generations = 51
+pop.subpop.0.size = 100
+breed.elite.0 = 2
+select.tournament.size = 4
+expect-training-time = 50000
+
+evospeak.objective-mode = single
+evospeak.objective.0 = mean-weighted-tardiness
+evospeak.weight.0 = 1.0
+evospeak.weight.1 = 0.0
+evospeak.normalization = false
+pop.subpop.0.species.fitness.num-objectives = 1
+eval.problem.eval-model.objectives = 1
+eval.problem.eval-model.objectives.0 = mean-weighted-tardiness
+
+eval.problem.eval-model.sim-models.0.util-level = 0.85
+eval.problem.eval-model.sim-models.0.due-date-factor = 1.5
+eval.problem.eval-model.sim-models.0.num-jobs = 5000
+eval.problem.eval-model.sim-models.0.warmup-jobs = 1000
+eval.problem.eval-model.rotate-sim-seed = true
+
+# V1 validates a complete LLM-generated population; it does not silently add random individuals.
+# To reuse the original offline input, set source=file and check that it supplies enough valid pairs.
+evospeak.source = llm
+evospeak.population-file = ../EvoSpeak/WarmStart/population_50_0.5.txt
+evospeak.output-directory = runs/single-objective
+evospeak.examples-file = warm-start-examples.json
+
+llm.provider = openai-compatible
+llm.model = gpt-4.1-mini
+llm.endpoint = https://api.openai.com/v1/chat/completions
+# Keep this shared file secret-free. Enter a key in the corresponding .local.params file.
+# A blank key falls back to the environment variable below.
+llm.api-key =
+llm.api-key-env = OPENAI_API_KEY
+llm.timeout-seconds = 120
+llm.max-output-tokens = 8000
+llm.max-attempts = 3
