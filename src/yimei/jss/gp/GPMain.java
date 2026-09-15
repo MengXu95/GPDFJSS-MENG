@@ -3,8 +3,8 @@ package yimei.jss.gp;
 import ec.Evolve;
 import ec.util.Parameter;
 import ec.util.ParameterDatabase;
-import mengxu.algorithm.EvoSpeakV1.EvoSpeakEvolutionState;
-import mengxu.algorithm.EvoSpeakV1.EvoSpeakMain;
+import mengxu.algorithm.OnlineEvoSpeak.EvoSpeakEvolutionState;
+import mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +47,7 @@ public class GPMain {
         //Multitask Pareto set learning GP - 2026.5.7
 //            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP.params");
 //        gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params");
-        gpRunArgs.add("./src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStart.local.params");
+        gpRunArgs.add("./src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.local.params");
         //GP with multi-case fitness -- need to set useLS = true; and warmupSame = true; in Simulation.java
 //        gpRunArgs.add("./src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params");
 
@@ -79,7 +79,7 @@ public class GPMain {
                                 || Files.exists(directory.resolve(prefix + ".time.csv"))
                                 || Files.exists(directory.resolve(prefix + ".timeSumGen.csv"));
                         if (existingResults) {
-                                System.out.println("EvoSpeakV1 run " + runId + " already has results in " + directory
+                                System.out.println("OnlineEvoSpeak run " + runId + " already has results in " + directory
                                         + ". Existing files will be kept; this attempt will use a new " + prefix
                                         + "-<unique-suffix> directory under evospeak.output-directory with the same seed.");
                                 runArguments.add("-p");

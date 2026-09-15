@@ -1,4 +1,4 @@
-package mengxu.algorithm.LLM.WarmStart;
+package mengxu.algorithm.OfflineEvoSpeak.WarmStart;
 
 import ec.EvolutionState;
 import ec.Individual;
@@ -125,7 +125,7 @@ public class MOGPRuleEvolutionStateLLMWarmStart extends GPRuleEvolutionState {
 //	    statistics.postEvaluationStatistics(this); //log the best individual
 
 //		//add by mengxu 2025.1.7 for checking
-//		try (PrintWriter writer = new PrintWriter("/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_file_new.txt")) {
+//		try (PrintWriter writer = new PrintWriter("/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/population_file_new.txt")) {
 //			this.population.subpops[0].printSubpopulation(this,writer);
 //		} catch (IOException e) {
 //			e.printStackTrace();

@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.util.Parameter;
 import ec.util.ParameterDatabase;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class EvoSpeakConfig {
-    public static final String DEFAULT_PARAMS = "src/mengxu/algorithm/EvoSpeakV1/evospeak.params";
+    public static final String DEFAULT_PARAMS = "src/mengxu/algorithm/OnlineEvoSpeak/evospeak.params";
     public final ParameterDatabase parameters;
     public final Path parameterFile;
     private String apiKey;
@@ -50,15 +50,15 @@ public final class EvoSpeakConfig {
         }
         if (integer("pop.subpops", 1) != 1 || integer("num-trees", 2) != 2
                 || integer("breedthreads", 1) != 1 || integer("evalthreads", 1) != 1) {
-            throw new IllegalArgumentException("EvoSpeakV1 currently uses one population, two trees, and one evaluation/breeding thread.");
+            throw new IllegalArgumentException("OnlineEvoSpeak currently uses one population, two trees, and one evaluation/breeding thread.");
         }
         if (integer("eval.problem.eval-model.sim-models", 1) != 1) {
-            throw new IllegalArgumentException("EvoSpeakV1 currently validates one configured scheduling scenario.");
+            throw new IllegalArgumentException("OnlineEvoSpeak currently validates one configured scheduling scenario.");
         }
         if (!text("terminals-from", "relative").equals("relative")
                 || !text("eval.problem.eval-model", "").equals(
                 "mengxu.complexsimulation.ruleevaluation.MultipleTreeMultipleRuleHeterogeneousEvaluationModel")) {
-            throw new IllegalArgumentException("EvoSpeakV1 requires relative terminals and the heterogeneous evaluation model used by its validator.");
+            throw new IllegalArgumentException("OnlineEvoSpeak requires relative terminals and the heterogeneous evaluation model used by its validator.");
         }
         int populationSize = integer("pop.subpop.0.size", 100);
         int elites = Integer.parseInt(text("breed.elite.0", "2"));

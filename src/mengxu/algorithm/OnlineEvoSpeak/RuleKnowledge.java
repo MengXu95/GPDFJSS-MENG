@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.gp.GPIndividual;
 import ec.gp.GPNode;
@@ -36,7 +36,7 @@ public final class RuleKnowledge {
             String name = terminal.toString();
             String meaning = TERMINALS.get(name);
             if (meaning == null) {
-                throw new IllegalArgumentException("No verified EvoSpeakV1 glossary entry for terminal " + name
+                throw new IllegalArgumentException("No verified OnlineEvoSpeak glossary entry for terminal " + name
                         + ". Use terminals-from=relative or extend the reviewed glossary.");
             }
             terminals.put(name, meaning);

@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.EvolutionState;
 import ec.Individual;

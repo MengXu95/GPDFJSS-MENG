@@ -1,4 +1,4 @@
-# EvoSpeakV1 single objective, based on EvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStart.params.
+# OnlineEvoSpeak single objective, based on OfflineEvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStart.params.
 # Inherit V1's corrected state, evaluator, dual-tree grammar and LLM validation workflow.
 parent.0 = evospeak.params
 
@@ -26,15 +26,15 @@ eval.problem.eval-model.rotate-sim-seed = true
 # V1 validates a complete LLM-generated population; it does not silently add random individuals.
 # To reuse the original offline input, set source=file and check that it supplies enough valid pairs.
 evospeak.source = llm
-evospeak.population-file = ../EvoSpeak/WarmStart/population_50_0.5.txt
+evospeak.population-file = ../OfflineEvoSpeak/WarmStart/population_50_0.5.txt
 evospeak.output-directory = runs/single-objective
 evospeak.examples-file = warm-start-examples.json
 
 llm.provider = azure-openai
 llm.api = responses
-llm.model = gpt-5.6-sol
-llm.model-version = 2026-07-09
-llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
+llm.model = gpt-5.6-luna
+llm.model-version =
+llm.endpoint = https://hackathon-qh.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview
 # Keep this shared file secret-free. Enter a key in the corresponding .local.params file.
 # Use this Azure resource's Key1/Key2, not a DefaultAzureCredential/Entra access token.
 # A blank key falls back to the environment variable below.

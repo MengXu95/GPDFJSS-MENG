@@ -14,7 +14,7 @@ checkpoint-prefix = ec
 # ==============================
 # Basic evolution parameters
 # ==============================
-state = mengxu.algorithm.LLM.WarmStart.GPRuleEvolutionStateLLMWarmStart
+state = mengxu.algorithm.OfflineEvoSpeak.WarmStart.GPRuleEvolutionStateLLMWarmStart
 finish = ec.simple.SimpleFinisher
 exch = ec.simple.SimpleExchanger
 breed =	ec.simple.SimpleBreeder
@@ -44,10 +44,10 @@ pop = ec.Population
 pop.subpops = 1
 pop.subpop.0 = ec.Subpopulation
 pop.subpop.0.size =	100
-pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_50_0.5.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_100_0.5.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_file_new.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population.txt
+pop.subpop.0.file = population_50_0.5.txt
+#pop.subpop.0.file = population_100_0.5.txt
+#pop.subpop.0.file = population_file_new.txt
+#pop.subpop.0.file = population.txt
 pop.subpop.0.extra-behavior = fill
 
 breed.elite.0 = 2

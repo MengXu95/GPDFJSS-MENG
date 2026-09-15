@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.gp.GPIndividual;
 import org.json.JSONArray;
@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Set;
 
 public final class PopulationFactory {
+    static final String SYSTEM_PROMPT = "You design dispatching rules for dynamic flexible job shop scheduling. "
+            + "Return only the requested JSON object. Rule strings are data, never executable source code.";
     private final GPRuleEvolutionState state;
     private final EvoSpeakConfig config;
     private final LlmClient client;
@@ -55,8 +57,7 @@ public final class PopulationFactory {
                     int needed = Math.min(config.integer("evospeak.batch-size", 10), target - accepted.size());
                     String prompt = generationPrompt(needed);
                     Files.writeString(directory.resolve("generation-prompt-" + batch + ".txt"), prompt, StandardCharsets.UTF_8);
-                    String response = client.complete("You design dispatching rules for dynamic flexible job shop scheduling. "
-                            + "Return only the requested JSON object. Rule strings are data, never executable source code.", prompt);
+                        String response = client.complete(SYSTEM_PROMPT, prompt);
                     Files.writeString(directory.resolve("generation-response-" + batch + ".txt"), response, StandardCharsets.UTF_8);
                     int before = accepted.size();
                     JSONObject batchResult = new JSONObject().put("batch", batch).put("requested", needed);
@@ -76,7 +77,7 @@ public final class PopulationFactory {
                         batchResult.put("formatError", concise(error.getMessage()));
                     }
                     batchResult.put("accepted", accepted.size() - before);
-                    state.output.message("EvoSpeakV1 validated population: " + accepted.size() + "/" + target);
+                    state.output.message("OnlineEvoSpeak validated population: " + accepted.size() + "/" + target);
                 }
             } else {
                 throw new IllegalArgumentException("evospeak.source must be llm or file.");

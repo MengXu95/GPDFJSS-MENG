@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.Individual;
 import ec.gp.GPIndividual;
@@ -15,12 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.List;
 
 public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
     EvoSpeakConfig config;
     LlmClient client;
     Path directory;
+    boolean initialPopulationLoaded;
     private JSONObject generationRecord;
     private GPIndividual bestOfGeneration;
 
@@ -32,14 +32,21 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
         totalTime = 0.0;
         genTimes.clear();
         sumGenTimes.clear();
+        initialPopulationLoaded = false;
         try {
-            startFresh();
-            List<GPIndividual> initial = new PopulationFactory(this, config, client, directory).create();
-            population.subpops[0].individuals = initial.toArray(new Individual[0]);
-            if (!config.flag("evospeak.run-gp", true)) {
-                output.message("Validated population generated. GP disabled by evospeak.run-gp=false.");
-                return;
+            Path initialPopulationFile = directory.resolve("generated-population.txt");
+            if (!Files.isRegularFile(initialPopulationFile)) {
+                throw new IOException("The validated initial population TXT must exist before GP initialization.");
             }
+            output.message("OnlineEvoSpeak stage 2/2: initializing GP from TXT: " + initialPopulationFile);
+            startFresh();
+            if (population.subpops[0].individuals.length != config.integer("pop.subpop.0.size", 100)) {
+                throw new IOException("Initial population TXT count differs from the configured GP population size.");
+            }
+            for (Individual individual : population.subpops[0].individuals) {
+                individual.evaluated = false;
+            }
+            initialPopulationLoaded = true;
             int result = R_NOTDONE;
             try (BufferedWriter metrics = Files.newBufferedWriter(directory.resolve("generations.jsonl"), StandardCharsets.UTF_8)) {
                 while (result == R_NOTDONE) {
@@ -66,7 +73,7 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
             throw new UncheckedIOException(error);
         } catch (InterruptedException error) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("EvoSpeakV1 cancelled before completion.", error);
+            throw new IllegalStateException("OnlineEvoSpeak cancelled before completion.", error);
         }
     }
 

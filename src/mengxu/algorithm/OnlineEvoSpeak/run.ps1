@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('build', 'train', 'analyze', 'test', 'check', 'auth')]
+    [ValidateSet('build', 'train', 'analyze', 'test', 'check', 'auth', 'prompt')]
     [string]$Action = 'train',
     [string]$ParamsFile = (Join-Path $PSScriptRoot 'evospeak.params'),
     [string[]]$Overrides = @(),
@@ -28,14 +28,14 @@ if (-not $jdk -or -not (Test-Path (Join-Path $jdk 'bin/javac.exe'))) {
 }
 $java = Join-Path $jdk 'bin/java.exe'
 $javac = Join-Path $jdk 'bin/javac.exe'
-$buildDirectory = Join-Path $repoRoot 'out/evospeakv1-classes'
+$buildDirectory = Join-Path $repoRoot 'out/onlineevospeak-classes'
 $classPath = "$buildDirectory;$(Join-Path $repoRoot 'libraries/*')"
 $configPath = (Resolve-Path -LiteralPath $ParamsFile).Path
 
 Push-Location $repoRoot
 try {
     $sources = @((Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.java').FullName)
-    $sources += Join-Path $repoRoot 'test/mengxu/algorithm/EvoSpeakV1/EvoSpeakV1RegressionTest.java'
+    $sources += Join-Path $repoRoot 'test/mengxu/algorithm/OnlineEvoSpeak/OnlineEvoSpeakRegressionTest.java'
     $parameters = ConvertFrom-StringData -StringData (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'evospeak.params') -Raw)
     foreach ($value in $parameters.Values) {
         if ($value -match '^(ec|yimei|mengxu)\.[A-Za-z0-9_.]+$') {
@@ -47,18 +47,19 @@ try {
     }
     & $javac --release 11 -encoding UTF-8 -nowarn -cp (Join-Path $repoRoot 'libraries/*') -sourcepath 'src;test' -d $buildDirectory ($sources | Sort-Object -Unique)
     if ($LASTEXITCODE -ne 0) {
-        throw 'EvoSpeakV1 compilation failed.'
+        throw 'OnlineEvoSpeak compilation failed.'
     }
     if ($Action -eq 'build') {
-        Write-Output "EvoSpeakV1 classes: $buildDirectory"
+        Write-Output "OnlineEvoSpeak classes: $buildDirectory"
         return
     }
     $mainClass = switch ($Action) {
-        'train' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
-        'analyze' { 'mengxu.algorithm.EvoSpeakV1.RuleAnalysisMain' }
-        'test' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakV1RegressionTest' }
-        'check' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
-        'auth' { 'mengxu.algorithm.EvoSpeakV1.EvoSpeakMain' }
+        'train' { 'mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain' }
+        'analyze' { 'mengxu.algorithm.OnlineEvoSpeak.RuleAnalysisMain' }
+        'test' { 'mengxu.algorithm.OnlineEvoSpeak.OnlineEvoSpeakRegressionTest' }
+        'check' { 'mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain' }
+        'auth' { 'mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain' }
+        'prompt' { 'mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain' }
     }
     $arguments = @('-cp', $classPath, $mainClass)
     if ($Action -ne 'test') {
@@ -73,10 +74,13 @@ try {
     if ($Action -eq 'auth') {
         $arguments += '--check-auth'
     }
+    if ($Action -eq 'prompt') {
+        $arguments += '--export-prompt'
+    }
     $arguments += $ExtraArgs
     & $java @arguments
     if ($LASTEXITCODE -ne 0) {
-        throw "EvoSpeakV1 $Action failed. See the error above and the run directory status/validation report."
+        throw "OnlineEvoSpeak $Action failed. See the error above and the run directory status/validation report."
     }
 } finally {
     Pop-Location

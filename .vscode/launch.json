@@ -3,36 +3,36 @@
   "configurations": [
     {
       "type": "java",
-      "name": "EvoSpeakV1: LLM Generate and Train",
+      "name": "OnlineEvoSpeak: LLM Generate and Train",
       "request": "launch",
-      "mainClass": "mengxu.algorithm.EvoSpeakV1.EvoSpeakMain",
-      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "mainClass": "mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain",
+      "classPaths": ["${workspaceFolder}/out/onlineevospeak-classes", "${workspaceFolder}/libraries/*"],
       "cwd": "${workspaceFolder}",
-      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/evospeak.params"],
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/OnlineEvoSpeak/evospeak.params"],
       "console": "integratedTerminal",
-      "preLaunchTask": "EvoSpeakV1: Compile"
+      "preLaunchTask": "OnlineEvoSpeak: Compile"
     },
     {
       "type": "java",
-      "name": "EvoSpeakV1: Offline Smoke",
+      "name": "OnlineEvoSpeak: Offline Smoke",
       "request": "launch",
-      "mainClass": "mengxu.algorithm.EvoSpeakV1.EvoSpeakMain",
-      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "mainClass": "mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain",
+      "classPaths": ["${workspaceFolder}/out/onlineevospeak-classes", "${workspaceFolder}/libraries/*"],
       "cwd": "${workspaceFolder}",
-      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/smoke.params"],
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/OnlineEvoSpeak/smoke.params"],
       "console": "integratedTerminal",
-      "preLaunchTask": "EvoSpeakV1: Compile"
+      "preLaunchTask": "OnlineEvoSpeak: Compile"
     },
     {
       "type": "java",
-      "name": "EvoSpeakV1: Explain Latest Population",
+      "name": "OnlineEvoSpeak: Explain Latest Population",
       "request": "launch",
-      "mainClass": "mengxu.algorithm.EvoSpeakV1.RuleAnalysisMain",
-      "classPaths": ["${workspaceFolder}/out/evospeakv1-classes", "${workspaceFolder}/libraries/*"],
+      "mainClass": "mengxu.algorithm.OnlineEvoSpeak.RuleAnalysisMain",
+      "classPaths": ["${workspaceFolder}/out/onlineevospeak-classes", "${workspaceFolder}/libraries/*"],
       "cwd": "${workspaceFolder}",
-      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/evospeak.params"],
+      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/OnlineEvoSpeak/evospeak.params"],
       "console": "integratedTerminal",
-      "preLaunchTask": "EvoSpeakV1: Compile"
+      "preLaunchTask": "OnlineEvoSpeak: Compile"
     }
   ]
 }

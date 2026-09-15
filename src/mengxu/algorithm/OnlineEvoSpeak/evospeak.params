@@ -1,16 +1,16 @@
-# EvoSpeakV1: run EvoSpeakMain.main() with no arguments from the repository root.
+# OnlineEvoSpeak: run EvoSpeakMain.main() with no arguments from the repository root.
 evalthreads = 1
 breedthreads = 1
 seed.0 = 0
 checkpoint = false
 checkpoint-modulo = 1
 checkpoint-prefix = ec
-state = mengxu.algorithm.EvoSpeakV1.EvoSpeakEvolutionState
+state = mengxu.algorithm.OnlineEvoSpeak.EvoSpeakEvolutionState
 init = ec.gp.GPInitializer
 finish = ec.simple.SimpleFinisher
 exch = ec.simple.SimpleExchanger
 breed = ec.simple.SimpleBreeder
-eval = mengxu.algorithm.EvoSpeakV1.EvoSpeakEvaluator
+eval = mengxu.algorithm.OnlineEvoSpeak.EvoSpeakEvaluator
 stat = ec.simple.SimpleStatistics
 stat.file = $out.stat
 stat.do-generation = true
@@ -28,7 +28,7 @@ pop.subpop.0.species.ind.tree.0 = ec.gp.GPTree
 pop.subpop.0.species.ind.tree.0.tc = tc0
 pop.subpop.0.species.ind.tree.1 = ec.gp.GPTree
 pop.subpop.0.species.ind.tree.1.tc = tc1
-pop.subpop.0.species.fitness = mengxu.algorithm.EvoSpeakV1.WeightedFitness
+pop.subpop.0.species.fitness = mengxu.algorithm.OnlineEvoSpeak.WeightedFitness
 pop.subpop.0.species.fitness.num-objectives = 2
 pop.subpop.0.species.fitness.maximize = false
 pop.subpop.0.duplicate-retries = 100
@@ -141,7 +141,7 @@ evospeak.weight.1 = 0.5
 evospeak.normalization = true
 # llm or file. Relative paths below are relative to this params file.
 evospeak.source = llm
-evospeak.population-file = ../EvoSpeak/WarmStart/population_100_0.5_MO.txt
+evospeak.population-file = ../OfflineEvoSpeak/WarmStart/population_100_0.5_MO.txt
 evospeak.output-directory = runs
 evospeak.batch-size = 10
 evospeak.max-batches = 40

@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.Evolve;
 import ec.gp.GPIndividual;
@@ -81,7 +81,7 @@ public final class RuleAnalysisMain {
         parsing.set("pop.subpop.0.size", Math.max(2, Integer.parseInt(config.text("breed.elite.0", "2"))));
         GPRuleEvolutionState state = (GPRuleEvolutionState) Evolve.initialize(parsing.parameters, 0);
         state.output.setThrowsErrors(true);
-        StringBuilder report = new StringBuilder("# EvoSpeakV1 Rule Analysis\n\n")
+        StringBuilder report = new StringBuilder("# OnlineEvoSpeak Rule Analysis\n\n")
                 .append("Population: ").append(population.toAbsolutePath()).append("\n\n")
                 .append("Created: ").append(Instant.now()).append("\n\n")
             .append("Model: ").append(config.text("llm.provider", "")).append(" / ").append(config.text("llm.model", "")).append("\n\n")

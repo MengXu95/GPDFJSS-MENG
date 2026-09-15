@@ -1,6 +1,8 @@
-# EvoSpeakV1
+# OnlineEvoSpeak
 
-An independently runnable derivative of EvoSpeak's offline LLM warm start. It retains dual-tree GP, tournament selection, crossover/mutation/reproduction, and weighted scheduling objectives. The original `EvoSpeak/WarmStart` files and existing experiments are not modified.
+OnlineEvoSpeak (formerly EvoSpeakV1) is the automatically invoked LLM warm-start implementation. [OfflineEvoSpeak](../OfflineEvoSpeak/README.md), formerly the EvoSpeak directory, retains the legacy offline training implementation and documents manually invoking an LLM with the same prompt. OnlineEvoSpeak retains dual-tree GP, tournament selection, crossover/mutation/reproduction and weighted scheduling objectives.
+
+The migration updates source packages, params, `GPMain`, tests and VS Code launch/task paths. The main class is now `mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain`; rebuild the project and update any saved IDEA run configuration referring to the old package. Existing private params and run directories move with the folder unchanged. Historical status files and serialized checkpoints retain their original paths/class names and are not rewritten; use the new location when opening old artifacts. Cross-version checkpoint compatibility is not guaranteed. The `evospeak.*` parameter names and per-run output filenames are unchanged.
 
 The workflow is:
 
@@ -8,9 +10,10 @@ The workflow is:
 2. Load the provided reference heuristics and ask the selected LLM to extract terminal-grounded insights, then generate a small JSON batch of new pairs with explanations of their expected objective trade-offs.
 3. Check the response schema and reference IDs, parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate/reference-copy pairs, and run bounded scheduling simulations on validation seeds.
 4. Feed rejection evidence back to the LLM and request replacements within the configured budget.
-5. Publish a correctly serialized ECJ population only when the required population is complete, then run GP automatically.
+5. Publish `generated-population.txt` in native ECJ format only when the required population is complete.
+6. Start a fresh GP state and load that TXT through ECJ's `pop.subpop.0.file` mechanism, then evaluate and evolve the loaded individuals. This is the same workflow for single and weighted multi-objective runs.
 
-No generated Java/Python/shell code is executed. LLM text is treated as expression data. Failed generation, invalid credentials, malformed output or insufficient feasible individuals prevent GP from starting. There is no silent random-population fallback.
+Preparation sets up only the grammar and species prototypes needed for validation; it does not create random initial individuals or initialize GP statistics. The training state is created after the complete TXT has been saved. No generated Java/Python/shell code is executed. LLM text is treated as expression data. Failed generation, invalid credentials, malformed output or insufficient feasible individuals prevent GP from starting. There is no silent random-population fallback.
 
 ## Quick Start
 
@@ -18,18 +21,18 @@ Requirements: JDK 11+, the existing `libraries` JARs, and PowerShell 7 for the c
 
 In VS Code, select one of these Run and Debug configurations:
 
-- **EvoSpeakV1: Offline Smoke**: no API key required; two handwritten example rules, three GP generations.
-- **EvoSpeakV1: LLM Generate and Train**: uses `evospeak.params` and automatically calls the configured LLM.
-- **EvoSpeakV1: Explain Latest Population**: analyzes the most recent generated population using the configured LLM.
+- **OnlineEvoSpeak: Offline Smoke**: no API key required; two handwritten example rules, three GP generations.
+- **OnlineEvoSpeak: LLM Generate and Train**: uses `evospeak.params` and automatically calls the configured LLM.
+- **OnlineEvoSpeak: Explain Latest Population**: analyzes the most recent generated population using the configured LLM.
 
-The pre-launch task compiles the required source and reflection-loaded ECJ classes. In IntelliJ, run `EvoSpeakMain.main()` or select EvoSpeakV1 in `GPMain.main()` with the repository root as the working directory and `libraries/*.jar` on the classpath. Running `GPRun` directly is not the V1 entry point because it bypasses generation configuration.
+The pre-launch task compiles the required source and reflection-loaded ECJ classes. In IntelliJ, run `EvoSpeakMain.main()` or select OnlineEvoSpeak in `GPMain.main()` with the repository root as the working directory and `libraries/*.jar` on the classpath. Running `GPRun` directly is not the V1 entry point because it bypasses generation configuration.
 
 From the repository root:
 
 ```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\smoke.params
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action train
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action test
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\smoke.params
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action train
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action test
 ```
 
 The first command checks the local environment without a model. The second needs the LLM configuration below. The regression tests use a local mock HTTP server and real scheduling simulations; they do not consume cloud tokens.
@@ -45,14 +48,14 @@ Two profiles in this directory inherit the V1 infrastructure from `evospeak.para
 
 Both retain 100 individuals, 51 generations, two trees, two elites, tournament size 4, crossover/mutation/reproduction probabilities 0.80/0.15/0.05, utilization 0.85, due-date factor 1.5, 5000 recorded jobs and 1000 warmup jobs. They use V1's state, evaluator, safe weighted fitness and complete-population validation instead of the old package classes or silent random filling. The old `limit-total-evaluation-times` parameter is not a V1 stopping condition; these profiles use the generation budget. The original offline file paths are available through `evospeak.population-file`, but `evospeak.source=llm` remains active.
 
-Both profiles now select the supplied Azure deployment `gpt-5.6-sol` through the Responses API. The generic `evospeak.params` keeps its OpenAI-compatible Chat Completions default. Selecting one of the Azure profiles does not change the original EvoSpeak implementation or its objective settings.
+Both profiles now select the supplied Azure deployment `gpt-5.6-luna` on `hackathon-qh` through the Responses API. The generic `evospeak.params` keeps its OpenAI-compatible Chat Completions default. Selecting one of the Azure profiles does not change the original EvoSpeak implementation or its objective settings.
 
 For an API key stored locally in params, this workspace also has two private companion files:
 
 - `multipletreegp-dynamicLLMWarmStart.local.params`
 - `multipletreegp-dynamicLLMWarmStartMO.local.params`
 
-Each inherits its corresponding profile and provides an editable `llm.api-key` field. Replace its placeholder or previous credential with the Azure resource's Key1/Key2, without quotes or a `Bearer ` prefix. Existing local credentials and proxy settings have not been changed. These `.local.params` files are ignored by Git and must not be shared or force-added. The tracked profiles contain an empty key field and are safe to share. On a fresh checkout, create a local companion with the same two-line structure, for example:
+Each inherits its corresponding profile and provides an editable `llm.api-key` field. Replace its placeholder or previous credential with the same Azure resource's Key1/Key2, without quotes or a `Bearer ` prefix. Keep any required proxy settings when updating credentials. These `.local.params` files are ignored by Git and must not be shared or force-added. The tracked profiles contain an empty key field and are safe to share. On a fresh checkout, create a local companion with the same two-line structure, for example:
 
 ```properties
 parent.0 = multipletreegp-dynamicLLMWarmStartMO.params
@@ -62,23 +65,23 @@ llm.api-key = REPLACE_WITH_YOUR_API_KEY
 In an IntelliJ **EvoSpeakMain** run configuration, set **Program arguments** to the desired private file:
 
 ```text
--file src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStartMO.local.params
+-file src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params
 ```
 
 For **GPMain**, change the selected parameter-file line to that same path; `GPMain` continues to assign the seed/run ID and result filenames. To run from PowerShell:
 
 ```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStartMO.local.params
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStart.local.params
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStartMO.local.params
 ```
 
 Use `RuleAnalysisMain` with the same selected profile to find results under its `runs/single-objective` or `runs/multi-objective` directory. Selecting the generic default params does not automatically switch to one of these profiles or load a private companion file.
 
 ## Run Through GPMain
 
-`src/yimei/jss/gp/GPMain.java` now selects EvoSpeakV1 by default alongside the existing commented algorithm options. Configure `firstRunId`, `lastRunId` (inclusive), `maxTests` (maximum ID) and `resultsDirectory` in that launcher. The default range remains a single run, ID 22; to run IDs 0 through 29, set the first/last IDs to 0 and 29. Changing this range can trigger a separate, billable LLM population-generation workflow for every run.
+`src/yimei/jss/gp/GPMain.java` now selects OnlineEvoSpeak by default alongside the existing commented algorithm options. Configure `firstRunId`, `lastRunId` (inclusive), `maxTests` (maximum ID) and `resultsDirectory` in that launcher. The default range remains a single run, ID 22; to run IDs 0 through 29, set the first/last IDs to 0 and 29. Changing this range can trigger a separate, billable LLM population-generation workflow for every run.
 
-For each ID, `GPMain` creates fresh arguments with `seed.0=<id>` and an absolute `stat.file=<resultsDirectory>/job.<id>.out.stat`. It detects the configured EvoSpeakV1 state and invokes `EvoSpeakMain` so LLM generation and feasibility checks still happen before GP. Other evolution states continue through the original `GPRun` path. To smoke-test this launcher without a model, select `src/mengxu/algorithm/EvoSpeakV1/smoke.params` instead of the normal EvoSpeakV1 params.
+For each ID, `GPMain` creates fresh arguments with `seed.0=<id>` and an absolute `stat.file=<resultsDirectory>/job.<id>.out.stat`. It detects the configured OnlineEvoSpeak state and invokes `EvoSpeakMain` so LLM generation and feasibility checks still happen before GP. Other evolution states continue through the original `GPRun` path. To smoke-test this launcher without a model, select `src/mengxu/algorithm/OnlineEvoSpeak/smoke.params` instead of the normal OnlineEvoSpeak params.
 
 The common GP result files are:
 
@@ -92,7 +95,7 @@ The common GP result files are:
 
 LLM prompts, populations, explanations, validation evidence and JSON metrics stay grouped in `evospeak.output-directory/job.<id>-<unique-suffix>/`. The suffix preserves separate attempts with the same seed. Its `status.json` records the ID and absolute locations of the statistics, timing files and artifact directory. Standalone `EvoSpeakMain` also uses `seed.0` as its run ID: with the default `stat.file=$out.stat`, the three common result files are placed inside that artifact directory. An explicit `stat.file` is honored using ECJ path resolution, with timing CSVs written beside it.
 
-EvoSpeakV1 never replaces existing statistics or timing files. When `GPMain` finds any of the three `job.<id>` result files already in `resultsDirectory`, it prints a notice and places all three new result files inside a fresh `evospeak.output-directory/job.<id>-<unique-suffix>/` artifact directory instead. The requested run ID and random seed stay unchanged, and the old files remain untouched. For example, rerunning ID 22 does not require deleting `job.22.out.stat` or changing the seed. The console and `status.json` show the new output location.
+OnlineEvoSpeak never replaces existing statistics or timing files. When `GPMain` finds any of the three `job.<id>` result files already in `resultsDirectory`, it prints a notice and places all three new result files inside a fresh `evospeak.output-directory/job.<id>-<unique-suffix>/` artifact directory instead. The requested run ID and random seed stay unchanged, and the old files remain untouched. For example, rerunning ID 22 does not require deleting `job.22.out.stat` or changing the seed. The console and `status.json` show the new output location.
 
 Direct `EvoSpeakMain` runs with an explicit conflicting `stat.file` still fail rather than silently redirect that requested path. Choose another path or leave the default `stat.file=$out.stat` to use an isolated artifact directory. Caller configuration and base launcher arguments are not mutated between runs. A result-file conflict is checked before population generation; reaching that check means the credential was found locally, not that the provider has authenticated it.
 
@@ -106,6 +109,7 @@ Keep actual tokens out of tracked params, source, URLs, command-line arguments a
 |---|---|---|---|
 | OpenAI or compatible service | `openai-compatible` | Default `https://api.openai.com/v1/chat/completions`, or `/v1/responses` with `llm.api=responses`; override for another service | Bearer token from local params or the named environment variable |
 | Azure OpenAI v1 | `azure-openai` | Full `https://<resource>.services.ai.azure.com/openai/v1/responses` with `llm.api=responses`; `.openai.azure.com` resource endpoints are also supported | Azure resource key in `api-key`; `llm.api-key-env=AZURE_OPENAI_API_KEY` |
+| Azure OpenAI preview Responses | `azure-openai` | Full `https://<resource>.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview` with `llm.api=responses` | Same resource's key in `api-key`; `llm.api-key-env=AZURE_OPENAI_API_KEY` |
 | Azure OpenAI legacy Chat Completions | `azure-openai` | Full `https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=<supported-version>` with `llm.api=chat-completions` | Azure resource key in `api-key` |
 | Anthropic | `anthropic` | Default `https://api.anthropic.com/v1/messages` | `x-api-key`; set `llm.api-key-env=ANTHROPIC_API_KEY` |
 | Local Ollama | `ollama` | Default `http://localhost:11434/api/chat` | No key required; start Ollama and install the model first |
@@ -134,20 +138,20 @@ The two original-derived profiles already contain this public configuration:
 ```properties
 llm.provider = azure-openai
 llm.api = responses
-llm.model = gpt-5.6-sol
-llm.model-version = 2026-07-09
-llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
+llm.model = gpt-5.6-luna
+llm.model-version =
+llm.endpoint = https://hackathon-qh.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview
 llm.api-key =
 llm.api-key-env = AZURE_OPENAI_API_KEY
 ```
 
-`llm.model-version` records the supplied deployment version as `configuredModelVersion` in the run status. It does not pin or verify the Azure deployment's live version, and it is not sent as `api-version` or `model_version`. The deployed version is managed in Azure.
+`llm.model-version` records an optional declared deployment version as `configuredModelVersion` in the run status. It is blank because the new deployment's model version has not been supplied; the previous deployment's version must not be reused without verification. This field does not pin or verify the live version, and it is not sent as `api-version` or `model_version`. The deployed version is managed in Azure. The supplied `2025-04-01-preview` value is an API version, not a model version.
 
-Unlike the Python SDK's `base_url`, `llm.endpoint` is the full POST URL and must include `/responses`. Azure v1 does not need a dated `api-version` query. `llm.model` is the deployment name. The client sends `instructions`, `input` and `max_output_tokens`, with storage, streaming and background mode disabled. It extracts assistant `output_text` blocks in order, skips reasoning items, and rejects incomplete, truncated, filtered, refused or malformed responses before they reach rule validation. Both population generation and `RuleAnalysisMain` use this adapter.
+Unlike the Python SDK's `base_url`, `llm.endpoint` is the full POST URL and must include `/responses`. The configured preview endpoint requires its `api-version` query, which the client preserves. Azure v1 endpoints remain supported without a dated query. `llm.model` is the deployment name. The client sends `instructions`, `input` and `max_output_tokens`, with storage, streaming and background mode disabled. It extracts assistant `output_text` blocks in order, skips reasoning items, and rejects incomplete, truncated, filtered, refused or malformed responses before they reach rule validation. Both population generation and `RuleAnalysisMain` use this adapter.
 
 The supplied Python example uses `get_bearer_token_provider(DefaultAzureCredential(), "https://ai.azure.com/.default")`, which is **Microsoft Entra ID authentication**, not a resource API key. This Java configuration uses the resource's **Key1/Key2** in the `api-key` header and requires key authentication to be enabled for that resource. Do not paste the token-provider expression or a temporary Entra access token into this key field. Automatic Entra token acquisition/refresh is not implemented; Entra-only access requires a separate authentication adapter.
 
-The selected single-objective private profile inherits this Azure configuration. Fill its local key field, keep any required local proxy setting, rebuild the project in IDEA, and run `GPMain` as before. For weighted two-objective runs or rule analysis, select the corresponding private profile explicitly. Local tests cover the protocol and GP workflow; deployment access, live model generation and the user's new credential have not been tested.
+The selected single-objective private profile inherits this Azure configuration. Update its local key field when rotating credentials, keep any required local proxy setting, rebuild the project in IDEA, and run `GPMain` as before. For weighted two-objective runs or rule analysis, select the corresponding private profile explicitly. A one-request Java test on 2026-09-15 returned HTTP 200 and the requested `OK` text from this deployment. This confirms that minimal inference worked at that time; it does not verify a full 100-individual population, future quota or scheduling quality. Local regression tests cover rule validation, actual small GP runs and independent analysis with mocked Responses output.
 
 Only HTTPS endpoints are accepted except loopback HTTP for local services. Redirects are not followed. Transient transport/429/5xx failures have a bounded retry count; authentication and other client errors fail immediately. Truncated model responses are rejected with instructions to reduce batch size or increase output tokens.
 
@@ -178,13 +182,13 @@ Supported `llm.proxy` values:
 From the repository root, this uses the same Java proxy/TLS settings but sends only one **unauthenticated HEAD request** to the configured endpoint:
 
 ```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action check -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action check -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStart.local.params
 ```
 
 To check a public endpoint without loading a private file:
 
 ```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action check -Overrides @('llm.proxy=http://127.0.0.1:7890','llm.connect-timeout-seconds=5','llm.timeout-seconds=10')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action check -Overrides @('llm.proxy=http://127.0.0.1:7890','llm.connect-timeout-seconds=5','llm.timeout-seconds=10')
 ```
 
 In IDEA, use an **EvoSpeakMain** configuration with program arguments `--check-connection -file <selected-params-file>`. This option belongs to `EvoSpeakMain`, not the batch `GPMain` entry point. It does not send an API key or prompt, request model generation, or create a GP run. A response such as HTTP 401/403/404/405 confirms that an HTTP response was received; it does not prove that the key, model, account or requested inference endpoint is authorized. Resolve response-specific authorization problems separately after transport works.
@@ -199,13 +203,9 @@ A nonempty `llm.api-key` in the selected private params takes precedence over th
 
 401 diagnostics include the endpoint host, credential source and recognized standard error codes such as `invalid_api_key` or `authentication_error`. They suppress the raw response message and unknown code/type fields because providers can echo the token there. A 407 is proxy authentication and is reported separately. Neither response triggers generation retries.
 
-For an OpenAI-compatible or Azure v1 endpoint ending in `/chat/completions` or `/responses` without query parameters, check the credential before launching a full population:
+For an OpenAI-compatible or Azure v1 endpoint ending in `/chat/completions` or `/responses` without query parameters, `run.ps1 -Action auth` or **EvoSpeakMain** with `--check-auth -file <selected-params-file>` sends one authenticated **GET** to the same service's `/models` endpoint (`/openai/v1/models` for Azure v1). It uses the same proxy and headers as generation, with no prompt, inference request or GP run. The key is sent only in the provider's authentication header and is not printed. Unlike `--check-connection`, this check requires the configured credential. A successful model-list response does not prove access to a particular inference model or available billing quota. HTTP 403/404/405 can indicate restricted model-list permissions or an unsupported route, so those outcomes alone do not establish inference-token validity.
 
-```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action auth -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
-```
-
-In IDEA use **EvoSpeakMain**, with program arguments `--check-auth -file <selected-params-file>`. This sends one authenticated **GET** to the same service's `/models` endpoint (`/openai/v1/models` for the supplied Azure resource) using the same proxy and headers as generation, with no prompt, inference request or GP run. The key is sent only in the provider's authentication header and is not printed. Unlike `--check-connection`, this check requires the configured credential. A successful model-list response does not prove access to a particular inference model or available billing quota. HTTP 403/404/405 can indicate restricted model-list permissions or an unsupported route, so those outcomes alone do not establish inference-token validity. Legacy Azure deployment URLs and Anthropic configurations are not supported by this model-list check.
+The currently configured `hackathon-qh` preview URL is **not supported by `--check-auth`**; the check deliberately does not guess a different API or rewrite a versioned endpoint. Use `--check-connection` for network-only diagnostics. Verifying inference access on this preview endpoint requires an explicitly requested, bounded text-generation test, which can consume tokens. Legacy Azure deployment URLs and Anthropic configurations are also unsupported by the model-list check.
 
 During investigation of the reported 401 on 2026-09-14, a single read-only check against the configured official OpenAI model-list endpoint returned `invalid_api_key`. Local format checks found no quotes, Bearer prefix or whitespace. The token's issuing service could not be confirmed, so no key or endpoint was changed. A valid token for the selected service is required to proceed.
 
@@ -236,6 +236,14 @@ Only objective 0 is evaluated and its weight is 1. Supported objective names com
 With normalization enabled, each objective is divided by the current scenario's benchmark-rule score, recomputed under the current training seed. A zero benchmark is replaced with denominator 1; negative/non-finite benchmarks stop the run. With normalization disabled, the score is the weighted sum of raw objectives. Every generation reevaluates all individuals, including elites and reproductions, so rotated seeds do not leave stale fitness values.
 
 ## Example-Guided Warm Starts
+
+The exact first-batch messages can be exported for manual offline use, with no LLM connection or GP run:
+
+```powershell
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action prompt -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStartMO.params -ExtraArgs @('.\out\offline-multi-prompt.md')
+```
+
+This invokes `EvoSpeakMain --export-prompt <new-output.md>` and uses the same system prompt and `PopulationFactory.generationPrompt` as online requests. Override objectives, weights, batch size or `evospeak.prompt-file` through the usual params/`-Overrides` mechanism. Existing files are not overwritten. [Offline instructions and complete single/multi-objective prompt snapshots](../OfflineEvoSpeak/README.md#exact-shared-prompts) explain manual batches and local conversion from the LLM's JSON response to ECJ TXT.
 
 The default generation prompt now follows the supplied **Insights Extraction -> New Heuristic Generation -> Expected Objective Effects** workflow. `warm-start-examples.json` contains the five input heuristics from that prompt, not the 100 individuals in the pasted model answer. Each example retains its reported scalar score as unverified historical metadata. Those scores are not comparable training observations without their original scenario, seeds and normalization, and are never loaded into GP fitness.
 
@@ -296,6 +304,7 @@ Completed online generation also produces `warm-start-report.md` with bullet-poi
 
 ```properties
 evospeak.source = llm
+evospeak.run-gp = true
 evospeak.batch-size = 10
 evospeak.max-batches = 40
 pop.subpop.0.size = 100
@@ -312,25 +321,53 @@ The supported grammar uses the actual `relative` terminals and binary `+`, `-`, 
 
 Feasible means feasible on these bounded validation scenarios, not a mathematical guarantee for every possible future queue, seed or GP offspring. Use larger validation workloads/seeds for stronger screening. Validation uses separate simulations and does not cache validation fitness as training fitness.
 
-At defaults, generation permits at most 40 content batches, each with at most 3 HTTP attempts. Cloud usage is billable; tune batch/count/token budgets before large runs. Optional `evospeak.prompt-file` supplies additional generation instructions. `evospeak.run-gp=false` generates and validates only.
+At defaults, generation permits at most 40 content batches, each with at most 3 HTTP attempts. Cloud usage is billable; tune batch/count/token budgets before large runs. Optional `evospeak.prompt-file` supplies additional generation instructions. `evospeak.run-gp=false` generates, validates and writes the complete TXT without initializing a GP population or creating GP statistics/timing/generation files. It still calls the LLM when `evospeak.source=llm`.
+
+### TXT Before GP
+
+Both objective profiles save the same standalone layout used by [the original population example](../OfflineEvoSpeak/WarmStart/population_100_0.8_MO.txt). For a 100-individual multi-objective run, the beginning has this form (one illustrative record shown):
+
+```text
+Number of Individuals: i100|
+Individual Number: i0|
+Evaluated: F
+Fitness: [d0|0.0| d0|0.0|]
+Tree 0:
+ (/ PT W)
+Tree 1:
+ (+ WIQ TRANT)
+```
+
+The file contains exactly `pop.subpop.0.size` records, numbered from zero. Every individual has both trees: Tree 0 is sequencing and Tree 1 is routing. The single-objective fitness record has one encoded value (`Fitness: [d0|0.0|]`); the two-objective record has two. These zeros mean unevaluated fitness, not measured scheduling results. ECJ writes the encoding; the LLM supplies rules and explanations, not fabricated fitness values. All individuals are evaluated afresh by GP.
+
+The default profile output locations, relative to the repository root, are:
+
+```text
+src/mengxu/algorithm/OnlineEvoSpeak/runs/single-objective/job.<seed>-<suffix>/generated-population.txt
+src/mengxu/algorithm/OnlineEvoSpeak/runs/multi-objective/job.<seed>-<suffix>/generated-population.txt
+```
+
+The launcher prints the absolute TXT path before `Initializing Generation 0`. It then sets `pop.subpop.0.file` to that path and loads the saved individuals through ECJ, rather than replacing a random population with an in-memory list. There is no random fill or wrapping of a short input; a size mismatch stops evolution. The original EvoSpeak example file is not overwritten. `status.json` records `initialPopulationFile` and whether the training state actually loaded it (`initialPopulationLoaded`).
+
+The training random generator starts from the configured run seed independently of LLM preparation. Removing the old, discarded random initialization changes the consumed random-number sequence relative to older V1 runs; do not expect identical later generations across those versions solely from an identical seed.
 
 Offline reuse accepts either the original ECJ-shaped text or `{"individuals":[{"sequencing":"PT","routing":"WIQ"}]}` JSON:
 
 ```properties
 evospeak.source = file
-evospeak.population-file = ../EvoSpeak/WarmStart/population_100_0.5_MO.txt
+evospeak.population-file = ../OfflineEvoSpeak/WarmStart/population_100_0.5_MO.txt
 ```
 
-Old serialized fitness values are ignored. Accepted expressions are converted to correctly constrained GP individuals with fresh fitness and `Evaluated: F`. The new ECJ output can also be read by ECJ's native population loader. Offline inputs with insufficient distinct validated pairs fail rather than fabricate replacements; switch back to `source=llm` for automated generation.
+Old serialized fitness values are ignored. Accepted expressions are converted to correctly constrained GP individuals with fresh fitness and `Evaluated: F`. Offline reuse also writes a validated TXT in the new run directory and starts GP from that file. Use `evospeak.population-file` for input, not ECJ's full-population `pop.file`; the launcher manages `pop.subpop.0.file` after validation. Offline inputs with insufficient distinct validated pairs fail rather than fabricate replacements; switch back to `source=llm` for automated generation.
 
-Relative EvoSpeak/analysis file paths are resolved relative to the params file. Each run uses an ID-labelled `job.<seed>-<unique-suffix>` directory under `runs`. Statistics paths follow ECJ conventions; `GPMain` supplies an absolute path in its selected results directory.
+Relative OfflineEvoSpeak/analysis file paths are resolved relative to the params file. Each run uses an ID-labelled `job.<seed>-<unique-suffix>` directory under `runs`. Statistics paths follow ECJ conventions; `GPMain` supplies an absolute path in its selected results directory.
 
 ## Independent Rule Analysis
 
 Run `RuleAnalysisMain.main()` without training. With no population path, it chooses the newest generated population. To focus on a small selection:
 
 ```powershell
-.\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action analyze -ExtraArgs @('--population','path\to\generated-population.txt','--indices','0,1','--prompt','Explain the congestion and urgency trade-off.','--output','path\to\report.md')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--population','path\to\generated-population.txt','--indices','0,1','--prompt','Explain the congestion and urgency trade-off.','--output','path\to\report.md')
 ```
 
 Alternatively use `--prompt-file` for a UTF-8 prompt document. Params equivalents are `analysis.population-file`, `analysis.indices`, `analysis.prompt`, `analysis.prompt-file` and `analysis.output-file`. `analysis.language=Chinese` is the default. `analysis.max-individuals` caps the number analyzed; each selected valid pair uses one content request, with at most `analysis.max-attempts` schema attempts (default 2), each subject to the HTTP retry budget.
@@ -351,16 +388,16 @@ Invalid expressions are marked in the report without being sent to the LLM. Inte
 
 Each completed artifact directory contains `status.json`, `validation-report.json`, `generated-population.txt` and `generated-rules.json`. Online runs save generation prompts/responses and a `reference-heuristics.json` snapshot. Completed online generation also saves `warm-start-report.md`; generation insights remain in the batch records of both the validation report and enriched rules JSON. Failed validation does not publish a complete population or warm-start report. GP runs add `generations.jsonl`, `final-population.txt` and `best-rules.txt` (best in the final generation), plus the `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` files at the result paths described above. The statistics log separately contains ECJ's best-of-run record.
 
-`status.json` stores the run ID, result paths, objective settings, configured weights, normalized weights, scenario, validation controls, seed, provider/model and completion state, without API keys. `generations.jsonl` stores the run ID, raw objectives, scalar fitness, normalization denominators, elapsed/cumulative time and the current best rule pair. An inactive objective that becomes non-finite after breeding is represented as JSON null rather than invalid JSON.
+`status.json` stores the run ID, result paths (including `initialPopulationFile`), `initialPopulationLoaded`, objective settings, configured weights, normalized weights, scenario, validation controls, seed, provider/model and completion state, without API keys. The state reaches `population-ready` after publication, then `completed` after successful GP, or `validated` for generate-only mode. Failures use `failed`. `generations.jsonl` stores the run ID, raw objectives, scalar fitness, normalization denominators, elapsed/cumulative time and the current best rule pair. An inactive objective that becomes non-finite after breeding is represented as JSON null rather than invalid JSON.
 
 The default `runs` directory is Git-ignored because prompts, responses and experiment artifacts can be large or sensitive. Archive a run directory explicitly when needed for reproducibility. LLM generation is not guaranteed deterministic; reuse the saved population with the same GP seed for a controlled replay.
 
-## Review of the Copied EvoSpeak
+## Offline Implementation Notes
 
-The original Java files compile when supplied explicitly, but the copied default configuration is not a portable online workflow:
+The original OfflineEvoSpeak Java files remain an offline workflow, with these compatibility considerations:
 
-- Source package declarations and params still point to `mengxu.algorithm.LLM.WarmStart`, while the copied directory is `EvoSpeak/WarmStart`.
-- Population and utility paths reference `/Users/mengxu/...` on another machine.
+- Source packages and params now use `mengxu.algorithm.OfflineEvoSpeak.WarmStart` and agree with the renamed directory; rebuild existing IDEA configurations accordingly.
+- Default population paths are relative historical example filenames. Supply a validated TXT for actual runs; the legacy utility helpers still contain machine-specific paths.
 - The example population uses fabricated, single-value fitness records although the MO configuration expects two objectives. V1 discards those fields and writes native ECJ serialization.
 - The original MO state writes `weights[1]` unconditionally, and initializes weighted fitness only inside its normalization branch. Single-objective or normalization-disabled use is unsafe.
 - `LLMWarmStart` is a text-processing stub; it does not implement a network generation/validation/retry workflow. The separate old `LLMcode` utility is not a configurable LLM API adapter.
@@ -371,4 +408,6 @@ The supplied `population_100_0.5_MO.txt` has 100 pairs that pass strict depth-8 
 
 The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict parsing, the original file format, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Example-guided checks cover the supplied five references, unequal/single-objective prompt settings, raw versus normalized score descriptions, invalid citations, empty/missing insights and explanations, wrong batch counts, exact reference copying, malformed reference files, example-free generation and explanation alignment after retries. Launcher checks run two IDs through `GPMain`, verify `GPRun` fallback, isolate arguments/configuration and timing totals, honor explicit result paths, and reject existing result-file collisions.
 
-Provider protocol behavior was tested with a local mock server, while GP and scheduling checks used the real Java implementation. Network regression checks exercise explicit HTTP proxies, JVM proxy selection, direct bypass, malformed proxy settings, categorized errors and the key-free HEAD entry point. Authentication regressions cover header formatting, known error-code filtering without leaking echoed credentials, no retry on 401, and the authenticated GET check's 200/401/403/404 outcomes without starting GP. Live diagnostics verified the proxy route with an unauthenticated HEAD request and subsequently confirmed `invalid_api_key` with one authenticated model-list GET. No real token was displayed or modified, and no live prompt or inference request was submitted during these checks. Successful inference authorization and model quality remain unverified. The offline smoke configuration completes three generations without a model. Full-size research experiments and claims of performance improvement are outside these smoke checks.
+The single- and multi-objective Responses workflows explicitly forbid random-individual initialization, verify that the TXT exists before ECJ loads any individual, compare every loaded tree with the saved file, and check the native fitness dimensions and unevaluated flags. Both modes cover successful two-generation evolution, generate-only publication without GP statistics, and incomplete generation without a partial population or GP initialization.
+
+Provider regression tests use a local mock server and fake credentials, while GP and scheduling checks use the real Java implementation. Network checks exercise explicit HTTP proxies, JVM proxy selection, direct bypass, malformed proxy settings, categorized errors and the key-free HEAD entry point. Authentication checks cover header formatting, known error-code filtering without leaking echoed credentials, no retry on 401, and the authenticated GET check's 200/401/403/404 outcomes without starting GP. The earlier minimal successful Azure call is documented above; it is separate from these local workflow regressions and does not establish complete LLM-population generation or model quality. The offline smoke configuration completes three generations without a model. Full-size research experiments and claims of performance improvement are outside these smoke checks.

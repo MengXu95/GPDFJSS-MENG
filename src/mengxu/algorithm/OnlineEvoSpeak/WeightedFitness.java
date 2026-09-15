@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.EvolutionState;
 import ec.Fitness;
@@ -13,7 +13,7 @@ public class WeightedFitness extends MultiObjectiveFitness {
     public void setup(EvolutionState state, Parameter base) {
         super.setup(state, base);
         if (objectives.length < 1 || objectives.length > 2) {
-            throw new IllegalArgumentException("EvoSpeakV1 requires one or two objectives.");
+            throw new IllegalArgumentException("OnlineEvoSpeak requires one or two objectives.");
         }
         weights = new double[objectives.length];
         baselines = new double[objectives.length];

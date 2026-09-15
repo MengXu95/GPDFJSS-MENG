@@ -1,4 +1,4 @@
-package mengxu.algorithm.LLM.WarmStart;
+package mengxu.algorithm.OfflineEvoSpeak.WarmStart;
 
 import java.io.*;
 import java.util.*;
@@ -7,8 +7,8 @@ import java.util.Random;
 
 public class LLMcode {
 
-        private static final String inputFile = "/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_file_new.txt";
-        private static final String outputFile = "/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_file_new_gene.txt";
+        private static final String inputFile = "/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/population_file_new.txt";
+        private static final String outputFile = "/Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/population_file_new_gene.txt";
 
     public static void main(String[] args) {
 

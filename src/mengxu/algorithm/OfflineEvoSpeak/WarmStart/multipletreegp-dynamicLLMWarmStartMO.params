@@ -14,7 +14,7 @@ checkpoint-prefix = ec
 # ==============================
 # Basic evolution parameters
 # ==============================
-state = mengxu.algorithm.LLM.WarmStart.MOGPRuleEvolutionStateLLMWarmStart
+state = mengxu.algorithm.OfflineEvoSpeak.WarmStart.MOGPRuleEvolutionStateLLMWarmStart
 finish = ec.simple.SimpleFinisher
 exch = ec.simple.SimpleExchanger
 breed =	ec.simple.SimpleBreeder
@@ -44,11 +44,11 @@ pop = ec.Population
 pop.subpops = 1
 pop.subpop.0 = ec.Subpopulation
 pop.subpop.0.size =	100
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_50_0.5.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_100_0.8_MO.txt
-pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_100_0.2_MO.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population_file_new.txt
-#pop.subpop.0.file = /Users/mengxu/IdeaProjects/GPJSS-master/src/mengxu/algorithm/LLM/WarmStart/population.txt
+#pop.subpop.0.file = population_50_0.5.txt
+#pop.subpop.0.file = population_100_0.8_MO.txt
+pop.subpop.0.file = population_100_0.2_MO.txt
+#pop.subpop.0.file = population_file_new.txt
+#pop.subpop.0.file = population.txt
 pop.subpop.0.extra-behavior = fill
 
 breed.elite.0 = 2
@@ -73,7 +73,7 @@ pop.subpop.0.species.ind.tree.1.tc = tc1
 #=============================================
 
 #pop.subpop.0.species.fitness = ec.multiobjective.MultiObjectiveFitness
-pop.subpop.0.species.fitness = mengxu.algorithm.LLM.WarmStart.MultiObjectiveFitnessLLM
+pop.subpop.0.species.fitness = mengxu.algorithm.OfflineEvoSpeak.WarmStart.MultiObjectiveFitnessLLM
 pop.subpop.0.species.fitness.num-objectives = 2
 pop.subpop.0.species.fitness.maximize = false
 pop.subpop.0.duplicate-retries = 100

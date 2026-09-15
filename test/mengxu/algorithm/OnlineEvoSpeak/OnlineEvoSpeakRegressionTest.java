@@ -1,4 +1,4 @@
-package mengxu.algorithm.EvoSpeakV1;
+package mengxu.algorithm.OnlineEvoSpeak;
 
 import ec.EvolutionState;
 import ec.Evolve;
@@ -24,25 +24,31 @@ import java.nio.charset.StandardCharsets;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
-public class EvoSpeakV1RegressionTest {
+public class OnlineEvoSpeakRegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--prompt-only")) {
+            testPromptExport();
+            System.out.println("OnlineEvoSpeak offline prompt regression tests passed.");
+            return;
+        }
         if (args.length == 1 && args[0].equals("--responses-only")) {
             testResponsesApi();
-            System.out.println("EvoSpeakV1 Responses API regression tests passed.");
+            System.out.println("OnlineEvoSpeak Responses API regression tests passed.");
             return;
         }
         if (args.length == 1 && args[0].equals("--auth-only")) {
             testLlmProviders();
-            System.out.println("EvoSpeakV1 authentication regression tests passed.");
+            System.out.println("OnlineEvoSpeak authentication regression tests passed.");
             return;
         }
         if (args.length == 1 && args[0].equals("--network-only")) {
             testProxyTransport();
-            System.out.println("EvoSpeakV1 network regression tests passed.");
+            System.out.println("OnlineEvoSpeak network regression tests passed.");
             return;
         }
         testWeightedFitness();
         testParameterProfiles();
+        testPromptExport();
         testPopulationParsing();
         testLlmProviders();
         testResponsesApi();
@@ -50,7 +56,7 @@ public class EvoSpeakV1RegressionTest {
         testOfflinePipeline();
         testGPMainRuns();
         testOnlinePipelineAndFailureGate();
-        System.out.println("EvoSpeakV1 regression tests passed.");
+        System.out.println("OnlineEvoSpeak regression tests passed.");
     }
 
     private static WeightedFitness fitness(int objectives, double firstWeight, double secondWeight) {
@@ -90,8 +96,53 @@ public class EvoSpeakV1RegressionTest {
         require(rejected, "All-zero weights must be rejected.");
     }
 
+    private static void testPromptExport() throws Exception {
+        Path root = Files.createTempDirectory("onlineevospeak-prompt-export-");
+        for (String profile : new String[]{"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"}) {
+            Path parameters = Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/" + profile);
+            Path noRun = root.resolve(profile + "-no-run");
+            Path output = root.resolve(profile + ".md");
+            EvoSpeakConfig config = new EvoSpeakConfig(parameters,
+                    "stat=ec.Statistics", "llm.provider=not-used-for-prompt-export",
+                    "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName(),
+                    "evospeak.output-directory=" + noRun);
+            EvoSpeakMain.main(new String[]{"--export-prompt", output.toString(), "-file", parameters.toString(),
+                    "-p", "stat=ec.Statistics", "-p", "llm.provider=not-used-for-prompt-export",
+                    "-p", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName(),
+                    "-p", "evospeak.output-directory=" + noRun});
+            String exported = Files.readString(output);
+                String snapshotName = profile.contains("WarmStartMO") ? "multi-objective.md" : "single-objective.md";
+                Path snapshot = Paths.get("src/mengxu/algorithm/OfflineEvoSpeak/prompts/" + snapshotName);
+                    require(Files.readString(snapshot).replace("\r\n", "\n").equals(exported),
+                    "The documented offline prompt must stay identical to the current online generator and profile.");
+            EvoSpeakEvolutionState state = (EvoSpeakEvolutionState) Evolve.initialize(config.parameters, 0);
+            state.output.setThrowsErrors(true);
+            try {
+                state.setup(state, null);
+                state.population = state.initializer.setupPopulation(state, 0);
+                String prompt = new PopulationFactory(state, config, null, null).generationPrompt(10);
+                require(exported.contains("```text\n" + PopulationFactory.SYSTEM_PROMPT + "\n```")
+                        && exported.contains("```text\n" + prompt + "\n```"),
+                        "Offline prompt export must exactly match both messages used by online generation.");
+                require(prompt.contains("100 individuals") && prompt.contains("exactly 10 NEW, DISTINCT pairs")
+                        && prompt.contains("reference data") && prompt.contains("terminalsUsed"),
+                        "Export must include the configured population/batch sizes, actual references and terminal facts.");
+            } finally {
+                state.output.close();
+            }
+            require(!Files.exists(noRun), "Prompt export must not create GP run files or require a working LLM provider.");
+            boolean overwriteBlocked = false;
+            try {
+                EvoSpeakMain.exportPrompt(config, output);
+            } catch (java.nio.file.FileAlreadyExistsException expected) {
+                overwriteBlocked = true;
+            }
+            require(overwriteBlocked && Files.readString(output).equals(exported), "Export must preserve an existing prompt file.");
+        }
+    }
+
     private static void testParameterProfiles() throws Exception {
-        String base = "src/mengxu/algorithm/EvoSpeakV1/";
+        String base = "src/mengxu/algorithm/OnlineEvoSpeak/";
         String[] filenames = {"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"};
         for (int index = 0; index < filenames.length; index++) {
             EvoSpeakConfig config = new EvoSpeakConfig(Paths.get(base + filenames[index]));
@@ -105,10 +156,10 @@ public class EvoSpeakV1RegressionTest {
             require(config.text("state", "").equals(EvoSpeakEvolutionState.class.getName()), "Profiles must use the V1 pipeline.");
             require(Files.isRegularFile(config.path("evospeak.examples-file", "")), "Relative profile references must resolve.");
                 require(config.text("llm.provider", "").equals("azure-openai") && config.text("llm.api", "").equals("responses")
-                    && config.text("llm.model", "").equals("gpt-5.6-sol"), "Both profiles must use the requested Azure Responses deployment.");
-                require(config.text("llm.endpoint", "").equals("https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses"),
+                        && config.text("llm.model", "").equals("gpt-5.6-luna"), "Both profiles must use the requested Azure Responses deployment.");
+                    require(config.text("llm.endpoint", "").equals("https://hackathon-qh.cognitiveservices.azure.com/openai/responses?api-version=2025-04-01-preview"),
                     "Profiles must use the full request URL, not just the Azure base URL.");
-                    require(config.text("llm.model-version", "").equals("2026-07-09"), "Record the supplied deployment model version.");
+                    require(config.text("llm.model-version", "").isEmpty(), "Do not inherit an unverified version from the previous deployment.");
                 require(config.configuredApiKey().isEmpty() && config.text("llm.api-key-env", "").equals("AZURE_OPENAI_API_KEY"),
                     "Shared Azure profiles must stay secret-free and name the Azure key environment variable.");
             EvolutionState state = new EvolutionState();
@@ -197,7 +248,7 @@ public class EvoSpeakV1RegressionTest {
                 Files.deleteIfExists(file);
             }
             List<RulePopulation.Rules> legacy = RulePopulation.read(Paths.get(
-                    "src/mengxu/algorithm/EvoSpeak/WarmStart/population_100_0.5_MO.txt"));
+                    "src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/population_100_0.5_MO.txt"));
             require(legacy.size() == 100, "Legacy population must be readable without trusting placeholder fitness.");
             int validLegacy = 0;
             for (RulePopulation.Rules pair : legacy) {
@@ -432,6 +483,7 @@ public class EvoSpeakV1RegressionTest {
 
     private static void testResponsesApi() throws Exception {
         AtomicReference<JSONObject> requestBody = new AtomicReference<>();
+        AtomicReference<String> responseQuery = new AtomicReference<>();
         AtomicReference<String> apiKeyHeader = new AtomicReference<>();
         AtomicReference<String> authorizationHeader = new AtomicReference<>();
         AtomicReference<JSONObject> responseBody = new AtomicReference<>(responsesEnvelope("responses-ok"));
@@ -440,15 +492,18 @@ public class EvoSpeakV1RegressionTest {
         AtomicReference<String> authMethod = new AtomicReference<>();
         AtomicInteger authBodyLength = new AtomicInteger(-1);
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/openai/v1/responses", exchange -> {
+        com.sun.net.httpserver.HttpHandler responsesHandler = exchange -> {
             requestBody.set(new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
+            responseQuery.set(exchange.getRequestURI().getRawQuery());
             apiKeyHeader.set(exchange.getRequestHeaders().getFirst("api-key"));
             authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
             byte[] response = responseBody.get().toString().getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, response.length);
             exchange.getResponseBody().write(response);
             exchange.close();
-        });
+        };
+        server.createContext("/openai/v1/responses", responsesHandler);
+        server.createContext("/openai/responses", responsesHandler);
             server.createContext("/openai/v1/models", exchange -> {
                 authRequests.incrementAndGet();
                 authMethod.set(exchange.getRequestMethod());
@@ -482,7 +537,7 @@ public class EvoSpeakV1RegressionTest {
             require("azure-test-key".equals(apiKeyHeader.get()) && authorizationHeader.get() == null,
                     "Azure resource-key authentication must use api-key, not an OpenAI Bearer key.");
                 for (String profile : new String[]{"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"}) {
-                EvoSpeakConfig selected = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/EvoSpeakV1/" + profile),
+                EvoSpeakConfig selected = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/" + profile),
                     "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/v1/responses",
                     "llm.proxy=direct", "llm.timeout-seconds=3");
                 selected.set("llm.api-key", "azure-test-key");
@@ -507,6 +562,13 @@ public class EvoSpeakV1RegressionTest {
                     require(authRequests.get() == requestsBefore + 1, "Azure auth checks must not retry or generate text.");
                 }
                 authStatus.set(200);
+                selected.set("llm.endpoint", "http://127.0.0.1:" + server.getAddress().getPort()
+                    + "/openai/responses?api-version=2025-04-01-preview");
+                require(new LlmClient(selected).complete("Test", "Test").equals("responses-ok")
+                    && "api-version=2025-04-01-preview".equals(responseQuery.get())
+                    && requestBody.get().getString("model").equals("gpt-5.6-luna")
+                    && "azure-test-key".equals(apiKeyHeader.get()) && authorizationHeader.get() == null,
+                    "Dated Azure Responses must preserve the API-version query, deployment and resource-key header.");
                 }
             config.set("llm.provider", "openai-compatible");
             require(new LlmClient(config, name -> "openai-test-key").complete("Test", "Test").equals("responses-ok")
@@ -555,14 +617,17 @@ public class EvoSpeakV1RegressionTest {
             responseBody.set(responsesEnvelope("partial-secret-text"));
             responseBody.get().getJSONArray("output").put(new JSONObject().put("type", "function_call"));
             assertResponsesRejected(client, "non-text output item");
+            for (String profile : new String[]{"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"}) {
                 Path workflowRoot = Files.createTempDirectory("evospeak-responses-workflow-");
-                EvoSpeakConfig workflow = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStart.params"),
-                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/v1/responses",
+                EvoSpeakConfig workflow = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/" + profile),
+                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/responses?api-version=2025-04-01-preview",
                     "llm.proxy=direct", "llm.timeout-seconds=3",
+                    "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName(),
                     "evospeak.output-directory=" + workflowRoot.toString().replace('\\', '/'),
                     "evospeak.batch-size=2", "evospeak.max-batches=1", "pop.subpop.0.size=2", "breed.elite.0=1", "generations=2",
                     "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
                     "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
+                loadedWarmStartRules.clear();
                 responseBody.set(responsesEnvelope(twoRuleResponse().toString()));
                 Path run = EvoSpeakMain.run(workflow, new LlmClient(workflow, name -> "azure-test-key"));
                 require(requestBody.get().getString("input").contains("mean-weighted-tardiness"),
@@ -571,11 +636,29 @@ public class EvoSpeakV1RegressionTest {
                 require(runStatus.getString("state").equals("completed") && runStatus.getString("api").equals("responses")
                     && Files.readAllLines(run.resolve("generations.jsonl")).size() == 2,
                     "Azure Responses output must pass rule validation and reach real GP evolution.");
-                    require(runStatus.getString("configuredModelVersion").equals("2026-07-09")
+                    require(runStatus.getString("configuredModelVersion").isEmpty()
+                        && "api-version=2025-04-01-preview".equals(responseQuery.get())
                         && !requestBody.get().has("model_version") && !requestBody.get().has("api-version"),
                         "Model version is declared run metadata, not a Responses request parameter or API version.");
                 require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2,
                     "Responses-generated rules must retain the native ECJ population format.");
+                String serialized = Files.readString(run.resolve("generated-population.txt"));
+                require(serialized.startsWith("Number of Individuals: i2|")
+                    && serialized.lines().filter(line -> line.equals("Evaluated: F")).count() == 2
+                    && serialized.lines().filter(line -> line.startsWith("Fitness: [")).count() == 2
+                    && serialized.lines().filter(line -> line.equals("Tree 0:")).count() == 2
+                    && serialized.lines().filter(line -> line.equals("Tree 1:")).count() == 2,
+                    "Initial TXT must use the standalone ECJ layout for both objective modes.");
+                require(loadedWarmStartRules.size() == 2 && runStatus.getBoolean("initialPopulationLoaded")
+                    && Paths.get(runStatus.getString("initialPopulationFile")).equals(run.resolve("generated-population.txt")),
+                    "Both objective modes must initialize GP by reading the published TXT, not the generation list.");
+                List<RulePopulation.Rules> saved = RulePopulation.read(run.resolve("generated-population.txt"));
+                for (int index = 0; index < saved.size(); index++) {
+                    require(saved.get(index).sequencing.equals(loadedWarmStartRules.get(index).sequencing)
+                        && saved.get(index).routing.equals(loadedWarmStartRules.get(index).routing),
+                        "The GP initial trees must match the saved initial population exactly and in order.");
+                }
+                workflow.set("pop.subpop.0.species", "ec.gp.GPSpecies");
                 JSONObject explanation = new JSONObject().put("sequencing", "PT and W influence sequencing priorities.")
                     .put("routing", "WIQ measures candidate-machine queue work.")
                     .put("interaction", "Queue assignment and job ordering act together.")
@@ -586,6 +669,43 @@ public class EvoSpeakV1RegressionTest {
                     run.resolve("generated-population.txt"), report);
                 require(Files.readString(report).contains("Analysis complete") && requestBody.get().getString("input").contains("terminalsUsed"),
                     "The independent analyzer must use Responses while preserving verified terminal facts.");
+                loadedWarmStartRules.clear();
+                EvoSpeakConfig generationOnly = workflow.copy();
+                generationOnly.set("pop.subpop.0.species", FileBackedTestSpecies.class.getName());
+                generationOnly.set("evospeak.run-gp", false);
+                generationOnly.set("evospeak.output-directory", workflowRoot.resolve("generate-only"));
+                responseBody.set(responsesEnvelope(twoRuleResponse().toString()));
+                Path generatedOnly = EvoSpeakMain.run(generationOnly, new LlmClient(generationOnly, name -> "azure-test-key"));
+                JSONObject generatedStatus = new JSONObject(Files.readString(generatedOnly.resolve("status.json")));
+                require(generatedStatus.getString("state").equals("validated") && !generatedStatus.getBoolean("initialPopulationLoaded")
+                    && loadedWarmStartRules.isEmpty() && RulePopulation.read(generatedOnly.resolve("generated-population.txt")).size() == 2,
+                    "Generate-only mode must publish the complete TXT without initializing a GP population.");
+                require(!Files.exists(Paths.get(generatedStatus.getString("statisticsFile")))
+                    && !Files.exists(generatedOnly.resolve("generations.jsonl")),
+                    "Generate-only mode must not initialize GP statistics or run generations.");
+                Path failureRoot = workflowRoot.resolve("failed-generation");
+                generationOnly.set("evospeak.run-gp", true);
+                generationOnly.set("evospeak.output-directory", failureRoot);
+                responseBody.set(responsesEnvelope(generatedResponse(new JSONArray()
+                    .put(new RulePopulation.Rules("UNKNOWN", "WIQ").json())
+                    .put(new RulePopulation.Rules("PT", "WIQ").json())).toString()));
+                boolean blocked = false;
+                try {
+                    EvoSpeakMain.run(generationOnly, new LlmClient(generationOnly, name -> "azure-test-key"));
+                } catch (java.io.UncheckedIOException expected) {
+                    blocked = true;
+                }
+                require(blocked && loadedWarmStartRules.isEmpty(), "An incomplete LLM population must stop before GP file loading.");
+                try (java.util.stream.Stream<Path> directories = Files.list(failureRoot)) {
+                    Path failed = directories.filter(Files::isDirectory).findFirst().orElseThrow();
+                    JSONObject failedStatus = new JSONObject(Files.readString(failed.resolve("status.json")));
+                    require(failedStatus.getString("state").equals("failed") && !failedStatus.getBoolean("initialPopulationLoaded")
+                        && !Files.exists(failed.resolve("generated-population.txt"))
+                        && !Files.exists(Paths.get(failedStatus.getString("statisticsFile")))
+                        && !Files.exists(failed.resolve("generations.jsonl")),
+                        "Generation failure must retain its audit status but publish neither a partial TXT nor GP output.");
+                }
+            }
             config.set("llm.api", "chat-completions");
             boolean mismatchRejected = false;
             try {
@@ -596,6 +716,28 @@ public class EvoSpeakV1RegressionTest {
             require(mismatchRejected, "Endpoint/protocol mismatches must fail before network access.");
         } finally {
             server.stop(0);
+        }
+    }
+
+    private static final List<RulePopulation.Rules> loadedWarmStartRules = new java.util.ArrayList<>();
+
+    public static class FileBackedTestSpecies extends ec.gp.GPSpecies {
+        @Override
+        public ec.Individual newIndividual(EvolutionState state, int thread) {
+            throw new AssertionError("The LLM warm start must not initialize random individuals before or after generation.");
+        }
+
+        @Override
+        public ec.Individual newIndividual(EvolutionState state, java.io.LineNumberReader reader) throws java.io.IOException {
+            Path file = state.parameters.getFile(new Parameter("pop.subpop.0.file"), null).toPath();
+            require(Files.isRegularFile(file), "The initial TXT must be saved before GP reads any individual.");
+            ec.Individual individual = super.newIndividual(state, reader);
+            require(!individual.evaluated && individual.fitness instanceof WeightedFitness
+                    && ((WeightedFitness) individual.fitness).getObjectives().length
+                    == state.parameters.getInt(new Parameter("eval.problem.eval-model.objectives"), null),
+                    "Loaded fitness must remain unevaluated and match the selected objective dimensions.");
+            loadedWarmStartRules.add(RulePopulation.rules((GPIndividual) individual));
+            return individual;
         }
     }
 
@@ -702,7 +844,7 @@ public class EvoSpeakV1RegressionTest {
                 require(!Files.exists(checkOutput), "Auth-only entry point must not initialize GP or create run files.");
             Path localParams = Files.createTempFile("evospeak-api-", ".local.params");
             try {
-                String parent = Paths.get("src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStartMO.params")
+                String parent = Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params")
                         .toAbsolutePath().toString().replace('\\', '/');
                 Files.writeString(localParams, "parent.0 = " + parent + "\nllm.api-key = local-test-key\nprint-params = true\n");
                 java.io.ByteArrayOutputStream trace = new java.io.ByteArrayOutputStream();
@@ -917,7 +1059,7 @@ public class EvoSpeakV1RegressionTest {
     private static void testGPMainRuns() throws Exception {
         Path directory = Files.createTempDirectory("evospeak-gpmain-test-");
         Path artifacts = directory.resolve("artifacts");
-        String[] arguments = {"-file", "src/mengxu/algorithm/EvoSpeakV1/smoke.params", "-p", "generations=2",
+        String[] arguments = {"-file", "src/mengxu/algorithm/OnlineEvoSpeak/smoke.params", "-p", "generations=2",
                 "-p", "evospeak.validation.seeds=17001", "-p", "evospeak.output-directory=" + artifacts,
                 "-p", "seed.0=99", "-p", "stat.file=" + directory.resolve("unused.out.stat")};
         String[] originalArguments = arguments.clone();
@@ -939,7 +1081,7 @@ public class EvoSpeakV1RegressionTest {
         require(!Files.exists(directory.resolve("unused.out.stat")), "A stale stat.file must not capture later runs.");
         testGPMainResultCollisions(arguments, directory, artifacts);
         require(Arrays.equals(arguments, originalArguments), "Collision handling must not change caller arguments.");
-        GPMain.runExperiment(new String[]{"-file", "src/mengxu/algorithm/EvoSpeakV1/smoke.params",
+        GPMain.runExperiment(new String[]{"-file", "src/mengxu/algorithm/OnlineEvoSpeak/smoke.params",
                 "-p", "state=" + GPLauncherProbeState.class.getName()}, 33, directory);
         require(Files.readString(directory.resolve("job.33.out.stat")).equals("33"),
                 "Ordinary evolution states must still be dispatched through GPRun.");

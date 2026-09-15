@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "EvoSpeakV1: Compile",
+      "label": "OnlineEvoSpeak: Compile",
       "type": "process",
       "command": "pwsh",
-      "args": ["-NoProfile", "-File", "${workspaceFolder}/src/mengxu/algorithm/EvoSpeakV1/run.ps1", "-Action", "build"],
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/src/mengxu/algorithm/OnlineEvoSpeak/run.ps1", "-Action", "build"],
       "options": {"cwd": "${workspaceFolder}"},
       "problemMatcher": []
     }
