@@ -33,13 +33,15 @@ evospeak.population-file = ../EvoSpeak/WarmStart/population_100_0.2_MO.txt
 evospeak.output-directory = runs/multi-objective
 evospeak.examples-file = warm-start-examples.json
 
-llm.provider = openai-compatible
-llm.model = gpt-4.1-mini
-llm.endpoint = https://api.openai.com/v1/chat/completions
+llm.provider = azure-openai
+llm.api = responses
+llm.model = gpt-5.6-sol
+llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
 # Keep this shared file secret-free. Enter a key in the corresponding .local.params file.
+# Use this Azure resource's Key1/Key2, not a DefaultAzureCredential/Entra access token.
 # A blank key falls back to the environment variable below.
 llm.api-key =
-llm.api-key-env = OPENAI_API_KEY
+llm.api-key-env = AZURE_OPENAI_API_KEY
 llm.timeout-seconds = 120
 llm.max-output-tokens = 8000
 llm.max-attempts = 3

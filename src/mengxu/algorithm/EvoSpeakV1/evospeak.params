@@ -163,6 +163,7 @@ evospeak.validation.max-decisions = 1000000
 # A full endpoint URL can override the provider default; keep this shared file secret-free.
 # Private .local.params profiles may supply llm.api-key instead of an environment variable.
 llm.provider = openai-compatible
+llm.api = chat-completions
 llm.model = gpt-4.1-mini
 llm.api-key-env = OPENAI_API_KEY
 llm.proxy = system
@@ -173,9 +174,11 @@ llm.max-attempts = 3
 # Optional: llm.endpoint = https://api.openai.com/v1/chat/completions
 # Proxy choices: system (JVM defaults), direct, or http://127.0.0.1:<actual-HTTP-proxy-port>.
 # An HTTPS endpoint uses an HTTP CONNECT tunnel; do not use a SOCKS-only port here.
-# Azure: full https://.../openai/deployments/.../chat/completions?api-version=... URL.
+# OpenAI/Azure Responses: llm.api=responses and a full /openai/v1/responses (Azure) or /v1/responses URL.
+# Azure resource keys use llm.provider=azure-openai and llm.api-key-env=AZURE_OPENAI_API_KEY.
+# Legacy Azure Chat Completions: full /openai/deployments/.../chat/completions?api-version=... URL.
 # Optional: llm.temperature = 0.7 (omit for models without temperature support).
-# Optional: llm.token-parameter = max_completion_tokens (OpenAI-compatible only).
+# Optional: llm.token-parameter = max_completion_tokens (Chat Completions only; Responses uses max_output_tokens).
 
 # Independent RuleAnalysisMain; --population and --prompt-file can override these.
 analysis.language = Chinese

@@ -23,6 +23,7 @@ import java.util.function.Function;
 public final class LlmClient {
     private final EvoSpeakConfig config;
     private final String provider;
+    private final String api;
     private final String model;
     private final URI endpoint;
     private final String apiKey;
@@ -42,13 +43,21 @@ public final class LlmClient {
     private LlmClient(EvoSpeakConfig config, Function<String, String> environment, boolean authenticate) {
         this.config = config;
         provider = config.text("llm.provider", "openai-compatible").toLowerCase(Locale.ROOT);
+        api = config.text("llm.api", "chat-completions").toLowerCase(Locale.ROOT);
+        if (!api.equals("chat-completions") && !api.equals("responses")) {
+            throw new IllegalArgumentException("llm.api must be chat-completions or responses.");
+        }
+        if (api.equals("responses") && !provider.equals("azure-openai") && !provider.equals("openai-compatible")) {
+            throw new IllegalArgumentException("llm.api=responses requires azure-openai or openai-compatible.");
+        }
         model = config.text("llm.model", "");
         if (model.isEmpty()) {
             throw new IllegalArgumentException("Set llm.model to the model or Azure deployment name.");
         }
         String defaultEndpoint;
         switch (provider) {
-            case "openai-compatible": defaultEndpoint = "https://api.openai.com/v1/chat/completions"; break;
+                case "openai-compatible": defaultEndpoint = "https://api.openai.com/v1/"
+                    + (api.equals("responses") ? "responses" : "chat/completions"); break;
             case "anthropic": defaultEndpoint = "https://api.anthropic.com/v1/messages"; break;
             case "ollama": defaultEndpoint = "http://localhost:11434/api/chat"; break;
             case "azure-openai": defaultEndpoint = ""; break;
@@ -56,7 +65,8 @@ public final class LlmClient {
         }
         String address = config.text("llm.endpoint", defaultEndpoint);
         if (address.isEmpty()) {
-            throw new IllegalArgumentException("Set llm.endpoint to the full Azure chat/completions deployment URL including api-version.");
+            throw new IllegalArgumentException("Set llm.endpoint to the full Azure endpoint, for example "
+                    + "https://<resource>.services.ai.azure.com/openai/v1/responses with llm.api=responses.");
         }
         endpoint = URI.create(address);
         if (endpoint.getQuery() != null && endpoint.getQuery().matches("(?i).*(api[-_]?key|token|secret|sig)=.*")) {
@@ -68,7 +78,12 @@ public final class LlmClient {
                 || !("https".equalsIgnoreCase(endpoint.getScheme()) || (loopback && "http".equalsIgnoreCase(endpoint.getScheme())))) {
             throw new IllegalArgumentException("LLM endpoints require HTTPS, except HTTP on localhost. Embedded credentials are not allowed.");
         }
-        String keyName = config.text("llm.api-key-env", provider.equals("anthropic") ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY");
+        if (api.equals("responses") != endpoint.getPath().endsWith("/responses")) {
+            throw new IllegalArgumentException("Use a full /responses endpoint with llm.api=responses; "
+                + "use llm.api=chat-completions for the existing chat/messages adapters.");
+        }
+        String keyName = config.text("llm.api-key-env", provider.equals("anthropic") ? "ANTHROPIC_API_KEY"
+            : provider.equals("azure-openai") ? "AZURE_OPENAI_API_KEY" : "OPENAI_API_KEY");
         String configuredKey = null;
         String source = "none (unauthenticated connection check)";
         if (authenticate) {
@@ -121,12 +136,15 @@ public final class LlmClient {
 
     public static String checkAuthentication(EvoSpeakConfig config) throws IOException, InterruptedException {
         LlmClient probe = new LlmClient(config);
-        if (!probe.provider.equals("openai-compatible") || probe.endpoint.getPath() == null
-                || !probe.endpoint.getPath().endsWith("/chat/completions") || probe.endpoint.getRawQuery() != null) {
-            throw new IllegalArgumentException("--check-auth currently supports OpenAI-compatible /chat/completions endpoints "
-                    + "without query parameters. It checks the same service's /models endpoint, not generation.");
+        String path = probe.endpoint.getPath();
+        String suffix = probe.api.equals("responses") ? "/responses" : "/chat/completions";
+        boolean supportedProvider = probe.provider.equals("openai-compatible")
+            || (probe.provider.equals("azure-openai") && path != null && path.startsWith("/openai/v1/"));
+        if (!supportedProvider || path == null || !path.endsWith(suffix) || probe.endpoint.getRawQuery() != null) {
+            throw new IllegalArgumentException("--check-auth supports OpenAI-compatible or Azure v1 /chat/completions "
+                + "and /responses endpoints without query parameters. It checks the same service's /models endpoint, not generation.");
         }
-        URI modelsEndpoint = probe.endpoint.resolve("../models");
+        URI modelsEndpoint = probe.endpoint.resolve(probe.api.equals("responses") ? "models" : "../models");
         HttpRequest request = probe.authenticatedRequest(modelsEndpoint).GET().build();
         HttpResponse<String> response;
         try {
@@ -278,7 +296,7 @@ public final class LlmClient {
                 }
                 return text;
             } catch (org.json.JSONException error) {
-                throw new IOException("LLM returned an incompatible JSON response envelope.", error);
+                throw new IOException("LLM returned an incompatible JSON response envelope.");
             }
         }
         throw lastFailure == null ? new IOException("LLM did not return a response.") : lastFailure;
@@ -298,6 +316,10 @@ public final class LlmClient {
             if ("api.openai.com".equalsIgnoreCase(endpoint.getHost())) {
                 message += "This is the official OpenAI API: Azure, DeepSeek and third-party gateway keys are not "
                         + "interchangeable with official OpenAI API keys. ChatGPT login/session credentials are not API keys. ";
+                } else if (provider.equals("azure-openai")) {
+                message += "This configuration sends an Azure resource key in the api-key header. Use this resource's "
+                    + "Key1/Key2 and confirm key authentication is enabled. Entra ID tokens from DefaultAzureCredential "
+                    + "are not resource API keys; automatic Entra token authentication is not implemented. ";
             }
             message += "A nonempty local llm.api-key overrides the environment key. Correct or rotate that credential "
                     + "in the private params, or configure the endpoint/provider that issued it. "
@@ -345,7 +367,10 @@ public final class LlmClient {
         JSONArray messages = new JSONArray();
         JSONObject body = new JSONObject().put("model", model);
         int tokens = config.integer("llm.max-output-tokens", 8000);
-        if (provider.equals("anthropic")) {
+        if (api.equals("responses")) {
+            body.put("instructions", system).put("input", prompt).put("max_output_tokens", tokens)
+                    .put("store", false).put("stream", false).put("background", false);
+        } else if (provider.equals("anthropic")) {
             body.put("system", system).put("max_tokens", tokens);
         } else {
             messages.put(new JSONObject().put("role", "system").put("content", system));
@@ -371,11 +396,17 @@ public final class LlmClient {
                 body.put("temperature", value);
             }
         }
+        if (api.equals("responses")) {
+            return body;
+        }
         messages.put(new JSONObject().put("role", "user").put("content", prompt));
         return body.put("messages", messages);
     }
 
     private String responseText(JSONObject response) throws IOException {
+        if (api.equals("responses")) {
+            return responsesText(response);
+        }
         if (provider.equals("ollama")) {
             rejectTruncation(response.optString("done_reason"));
             return response.getJSONObject("message").getString("content");
@@ -395,6 +426,54 @@ public final class LlmClient {
         rejectTruncation(choice.optString("finish_reason"));
         JSONObject message = choice.getJSONObject("message");
         return message.optString("content", "");
+    }
+
+    private String responsesText(JSONObject response) throws IOException {
+        if (response.optString("status").equals("incomplete")) {
+            JSONObject details = response.optJSONObject("incomplete_details");
+            if (details != null && details.optString("reason").equals("max_output_tokens")) {
+                throw new IOException("Responses API output was truncated. Reduce evospeak.batch-size or increase "
+                        + "llm.max-output-tokens; this budget includes reasoning tokens.");
+            }
+            throw new IOException("Responses API returned incomplete output; partial or filtered text will not be used.");
+        }
+        if (!response.optString("status").equals("completed") || !response.isNull("error")) {
+            throw new IOException("Responses API did not complete successfully; no partial output will be used.");
+        }
+        JSONArray filters = response.optJSONArray("content_filters");
+        if (filters != null) {
+            for (int filterIndex = 0; filterIndex < filters.length(); filterIndex++) {
+                if (filters.getJSONObject(filterIndex).optBoolean("blocked")) {
+                    throw new IOException("Azure filtered the Responses API output; it will not be used.");
+                }
+            }
+        }
+        StringBuilder text = new StringBuilder();
+        JSONArray outputItems = response.getJSONArray("output");
+        for (int outputIndex = 0; outputIndex < outputItems.length(); outputIndex++) {
+            JSONObject output = outputItems.getJSONObject(outputIndex);
+            if (output.optString("type").equals("reasoning")) {
+                continue;
+            }
+            if (!output.optString("type").equals("message") || !output.optString("role").equals("assistant")) {
+                throw new IOException("Responses API returned a non-text output item; tool/image output is not a rule response.");
+            }
+            if (!output.optString("status", "completed").equals("completed")) {
+                throw new IOException("Responses API returned an incomplete assistant message.");
+            }
+            JSONArray contentItems = output.getJSONArray("content");
+            for (int contentIndex = 0; contentIndex < contentItems.length(); contentIndex++) {
+                JSONObject content = contentItems.getJSONObject(contentIndex);
+                if (content.optString("type").equals("refusal")) {
+                    throw new IOException("Responses API refused the request; no rules will be accepted.");
+                }
+                if (!content.optString("type").equals("output_text")) {
+                    throw new IOException("Responses API returned unsupported message content.");
+                }
+                text.append(content.getString("text"));
+            }
+        }
+        return text.toString();
     }
 
     private void rejectTruncation(String reason) throws IOException {

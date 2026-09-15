@@ -26,6 +26,11 @@ import org.json.JSONArray;
 
 public class EvoSpeakV1RegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--responses-only")) {
+            testResponsesApi();
+            System.out.println("EvoSpeakV1 Responses API regression tests passed.");
+            return;
+        }
         if (args.length == 1 && args[0].equals("--auth-only")) {
             testLlmProviders();
             System.out.println("EvoSpeakV1 authentication regression tests passed.");
@@ -40,6 +45,7 @@ public class EvoSpeakV1RegressionTest {
         testParameterProfiles();
         testPopulationParsing();
         testLlmProviders();
+        testResponsesApi();
         testProxyTransport();
         testOfflinePipeline();
         testGPMainRuns();
@@ -98,6 +104,12 @@ public class EvoSpeakV1RegressionTest {
             require(config.integer("pop.subpop.0.size", 0) == 100 && config.integer("generations", 0) == 51, "Original GP budget");
             require(config.text("state", "").equals(EvoSpeakEvolutionState.class.getName()), "Profiles must use the V1 pipeline.");
             require(Files.isRegularFile(config.path("evospeak.examples-file", "")), "Relative profile references must resolve.");
+                require(config.text("llm.provider", "").equals("azure-openai") && config.text("llm.api", "").equals("responses")
+                    && config.text("llm.model", "").equals("gpt-5.6-sol"), "Both profiles must use the requested Azure Responses deployment.");
+                require(config.text("llm.endpoint", "").equals("https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses"),
+                    "Profiles must use the full request URL, not just the Azure base URL.");
+                require(config.configuredApiKey().isEmpty() && config.text("llm.api-key-env", "").equals("AZURE_OPENAI_API_KEY"),
+                    "Shared Azure profiles must stay secret-free and name the Azure key environment variable.");
             EvolutionState state = new EvolutionState();
             state.parameters = config.parameters;
             state.output = new Output(true);
@@ -417,6 +429,195 @@ public class EvoSpeakV1RegressionTest {
         }
     }
 
+    private static void testResponsesApi() throws Exception {
+        AtomicReference<JSONObject> requestBody = new AtomicReference<>();
+        AtomicReference<String> apiKeyHeader = new AtomicReference<>();
+        AtomicReference<String> authorizationHeader = new AtomicReference<>();
+        AtomicReference<JSONObject> responseBody = new AtomicReference<>(responsesEnvelope("responses-ok"));
+        AtomicInteger authStatus = new AtomicInteger(200);
+        AtomicInteger authRequests = new AtomicInteger();
+        AtomicReference<String> authMethod = new AtomicReference<>();
+        AtomicInteger authBodyLength = new AtomicInteger(-1);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/openai/v1/responses", exchange -> {
+            requestBody.set(new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)));
+            apiKeyHeader.set(exchange.getRequestHeaders().getFirst("api-key"));
+            authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            byte[] response = responseBody.get().toString().getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+            server.createContext("/openai/v1/models", exchange -> {
+                authRequests.incrementAndGet();
+                authMethod.set(exchange.getRequestMethod());
+                authBodyLength.set(exchange.getRequestBody().readAllBytes().length);
+                apiKeyHeader.set(exchange.getRequestHeaders().getFirst("api-key"));
+                authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                JSONObject result = authStatus.get() == 200 ? new JSONObject().put("data", new JSONArray())
+                    : new JSONObject().put("error", new JSONObject().put("code", "invalid_api_key")
+                        .put("message", "azure-test-key"));
+                byte[] response = result.toString().getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(authStatus.get(), response.length);
+                exchange.getResponseBody().write(response);
+                exchange.close();
+            });
+        server.start();
+        try {
+            EvoSpeakConfig config = new EvoSpeakConfig(Paths.get(EvoSpeakConfig.DEFAULT_PARAMS),
+                    "llm.provider=azure-openai", "llm.api=responses", "llm.model=gpt-5.6-sol",
+                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/v1/responses",
+                    "llm.proxy=direct", "llm.timeout-seconds=3", "llm.max-attempts=3", "llm.max-output-tokens=1234");
+            LlmClient client = new LlmClient(config, name -> "azure-test-key");
+            require(client.complete("Generation instructions", "Generation prompt").equals("responses-ok"),
+                    "Responses text must be extracted after a leading reasoning item.");
+            JSONObject request = requestBody.get();
+            require(request.getString("model").equals("gpt-5.6-sol") && request.getString("instructions").equals("Generation instructions")
+                    && request.getString("input").equals("Generation prompt"), "Responses API must preserve deployment and both prompt components.");
+            require(request.getInt("max_output_tokens") == 1234 && !request.has("messages") && !request.has("max_tokens")
+                    && !request.has("max_completion_tokens") && !request.has("temperature"), "Use only the Responses request fields, with optional temperature omitted.");
+            require(!request.getBoolean("store") && !request.getBoolean("stream") && !request.getBoolean("background"),
+                    "Rule generation must remain synchronous and stateless.");
+            require("azure-test-key".equals(apiKeyHeader.get()) && authorizationHeader.get() == null,
+                    "Azure resource-key authentication must use api-key, not an OpenAI Bearer key.");
+                for (String profile : new String[]{"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"}) {
+                EvoSpeakConfig selected = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/EvoSpeakV1/" + profile),
+                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/v1/responses",
+                    "llm.proxy=direct", "llm.timeout-seconds=3");
+                selected.set("llm.api-key", "azure-test-key");
+                require(new LlmClient(selected).complete("Test", "Test").equals("responses-ok"),
+                    "Both public profiles must select the Responses adapter through normal parameter loading.");
+                require(LlmClient.checkAuthentication(selected).contains("model-list request was accepted"),
+                    "Azure v1 auth checks must resolve the sibling /openai/v1/models endpoint.");
+                require("GET".equals(authMethod.get()) && authBodyLength.get() == 0
+                    && "azure-test-key".equals(apiKeyHeader.get()) && authorizationHeader.get() == null,
+                    "Azure auth checks must be read-only and use resource-key authentication without a prompt.");
+                for (int status : new int[]{401, 403, 404, 405}) {
+                    authStatus.set(status);
+                    int requestsBefore = authRequests.get();
+                    try {
+                    LlmClient.checkAuthentication(selected);
+                    throw new AssertionError("Failed Azure auth probes must not report success.");
+                    } catch (java.io.IOException expected) {
+                    require(!expected.getMessage().contains("azure-test-key"), "Azure auth errors must not reveal a key.");
+                    require(status == 401 ? expected.getMessage().contains("Key1/Key2")
+                        : expected.getMessage().contains("restricted or unsupported"), "Distinguish resource-key rejection from model-list permissions.");
+                    }
+                    require(authRequests.get() == requestsBefore + 1, "Azure auth checks must not retry or generate text.");
+                }
+                authStatus.set(200);
+                }
+            config.set("llm.provider", "openai-compatible");
+            require(new LlmClient(config, name -> "openai-test-key").complete("Test", "Test").equals("responses-ok")
+                    && "Bearer openai-test-key".equals(authorizationHeader.get()) && apiKeyHeader.get() == null,
+                    "Responses must also support the existing OpenAI-compatible authentication convention.");
+                config.set("llm.api-key", "openai-test-key");
+                require(LlmClient.checkAuthentication(config).contains("model-list request was accepted")
+                    && "Bearer openai-test-key".equals(authorizationHeader.get()) && apiKeyHeader.get() == null,
+                    "OpenAI Responses auth checks must also use the sibling models endpoint with Bearer authentication.");
+            for (String status : new String[]{"incomplete", "failed", "queued", "in_progress", "cancelled"}) {
+                JSONObject failure = responsesEnvelope("partial-secret-text").put("status", status);
+                if (status.equals("incomplete")) {
+                    failure.put("incomplete_details", new JSONObject().put("reason", "max_output_tokens"));
+                }
+                responseBody.set(failure);
+                try {
+                    client.complete("Test", "Test");
+                    throw new AssertionError("Only completed Responses output may be consumed.");
+                } catch (java.io.IOException expected) {
+                    require(!expected.getMessage().contains("partial-secret-text"), "Never echo failed output in error messages.");
+                    require(!status.equals("incomplete") || expected.getMessage().contains("truncated"), "Identify exhausted output-token budgets.");
+                }
+            }
+            JSONObject refusal = responsesEnvelope("partial-secret-text");
+            refusal.getJSONArray("output").getJSONObject(1).getJSONArray("content")
+                    .put(new JSONObject().put("type", "refusal").put("refusal", "provider-refusal-text"));
+            responseBody.set(refusal);
+            try {
+                client.complete("Test", "Test");
+                throw new AssertionError("A mixed text/refusal response must be rejected.");
+            } catch (java.io.IOException expected) {
+                require(expected.getMessage().contains("refused") && !expected.getMessage().contains("provider-refusal-text"),
+                        "Refusals must be detected without exposing provider text.");
+            }
+            responseBody.set(responsesEnvelope("").put("content_filters", new JSONArray().put(new JSONObject().put("blocked", true))));
+            assertResponsesRejected(client, "filtered");
+            responseBody.set(responsesEnvelope(""));
+            assertResponsesRejected(client, "empty text");
+            responseBody.set(responsesEnvelope("partial-secret-text").put("error", new JSONObject().put("message", "azure-test-key")));
+            assertResponsesRejected(client, "did not complete");
+            responseBody.set(responsesEnvelope("partial-secret-text"));
+            responseBody.get().getJSONArray("output").getJSONObject(1).put("status", "incomplete");
+            assertResponsesRejected(client, "incomplete assistant message");
+            responseBody.set(responsesEnvelope("partial-secret-text").put("output", new JSONArray().put("azure-test-key")));
+            assertResponsesRejected(client, "incompatible JSON response envelope");
+            responseBody.set(responsesEnvelope("partial-secret-text"));
+            responseBody.get().getJSONArray("output").put(new JSONObject().put("type", "function_call"));
+            assertResponsesRejected(client, "non-text output item");
+                Path workflowRoot = Files.createTempDirectory("evospeak-responses-workflow-");
+                EvoSpeakConfig workflow = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/EvoSpeakV1/multipletreegp-dynamicLLMWarmStart.params"),
+                    "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/openai/v1/responses",
+                    "llm.proxy=direct", "llm.timeout-seconds=3",
+                    "evospeak.output-directory=" + workflowRoot.toString().replace('\\', '/'),
+                    "evospeak.batch-size=2", "evospeak.max-batches=1", "pop.subpop.0.size=2", "breed.elite.0=1", "generations=2",
+                    "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
+                    "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
+                responseBody.set(responsesEnvelope(twoRuleResponse().toString()));
+                Path run = EvoSpeakMain.run(workflow, new LlmClient(workflow, name -> "azure-test-key"));
+                require(requestBody.get().getString("input").contains("mean-weighted-tardiness"),
+                    "Responses population generation must preserve the configured objective prompt.");
+                JSONObject runStatus = new JSONObject(Files.readString(run.resolve("status.json")));
+                require(runStatus.getString("state").equals("completed") && runStatus.getString("api").equals("responses")
+                    && Files.readAllLines(run.resolve("generations.jsonl")).size() == 2,
+                    "Azure Responses output must pass rule validation and reach real GP evolution.");
+                require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2,
+                    "Responses-generated rules must retain the native ECJ population format.");
+                JSONObject explanation = new JSONObject().put("sequencing", "PT and W influence sequencing priorities.")
+                    .put("routing", "WIQ measures candidate-machine queue work.")
+                    .put("interaction", "Queue assignment and job ordering act together.")
+                    .put("limitations", "These interpretations are not measured performance improvements.");
+                responseBody.set(responsesEnvelope(explanation.toString()));
+                Path report = run.resolve("responses-analysis.md");
+                RuleAnalysisMain.analyze(workflow, new LlmClient(workflow, name -> "azure-test-key"),
+                    run.resolve("generated-population.txt"), report);
+                require(Files.readString(report).contains("Analysis complete") && requestBody.get().getString("input").contains("terminalsUsed"),
+                    "The independent analyzer must use Responses while preserving verified terminal facts.");
+            config.set("llm.api", "chat-completions");
+            boolean mismatchRejected = false;
+            try {
+                new LlmClient(config, name -> "test-key");
+            } catch (IllegalArgumentException expected) {
+                mismatchRejected = expected.getMessage().contains("llm.api=responses");
+            }
+            require(mismatchRejected, "Endpoint/protocol mismatches must fail before network access.");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private static void assertResponsesRejected(LlmClient client, String message) throws Exception {
+        int requestsBefore = client.requestCount();
+        try {
+            client.complete("Test", "Test");
+            throw new AssertionError("Invalid Responses output must not reach population generation.");
+        } catch (java.io.IOException expected) {
+            java.io.StringWriter trace = new java.io.StringWriter();
+            expected.printStackTrace(new java.io.PrintWriter(trace));
+            require(expected.getMessage().contains(message) && !trace.toString().contains("azure-test-key")
+                    && !trace.toString().contains("partial-secret-text"), "Responses errors must be descriptive without leaking response data.");
+        }
+        require(client.requestCount() == requestsBefore + 1, "Invalid Responses output must not trigger transport retries.");
+    }
+
+    private static JSONObject responsesEnvelope(String text) {
+        int middle = text.length() / 2;
+        return new JSONObject().put("status", "completed").put("error", JSONObject.NULL)
+                .put("output", new JSONArray().put(new JSONObject().put("type", "reasoning").put("summary", new JSONArray()))
+                        .put(new JSONObject().put("type", "message").put("role", "assistant").put("status", "completed")
+                                .put("content", new JSONArray().put(new JSONObject().put("type", "output_text").put("text", text.substring(0, middle)))
+                                        .put(new JSONObject().put("type", "output_text").put("text", text.substring(middle))))));
+    }
+
     private static void testLlmProviders() throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -506,6 +707,7 @@ public class EvoSpeakV1RegressionTest {
                 try (java.io.PrintStream errors = new java.io.PrintStream(trace, true, StandardCharsets.UTF_8.name())) {
                     System.setErr(errors);
                     local = new EvoSpeakConfig(localParams,
+                        "llm.provider=openai-compatible", "llm.api=chat-completions",
                         "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/chat");
                 } finally {
                     System.setErr(previousErrors);

@@ -22,9 +22,9 @@ public final class EvoSpeakMain {
         if (args.length == 1 && args[0].equals("--help")) {
             System.out.println("EvoSpeakMain [--check-connection | --check-auth] [-file <params>] [-p name=value ...]\n"
                     + "No arguments: src/mengxu/algorithm/EvoSpeakV1/evospeak.params.\n"
-                    + "Set llm.provider/model/endpoint and llm.api-key in private local params or its environment variable.\n"
+                    + "Set llm.provider/api/model/endpoint and llm.api-key in private local params or its environment variable.\n"
                     + "--check-connection sends only an unauthenticated HEAD request.\n"
-                    + "--check-auth sends an authenticated GET to the same OpenAI-compatible service's models endpoint.\n"
+                    + "--check-auth sends an authenticated GET to the same OpenAI-compatible or Azure v1 service's models endpoint.\n"
                     + "Neither check submits prompts, model generation or a GP run.");
             return;
         }
@@ -77,6 +77,7 @@ public final class EvoSpeakMain {
                 .put("objectiveMode", config.text("evospeak.objective-mode", "multi"))
                 .put("source", config.text("evospeak.source", "llm"))
                 .put("provider", config.text("llm.provider", "" )).put("model", config.text("llm.model", ""))
+                .put("api", config.text("llm.api", "chat-completions"))
                 .put("seed", config.text("seed.0", "0"));
             JSONObject settings = new JSONObject();
             for (String key : new String[]{"evospeak.objective-mode", "evospeak.objective.0", "evospeak.objective.1",

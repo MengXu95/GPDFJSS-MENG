@@ -45,12 +45,14 @@ Two profiles in this directory inherit the V1 infrastructure from `evospeak.para
 
 Both retain 100 individuals, 51 generations, two trees, two elites, tournament size 4, crossover/mutation/reproduction probabilities 0.80/0.15/0.05, utilization 0.85, due-date factor 1.5, 5000 recorded jobs and 1000 warmup jobs. They use V1's state, evaluator, safe weighted fitness and complete-population validation instead of the old package classes or silent random filling. The old `limit-total-evaluation-times` parameter is not a V1 stopping condition; these profiles use the generation budget. The original offline file paths are available through `evospeak.population-file`, but `evospeak.source=llm` remains active.
 
+Both profiles now select the supplied Azure deployment `gpt-5.6-sol` through the Responses API. The generic `evospeak.params` keeps its OpenAI-compatible Chat Completions default. Selecting one of the Azure profiles does not change the original EvoSpeak implementation or its objective settings.
+
 For an API key stored locally in params, this workspace also has two private companion files:
 
 - `multipletreegp-dynamicLLMWarmStart.local.params`
 - `multipletreegp-dynamicLLMWarmStartMO.local.params`
 
-Each inherits its corresponding profile and contains `llm.api-key=REPLACE_WITH_YOUR_API_KEY`. Replace that placeholder locally with your actual token, without quotes. These `.local.params` files are ignored by Git and must not be shared or force-added. The tracked profiles contain an empty key field and are safe to share. On a fresh checkout, create a local companion with the same two-line structure, for example:
+Each inherits its corresponding profile and provides an editable `llm.api-key` field. Replace its placeholder or previous credential with the Azure resource's Key1/Key2, without quotes or a `Bearer ` prefix. Existing local credentials and proxy settings have not been changed. These `.local.params` files are ignored by Git and must not be shared or force-added. The tracked profiles contain an empty key field and are safe to share. On a fresh checkout, create a local companion with the same two-line structure, for example:
 
 ```properties
 parent.0 = multipletreegp-dynamicLLMWarmStartMO.params
@@ -102,8 +104,9 @@ Keep actual tokens out of tracked params, source, URLs, command-line arguments a
 
 | Provider | `llm.provider` | Endpoint | Authentication |
 |---|---|---|---|
-| OpenAI or compatible service | `openai-compatible` | Default `https://api.openai.com/v1/chat/completions`; override for another service | Bearer token from local params or the named environment variable |
-| Azure OpenAI | `azure-openai` | Full `https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=<supported-version>` | `api-key` header; e.g. `llm.api-key-env=AZURE_OPENAI_API_KEY` |
+| OpenAI or compatible service | `openai-compatible` | Default `https://api.openai.com/v1/chat/completions`, or `/v1/responses` with `llm.api=responses`; override for another service | Bearer token from local params or the named environment variable |
+| Azure OpenAI v1 | `azure-openai` | Full `https://<resource>.services.ai.azure.com/openai/v1/responses` with `llm.api=responses`; `.openai.azure.com` resource endpoints are also supported | Azure resource key in `api-key`; `llm.api-key-env=AZURE_OPENAI_API_KEY` |
+| Azure OpenAI legacy Chat Completions | `azure-openai` | Full `https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=<supported-version>` with `llm.api=chat-completions` | Azure resource key in `api-key` |
 | Anthropic | `anthropic` | Default `https://api.anthropic.com/v1/messages` | `x-api-key`; set `llm.api-key-env=ANTHROPIC_API_KEY` |
 | Local Ollama | `ollama` | Default `http://localhost:11434/api/chat` | No key required; start Ollama and install the model first |
 
@@ -111,6 +114,7 @@ Example for an OpenAI-compatible API:
 
 ```properties
 llm.provider = openai-compatible
+llm.api = chat-completions
 llm.model = gpt-4.1-mini
 llm.api-key =
 llm.api-key-env = OPENAI_API_KEY
@@ -121,7 +125,26 @@ llm.max-output-tokens = 8000
 llm.max-attempts = 3
 ```
 
-For providers requiring `max_completion_tokens`, set `llm.token-parameter=max_completion_tokens`. Temperature is omitted unless `llm.temperature` is explicitly set, because some models do not support it. The adapter supports text chat completions/messages, not every provider's Responses API or streaming API.
+For Chat Completions providers requiring `max_completion_tokens`, set `llm.token-parameter=max_completion_tokens`. Responses mode always maps `llm.max-output-tokens` to `max_output_tokens`, including the model's reasoning-token budget. Temperature is omitted unless `llm.temperature` is explicitly set, because some models do not support it. Anthropic and Ollama retain their existing adapters with the default `llm.api=chat-completions`. Streaming, tool calls and image generation are not supported by this rule client.
+
+### Supplied Azure Responses Deployment
+
+The two original-derived profiles already contain this public configuration:
+
+```properties
+llm.provider = azure-openai
+llm.api = responses
+llm.model = gpt-5.6-sol
+llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
+llm.api-key =
+llm.api-key-env = AZURE_OPENAI_API_KEY
+```
+
+Unlike the Python SDK's `base_url`, `llm.endpoint` is the full POST URL and must include `/responses`. Azure v1 does not need a dated `api-version` query. `llm.model` is the deployment name. The client sends `instructions`, `input` and `max_output_tokens`, with storage, streaming and background mode disabled. It extracts assistant `output_text` blocks in order, skips reasoning items, and rejects incomplete, truncated, filtered, refused or malformed responses before they reach rule validation. Both population generation and `RuleAnalysisMain` use this adapter.
+
+The supplied Python example uses `get_bearer_token_provider(DefaultAzureCredential(), "https://ai.azure.com/.default")`, which is **Microsoft Entra ID authentication**, not a resource API key. This Java configuration uses the resource's **Key1/Key2** in the `api-key` header and requires key authentication to be enabled for that resource. Do not paste the token-provider expression or a temporary Entra access token into this key field. Automatic Entra token acquisition/refresh is not implemented; Entra-only access requires a separate authentication adapter.
+
+The selected single-objective private profile inherits this Azure configuration. Fill its local key field, keep any required local proxy setting, rebuild the project in IDEA, and run `GPMain` as before. For weighted two-objective runs or rule analysis, select the corresponding private profile explicitly. Local tests cover the protocol and GP workflow; deployment access, live model generation and the user's new credential have not been tested.
 
 Only HTTPS endpoints are accepted except loopback HTTP for local services. Redirects are not followed. Transient transport/429/5xx failures have a bounded retry count; authentication and other client errors fail immediately. Truncated model responses are rejected with instructions to reduce batch size or increase output tokens.
 
@@ -169,17 +192,17 @@ For the reported workstation on 2026-09-14, Windows system proxy settings were d
 
 An inference request returning HTTP 401 has received a server response but failed authentication. Check the service that issued the key before changing proxy or GP settings. `api.openai.com` requires an official OpenAI API key; Azure resource keys, third-party gateway keys, another provider's tokens and ChatGPT login/session credentials are not interchangeable. For a compatible third-party API, use that provider's documented full chat-completions URL and supported model instead of sending its token to the official OpenAI host.
 
-A nonempty `llm.api-key` in the selected private params takes precedence over the environment key. Replacing only `OPENAI_API_KEY` will not change the credential being sent while a local key is present. Enter the full active token without quotes or a `Bearer ` prefix; the client adds the correct authentication header. Revoke/rotate an invalid or deactivated key at its issuing service, then update the private file. Never paste keys into chat, logs or committed files. This code does not automatically switch credentials after a rejection.
+A nonempty `llm.api-key` in the selected private params takes precedence over the environment key. Replacing only `OPENAI_API_KEY` or `AZURE_OPENAI_API_KEY` will not change the credential being sent while a local key is present. Enter the full active credential for the selected provider without quotes or a `Bearer ` prefix; the client adds the correct authentication header. Azure resource-key mode requires Key1/Key2 from that same resource, not an Entra access token. Revoke/rotate an invalid or deactivated key at its issuing service, then update the private file. Never paste keys into chat, logs or committed files. This code does not automatically switch credentials after a rejection.
 
 401 diagnostics include the endpoint host, credential source and recognized standard error codes such as `invalid_api_key` or `authentication_error`. They suppress the raw response message and unknown code/type fields because providers can echo the token there. A 407 is proxy authentication and is reported separately. Neither response triggers generation retries.
 
-For an OpenAI-compatible endpoint ending in `/chat/completions` without query parameters, check the credential before launching a full population:
+For an OpenAI-compatible or Azure v1 endpoint ending in `/chat/completions` or `/responses` without query parameters, check the credential before launching a full population:
 
 ```powershell
 .\src\mengxu\algorithm\EvoSpeakV1\run.ps1 -Action auth -ParamsFile .\src\mengxu\algorithm\EvoSpeakV1\multipletreegp-dynamicLLMWarmStart.local.params
 ```
 
-In IDEA use **EvoSpeakMain**, with program arguments `--check-auth -file <selected-params-file>`. This sends one authenticated **GET** to the same service's `/models` endpoint using the same proxy and headers as generation, with no prompt, inference request or GP run. The key is sent only in the provider's authentication header and is not printed. Unlike `--check-connection`, this check requires the configured credential. A successful model-list response does not prove access to a particular inference model or available billing quota. HTTP 403/404/405 can indicate restricted model-list permissions or an unsupported route, so those outcomes alone do not establish inference-token validity. Azure and Anthropic configurations are not supported by this model-list check.
+In IDEA use **EvoSpeakMain**, with program arguments `--check-auth -file <selected-params-file>`. This sends one authenticated **GET** to the same service's `/models` endpoint (`/openai/v1/models` for the supplied Azure resource) using the same proxy and headers as generation, with no prompt, inference request or GP run. The key is sent only in the provider's authentication header and is not printed. Unlike `--check-connection`, this check requires the configured credential. A successful model-list response does not prove access to a particular inference model or available billing quota. HTTP 403/404/405 can indicate restricted model-list permissions or an unsupported route, so those outcomes alone do not establish inference-token validity. Legacy Azure deployment URLs and Anthropic configurations are not supported by this model-list check.
 
 During investigation of the reported 401 on 2026-09-14, a single read-only check against the configured official OpenAI model-list endpoint returned `invalid_api_key`. Local format checks found no quotes, Bearer prefix or whitespace. The token's issuing service could not be confirmed, so no key or endpoint was changed. A valid token for the selected service is required to proceed.
 
