@@ -135,10 +135,13 @@ The two original-derived profiles already contain this public configuration:
 llm.provider = azure-openai
 llm.api = responses
 llm.model = gpt-5.6-sol
+llm.model-version = 2026-07-09
 llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
 llm.api-key =
 llm.api-key-env = AZURE_OPENAI_API_KEY
 ```
+
+`llm.model-version` records the supplied deployment version as `configuredModelVersion` in the run status. It does not pin or verify the Azure deployment's live version, and it is not sent as `api-version` or `model_version`. The deployed version is managed in Azure.
 
 Unlike the Python SDK's `base_url`, `llm.endpoint` is the full POST URL and must include `/responses`. Azure v1 does not need a dated `api-version` query. `llm.model` is the deployment name. The client sends `instructions`, `input` and `max_output_tokens`, with storage, streaming and background mode disabled. It extracts assistant `output_text` blocks in order, skips reasoning items, and rejects incomplete, truncated, filtered, refused or malformed responses before they reach rule validation. Both population generation and `RuleAnalysisMain` use this adapter.
 

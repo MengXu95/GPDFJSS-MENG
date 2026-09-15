@@ -78,6 +78,7 @@ public final class EvoSpeakMain {
                 .put("source", config.text("evospeak.source", "llm"))
                 .put("provider", config.text("llm.provider", "" )).put("model", config.text("llm.model", ""))
                 .put("api", config.text("llm.api", "chat-completions"))
+                .put("configuredModelVersion", config.text("llm.model-version", ""))
                 .put("seed", config.text("seed.0", "0"));
             JSONObject settings = new JSONObject();
             for (String key : new String[]{"evospeak.objective-mode", "evospeak.objective.0", "evospeak.objective.1",

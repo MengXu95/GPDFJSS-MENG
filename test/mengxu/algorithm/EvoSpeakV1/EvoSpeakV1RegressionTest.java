@@ -108,6 +108,7 @@ public class EvoSpeakV1RegressionTest {
                     && config.text("llm.model", "").equals("gpt-5.6-sol"), "Both profiles must use the requested Azure Responses deployment.");
                 require(config.text("llm.endpoint", "").equals("https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses"),
                     "Profiles must use the full request URL, not just the Azure base URL.");
+                    require(config.text("llm.model-version", "").equals("2026-07-09"), "Record the supplied deployment model version.");
                 require(config.configuredApiKey().isEmpty() && config.text("llm.api-key-env", "").equals("AZURE_OPENAI_API_KEY"),
                     "Shared Azure profiles must stay secret-free and name the Azure key environment variable.");
             EvolutionState state = new EvolutionState();
@@ -570,6 +571,9 @@ public class EvoSpeakV1RegressionTest {
                 require(runStatus.getString("state").equals("completed") && runStatus.getString("api").equals("responses")
                     && Files.readAllLines(run.resolve("generations.jsonl")).size() == 2,
                     "Azure Responses output must pass rule validation and reach real GP evolution.");
+                    require(runStatus.getString("configuredModelVersion").equals("2026-07-09")
+                        && !requestBody.get().has("model_version") && !requestBody.get().has("api-version"),
+                        "Model version is declared run metadata, not a Responses request parameter or API version.");
                 require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2,
                     "Responses-generated rules must retain the native ECJ population format.");
                 JSONObject explanation = new JSONObject().put("sequencing", "PT and W influence sequencing priorities.")

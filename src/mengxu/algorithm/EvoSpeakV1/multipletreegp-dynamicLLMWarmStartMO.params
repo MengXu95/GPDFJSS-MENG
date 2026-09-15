@@ -36,6 +36,7 @@ evospeak.examples-file = warm-start-examples.json
 llm.provider = azure-openai
 llm.api = responses
 llm.model = gpt-5.6-sol
+llm.model-version = 2026-07-09
 llm.endpoint = https://41626-me2j04fd-eastus2.services.ai.azure.com/openai/v1/responses
 # Keep this shared file secret-free. Enter a key in the corresponding .local.params file.
 # Use this Azure resource's Key1/Key2, not a DefaultAzureCredential/Entra access token.
