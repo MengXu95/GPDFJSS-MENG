@@ -216,7 +216,7 @@ public final class RuleAnalysisMain {
     private static JSONObject explain(EvoSpeakConfig config, LlmClient client, JSONObject facts, String userPrompt)
             throws IOException, InterruptedException {
         String system = "You are a scheduling researcher explaining GP dispatching rules in clear natural language. "
-                + "Write all four analysis sections in " + config.text("analysis.language", "Chinese") + ". "
+            + "Write all four analysis sections in " + config.text("analysis.language", "English") + ". "
                 + "Use only terminals and semantics in the verified facts. Explain smaller-score priority, signed terms, "
                 + "conditional Min/Max branches, protected division, sequencing-constant machine features, routing-dependent features, "
                 + "and how the pair interacts. Avoid unsupported monotonicity claims for nonlinear expressions. "

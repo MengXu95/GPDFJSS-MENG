@@ -103,6 +103,9 @@ public class OnlineEvoSpeakRegressionTest {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/analysis", exchange -> {
             JSONObject body = new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            require(body.getJSONArray("messages").getJSONObject(0).getString("content")
+                    .contains("Write all four analysis sections in English."),
+                    "Single and multi analysis must default to English, including when analysis.language is absent.");
             String prompt = body.getJSONArray("messages").getJSONObject(1).getString("content");
             require(prompt.contains("terminalsUsed") && prompt.contains("objectiveMode") && !prompt.contains("must-not-leak"),
                 "Directory analysis must provide verified terminals and allowlisted run context, never raw private settings.");
@@ -147,6 +150,8 @@ public class OnlineEvoSpeakRegressionTest {
                 "-p", "llm.api-key=analysis-test-key", "-p", "llm.proxy=direct", "-p", "llm.timeout-seconds=3",
                 "-p", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName()));
             List<RuleAnalysisMain.AnalysisTarget> selected = RuleAnalysisMain.selectResults(arguments.toArray(new String[0]));
+                require(selected.stream().allMatch(target -> target.config.text("analysis.language", "").equals("English")),
+                    "Both analysis modes must inherit the shared English language setting.");
             require(selected.size() == 2 && selected.get(0).population.equals(root.resolve("single-objective/job.22/best-rules.txt"))
                 && selected.get(1).population.equals(root.resolve("multi-objective/job.22/best-rules.txt")),
                 "Both mode roots must be discovered and fixed seed directories must take priority over legacy suffix directories.");
@@ -166,6 +171,7 @@ public class OnlineEvoSpeakRegressionTest {
             require(target.output.getFileName().toString().equals("analysis-best.md") && report.contains("Analysis complete")
                 && !report.contains("must-not-leak"), "Write a deterministic report in the selected result directory without credential data.");
             Files.writeString(target.output, "old report");
+            target.config.parameters.removeDeeply(new Parameter("analysis.language"));
             RuleAnalysisMain.analyze(target.config, new LlmClient(target.config), target.population, target.output);
             require(!Files.readString(target.output).contains("old report"), "Repeated analysis must replace the selected report.");
             }

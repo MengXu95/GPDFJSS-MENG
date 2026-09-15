@@ -412,7 +412,7 @@ runs/multi-objective/job.22/analysis-best.md
 
 `final` and `initial` use `analysis-final.md` and `analysis-initial.md`. Rerunning analysis overwrites the selected report. `--output` chooses a report path for a single mode; `--population` and `--output` cannot be combined with `--mode both`. The analyzer refuses to overwrite its rule input, prompt input or selected params file. The next training rerun removes the default analysis reports for that seed so they cannot describe outdated rules.
 
-Use `--prompt-file` for a UTF-8 analysis-focus document. Params equivalents are `analysis.mode`, `analysis.seed`, `analysis.rules`, `analysis.results-directory`, `analysis.population-file`, `analysis.indices`, `analysis.prompt`, `analysis.prompt-file` and `analysis.output-file`. `analysis.language=Chinese` is the default. `analysis.max-individuals` caps the number analyzed; each selected valid pair uses one content request, with at most `analysis.max-attempts` schema attempts (default 2), each subject to the HTTP retry budget.
+Use `--prompt-file` for a UTF-8 analysis-focus document. Params equivalents are `analysis.mode`, `analysis.seed`, `analysis.rules`, `analysis.results-directory`, `analysis.population-file`, `analysis.indices`, `analysis.prompt`, `analysis.prompt-file` and `analysis.output-file`. `analysis.language=English` is the default for both objective modes, including when the setting is omitted. `analysis.max-individuals` caps the number analyzed; each selected valid pair uses one content request, with at most `analysis.max-attempts` schema attempts (default 2), each subject to the HTTP retry budget.
 
 Reports contain:
 

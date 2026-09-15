@@ -181,6 +181,6 @@ llm.max-attempts = 3
 # Optional: llm.token-parameter = max_completion_tokens (Chat Completions only; Responses uses max_output_tokens).
 
 # Independent RuleAnalysisMain; --population and --prompt-file can override these.
-analysis.language = Chinese
+analysis.language = English
 analysis.prompt = Explain both trees, their interaction, terminal meanings, signs, branches and limitations. Do not claim measured superiority.
 analysis.max-individuals = 100
