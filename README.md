@@ -12,6 +12,9 @@ This README is centered around the main experiment launcher in `src/yimei/jss/gp
 > [!NOTE]
 > This repository is intended as a research-oriented GP platform for DFJSS, helping users reproduce, understand, and extend the published methods in this project.
 
+> [!IMPORTANT]
+> **Our EvoSpeak paper is based on OfflineEvoSpeak.** OnlineEvoSpeak was implemented **after the paper was accepted** to make the workflow easier and more straightforward to run. It is a convenience extension, not the implementation used to produce the paper's reported results.
+
 ---
 
 ## 1. Repository purpose
@@ -26,6 +29,7 @@ The project supports research on automatically evolving dispatching and routing 
 - GP with diverse partner selection,
 - GP with cluster-based selection,
 - Pareto set learning GP,
+- LLM-assisted GP with offline and online EvoSpeak,
 - and GP with multi-case fitness evaluation.
 
 The implementation is built on top of ECJ:
@@ -46,6 +50,8 @@ The most relevant folders are:
 - `src/yimei/jss/rule/`: rule representation.
 - `src/yimei/jss/ruleanalysis/`: post-hoc analysis utilities.
 - `src/mengxu/algorithm/`: parameter files and method-specific algorithm configurations.
+- [OfflineEvoSpeak](src/mengxu/algorithm/OfflineEvoSpeak/README.md): the offline EvoSpeak implementation used in the paper, with instructions and prompts for preparing TXT initial populations.
+- [OnlineEvoSpeak](src/mengxu/algorithm/OnlineEvoSpeak/README.md): the online extension added after acceptance, with automatic LLM API calls, population validation, TXT generation and GP initialization.
 - `libraries/`: project dependencies.
 
 ---
@@ -69,11 +75,22 @@ java yimei.jss.gp.GPRun -file <path-to-params-file> -p seed.0=0 -p stat.file=job
 Key switches in `GPMain.java`:
 
 - `int maxTests = 29;`
-  - caps the maximum run ID.
-- `firstRunId` and `lastRunId`
-  - select the inclusive range of IDs/seeds; both currently default to 22.
-- `resultsDirectory`
-  - selects the statistics directory, defaulting to the working directory.
+  - controls the maximum number of seed-based runs.
+
+### EvoSpeak: Offline and Online
+
+| Version | Relationship to the paper | Workflow |
+|---|---|---|
+| [OfflineEvoSpeak](src/mengxu/algorithm/OfflineEvoSpeak/README.md) | **Implementation used in the EvoSpeak paper.** | Use an LLM separately to generate rules, prepare a TXT initial population, then load it into GP. |
+| [OnlineEvoSpeak](src/mengxu/algorithm/OnlineEvoSpeak/README.md) | **Convenience extension implemented after paper acceptance.** | The program calls the configured LLM API, validates the generated rules, writes the TXT initial population, then starts GP automatically. |
+
+**OfflineEvoSpeak: a simple workflow without API integration.** You can use free-to-access LLM models or free web/chat interfaces to generate the initial heuristics, subject to the provider's availability, terms and usage limits. The Java training program does not require an LLM API key: it reads the prepared population locally. Here, "offline" means that LLM generation is separate from the GP run; the external model can be hosted or local and may still require an account or Internet access.
+
+To get started, use the [single-objective prompt](src/mengxu/algorithm/OfflineEvoSpeak/prompts/single-objective.md) or [multi-objective prompt](src/mengxu/algorithm/OfflineEvoSpeak/prompts/multi-objective.md), follow the [offline instructions](src/mengxu/algorithm/OfflineEvoSpeak/README.md) to validate and prepare the TXT, and run `yimei.jss.gp.GPRun` with the corresponding OfflineEvoSpeak params and `pop.subpop.0.file`. The prompts can be adapted to your objectives and scheduling scenario; record any changes when comparing experiments.
+
+**OnlineEvoSpeak: automatic generation and training.** After acceptance, we implemented this version to remove the manual steps of submitting generation requests, handling replacement batches and preparing the validated TXT. For a hosted API service, **you must provide your own API key**, together with the matching endpoint and model/deployment name. The repository does not supply credentials or API credits. API calls may incur charges and are subject to account quotas; access to a free chat interface does not necessarily include free API access. Store credentials in the documented Git-ignored local params or environment variables, never in committed files. Follow the [online setup guide](src/mengxu/algorithm/OnlineEvoSpeak/README.md), then run `mengxu.algorithm.OnlineEvoSpeak.EvoSpeakMain` or select OnlineEvoSpeak in `GPMain`.
+
+**Results depend on the model and experimental settings.** In both workflows, the initial heuristics and final GP results depend on the LLM provider, model/version, prompt, reference examples, generation settings and stochastic outputs, as well as the GP seed, objectives, weights, simulation scenario and evaluation budget. A different free model or the online extension is not guaranteed to reproduce the paper's numerical results or improve on them. For paper reproduction, use **OfflineEvoSpeak** with the model, prompts, initial populations and experimental settings specified in the paper. Treat runs with changed models or settings as new experiments. Archive the actual prompt, model/version, response, validated TXT, params and seeds; a fixed GP seed alone does not make LLM generation reproducible. Online same-seed reruns overwrite their generated outputs, so archive results before repeating a seed when needed.
 
 ---
 
@@ -84,7 +101,7 @@ For dynamic experiments, `GPMain.java` works by:
 1. adding `-file`,
 2. selecting exactly one parameter file,
 3. appending `-p` overrides such as seed and output file name,
-4. then calling `GPRun.main(...)`, or `EvoSpeakMain.main(...)` for the OnlineEvoSpeak evolution state so LLM warm-start generation and validation run first.
+4. then calling `GPRun.main(...)` for the original methods, including OfflineEvoSpeak, or `EvoSpeakMain.main(...)` for OnlineEvoSpeak so LLM generation and validation occur before GP initialization.
 
 ### Run through the IDE
 
@@ -94,7 +111,7 @@ For dynamic experiments, `GPMain.java` works by:
 4. In the dynamic section, comment/uncomment the desired parameter-file line.
 5. Run the `main` method of `GPMain`.
 
-You can replace the parameter file with any method listed in the table above.
+You can replace the parameter file with a method listed in the method-to-paper table below. To reproduce the EvoSpeak paper, select the OfflineEvoSpeak params and supply a prepared TXT population; selecting OnlineEvoSpeak instead invokes the post-acceptance API workflow.
 
 ---
 
@@ -180,8 +197,6 @@ The most common outputs are:
 
 These outputs are usually written to the project root unless redirected in the parameter file.
 
-OnlineEvoSpeak launched through `GPMain` follows the same `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` naming in `resultsDirectory`. Additional LLM/validation artifacts use a fixed `evospeak.output-directory/job.<id>/` directory, with no random suffix. Rerunning a seed replaces its known generated outputs, statistics and timing files instead of moving them elsewhere; archive an attempt before rerunning when needed. `RuleAnalysisMain` can read single- and multi-objective results by mode, seed and best/final/initial rule selection. See [the OnlineEvoSpeak guide](src/mengxu/algorithm/OnlineEvoSpeak/README.md) for commands and overwrite scope.
-
 ---
 
 ## 9. Recommended workflow for researchers
@@ -196,6 +211,12 @@ OnlineEvoSpeak launched through `GPMain` follows the same `job.<id>.out.stat`, `
 ---
 
 ## 10. Publications represented in this repository
+
+### EvoSpeak
+
+**Meng Xu**, Jiao Liu, and Yew Soon Ong. "EvoSpeak: Large Language Models for Interpretable Genetic Programming-Evolved Heuristics." *IEEE Transactions on Evolutionary Computation*, 2026. DOI: [10.1109/TEVC.2026.3705492](https://doi.org/10.1109/TEVC.2026.3705492).
+
+The paper is based on [OfflineEvoSpeak](src/mengxu/algorithm/OfflineEvoSpeak/README.md). [OnlineEvoSpeak](src/mengxu/algorithm/OnlineEvoSpeak/README.md) is an additional implementation developed after acceptance for easier automated use, not the source of the results reported in the paper.
 
 ### Ensemble GP
 
@@ -245,15 +266,14 @@ For ECJ-specific details, consult the official ECJ documentation. For DFJSS pape
 
 ## 12. Method-to-paper mapping
 
-The following dynamic methods are explicitly listed in `GPMain.java`.
+The following dynamic methods are available in this repository. Select the appropriate parameter file in [GPMain](src/yimei/jss/gp/GPMain.java), or use the method's documented entry point.
 
 > Most parameter files and algorithm codes are located under `src/mengxu/algorithm/`.
 
-The EvoSpeak family now has two explicit directories: [OfflineEvoSpeak](src/mengxu/algorithm/OfflineEvoSpeak/README.md) for manually invoking an LLM and preparing a TXT initial population, and [OnlineEvoSpeak](src/mengxu/algorithm/OnlineEvoSpeak/README.md) for automated API generation, validation and GP initialization. The offline README links complete single- and multi-objective prompts generated from the same online implementation and explains how to customize them.
-
-| Method in `GPMain.java` | Related paper / purpose | Parameter file |
+| Method | Related paper / purpose | Parameter file |
 |---|---|---|
-| OnlineEvoSpeak | Online LLM warm-start generation, validation and weighted GP | `src/mengxu/algorithm/OnlineEvoSpeak/evospeak.params` |
+| OfflineEvoSpeak | Xu, Liu, and Ong, 2026, *IEEE Transactions on Evolutionary Computation*, "EvoSpeak: Large Language Models for Interpretable Genetic Programming-Evolved Heuristics." **The paper's implementation.** | [Single objective](src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStart.params), [weighted two objectives](src/mengxu/algorithm/OfflineEvoSpeak/WarmStart/multipletreegp-dynamicLLMWarmStartMO.params) |
+| OnlineEvoSpeak | Automated LLM-to-TXT-to-GP extension implemented **after paper acceptance**. Hosted API use requires your own credentials; results depend on the model and settings. | [Single objective](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.params), [weighted two objectives](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params); see the online guide for private local overrides. |
 | ensembleGP | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming for dynamic flexible job shop scheduling: Evolution with single individuals and ensembles” | `src/mengxu/algorithm/multicaseEnsemble/ensembleContribution/multipletreegp-dynamicEnsembleContributionCrossover.params` |
 | GP with lexicase selection | Xu et al., 2023, *IEEE Transactions on Evolutionary Computation*, “Genetic programming with lexicase selection for large-scale dynamic flexible job shop scheduling” | `src/mengxu/algorithm/lexicaseselection/multipletreegp-dynamicOneInstanceMultiCase.params` |
 | NSGPII with semantic diversity and semantic similarity | Xu et al., 2023, *AI 2023*, “A semantic genetic programming approach to evolving heuristics for multi-objective dynamic scheduling” | `src/mengxu/algorithm/multiobjective/phenotypeNSGPII/improvedCompareOne/multipletreegp-dynamic-NSGA2-no-environmental-selection-phenotypeBreeding-improved.params` |
@@ -264,8 +284,6 @@ The EvoSpeak family now has two explicit directories: [OfflineEvoSpeak](src/meng
 | Pareto set learning GP | Xu et al., 2025, *IEEE Transactions on Evolutionary Computation*, “Pareto set learning through genetic programming for multi-objective dynamic scheduling” | `/src/mengxu/algorithm/multiobjective/ParetoSetLearning/multipletreegp-dynamic-PSLnichingBasedOnHV.params` |
 | GP with multi-case fitness | Xu et al., 2022, *CEC*, “Genetic programming with multi-case fitness for dynamic flexible job shop scheduling” | `src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params` |
 
-> In the current `GPMain.java`, the active line points to OnlineEvoSpeak:
+> In the current [GPMain](src/yimei/jss/gp/GPMain.java), the active line selects the **OnlineEvoSpeak multi-objective** private profile, which inherits the [public MO configuration](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params). This is not the paper-reproduction workflow.
 >
-> [src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params)
-
-That private profile is Git-ignored and currently selects the multi-objective Azure workflow in this workspace; the single-objective option remains beside it in `GPMain`. On a fresh checkout, create the private companion following the OnlineEvoSpeak README; do not commit API keys. Java classes now use `mengxu.algorithm.OnlineEvoSpeak` and `mengxu.algorithm.OfflineEvoSpeak.WarmStart`, so rebuild and update saved IDE launch configurations after the rename.
+> Check the selected parameter-file line before running. For the EvoSpeak paper, use the OfflineEvoSpeak configuration and prepared initial population described above. Private credential files are not included in a fresh checkout; create them locally only when using a hosted API, following the OnlineEvoSpeak guide.
