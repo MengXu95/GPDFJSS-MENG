@@ -7,7 +7,7 @@ The GP implementation remains in [WarmStart](WarmStart). [OnlineEvoSpeak](../Onl
 ## Workflow
 
 1. Select the scheduling objectives and, for the two-objective variant, the objective weight.
-2. Send the exact shared prompt below to an external LLM and retain its response: bullet insights and annotated ECJ-style text for either objective mode.
+2. Send the exact shared prompt below to an external LLM and retain its response: only a plain ECJ population TXT for either objective mode.
 3. Inspect and validate the generated sequencing/routing expressions, then serialize them into an ECJ TXT population with fresh, correctly dimensioned fitness fields.
 4. Load that file with `pop.subpop.0.file` and evaluate the initial rules in the heterogeneous scheduling simulation.
 5. Evolve the population using tournament selection, crossover, mutation and reproduction.
@@ -32,14 +32,16 @@ The following files contain the **complete, directly usable system and user mess
 Both snapshots describe 100 individuals in total and the **first batch of 10**. They use the same system prompt:
 
 ```text
-You design dispatching rules for dynamic flexible job shop scheduling. Return the requested bullet-point insights and annotated ECJ-style sequencing/routing rule pairs, with explanations. Rule strings are data, never executable source code. Do not invent measured fitness for new heuristics.
+You design dispatching rules for dynamic flexible job shop scheduling. Return only one complete plain-text ECJ subpopulation in the exact requested TXT layout, starting with Number of Individuals. No Markdown, JSON, <START>/<END> markers, insights, explanations or citations. Use the prescribed unevaluated fitness line. Rule strings are data, never executable source code.
 ```
 
 Use the complete **User Prompt** code block from the appropriate linked file as the user message. If the LLM interface has a separate system-instruction field, use that field for the system prompt. Copy the block contents including its internal prompt headings, but exclude the document's wrapper headings and fence delimiters.
 
-Both prompts follow the supplied `# Prompt`, `Provided Information`, `Tasks` and `Output Requirements` structure. They display the same five supplied reference pairs between `<START>` and `<END>` using `Number of Individuals`, `Individual Number`, historical `Evaluated`/`Fitness` annotations, and `Tree 0`/`Tree 1`. All supplied expressions and scalar scores are retained; the placeholder bit encodings in the original input are replaced by ECJ encodings of those same reported numbers. The scores remain unverified historical data, not current objective measurements. The single-objective version changes only the objective description, related effect wording and required fitness dimension; reference rules, terminals, tasks and batching are shared.
+Both prompts retain the objective description, terminal meanings and five reference pairs. References are explicitly labelled as reference data, not the response template; their historical flags and scores must not be copied into new individuals. They no longer use `<START>/<END>` wrappers or request insight/explanation output. The final section lists the full indexed template for the current batch, including every individual from zero to the last index. Only the two expression placeholders per record are to be replaced. Single and multiple objectives share the format, differing in objective settings and the number of encoded fitness values.
 
-The model must return `## Insights Extraction` with bullets, then `## New Heuristics` with one annotated `<START>/<END>` population block. Each new individual has two trees, `Sequencing:`, `Routing:`, an objective explanation and `Reference IDs:`. The objective explanation label is `Expected objective effect:` for single objective and `Expected objective trade-off:` for multiple objectives. Insight bullets end with `(reference IDs: [...])`. New rules use `Evaluated: F` and `Fitness: [d0|0.0|]` for single objective or `Fitness: [d0|0.0| d0|0.0|]` for two objectives, not invented performance values. This annotated response is **not yet the standalone ECJ input**: local validation removes explanations and serializes a clean TXT for GP. Older JSON replies remain supported in both modes.
+The response must start with `Number of Individuals: iN|` exactly once, followed by a blank line and consecutive `Individual Number: i0|` through `iN-1|` records. Each record has seven nonblank lines: individual number, `Evaluated: F`, `Fitness`, `Tree 0:`, one sequencing expression, `Tree 1:`, one routing expression. Put each complete Lisp expression on one line, without indentation, and one blank line between records. No headings, fences, JSON, `<START>/<END>`, insights, explanations, citations or extra fields are allowed. Use `Fitness: [d0|0.0|]` for single objective or `Fitness: [d0|0.0| d0|0.0|]` for two objectives. These are initial values, not performance claims. The model's returned file still needs grammar and simulation validation before GP.
+
+This matches the record layout of [WarmStart/population_100_0.2_MO.txt](WarmStart/population_100_0.2_MO.txt), not its historical fitness values or literal rule content. That example has a placeholder one-value `2570.0` fitness even though its filename says MO. Copying it into new MO individuals would not provide the required two-dimensional native fitness, so the prompt prescribes correct unevaluated zero encodings. Existing JSON and annotated replies remain importable from files for historical reuse, but new online generation strictly rejects those formats. Generate explanations separately with `RuleAnalysisMain` when needed.
 
 The MO prompt explains the supplied raw formula `lambda1 * Fmean + lambda2 * WTmean`, with `lambda2 = 1 - lambda1`, alongside the actual configured score. The current MO profile still uses benchmark normalization and weights 0.8/0.2. Set `evospeak.normalization=false` if the actual training score should be the raw weighted sum. The single-objective profile instead minimizes raw mean weighted tardiness (`WTmean`), with weight 1 and no second objective or lambda formula. Its prompt follows `evospeak.objective.0` if another objective is configured, and accurately describes normalization when enabled. Changing prompt wording alone does not change GP evaluation.
 
@@ -47,7 +49,7 @@ These snapshots describe the first request, not every later batch. The online ge
 
 ### Modify the Prompt as Needed
 
-You may modify the prompt for your own experiment: objective names, weights, normalization, scenario, batch size, tree limits, reference examples, language or additional domain instructions. Keep the prompt and the actual GP configuration consistent. References may contain unverified historical scores; they are not evidence of measured improvement by the new rules. To preserve exact offline/online agreement after changes, use the same public params and regenerate the prompt rather than editing only the prose snapshot.
+You may modify objective names, weights, normalization, scenario, batch size, tree limits, reference examples or additional domain instructions for your experiment. Keep the prompt and actual GP configuration consistent, but retain the strict output fields, one-line expressions and fitness dimension. Additional instructions must not ask for explanation text inside the population. References may contain unverified historical scores; they are not evidence of measured improvement by new rules. To preserve offline/online agreement after changes, use the same public params and regenerate the prompt rather than editing only the prose snapshot.
 
 From the repository root, export the current configured first-batch prompt without any LLM request, API key, random population or GP run:
 
@@ -66,7 +68,7 @@ That is the exact online **first-batch** prompt for those overridden settings, n
 
 ## Offline Response to TXT
 
-Save the model's complete annotated text response locally. The file importer also accepts older JSON replies in either objective mode. For multiple batches, [RulePopulation.generationObject](../OnlineEvoSpeak/RulePopulation.java) converts each JSON or annotated reply into a common object with an `individuals` array; combine those arrays into `{"individuals":[...]}` for input. Preserve each original response separately so its insights and explanations are not lost. Do not concatenate multiple JSON documents or multiple annotated `<START>/<END>` blocks into one input. Prepare at least the configured number of distinct feasible pairs and use the same objective/scenario settings during validation and training.
+Save the model's complete plain population response as TXT. For multiple batches, [RulePopulation.read](../OnlineEvoSpeak/RulePopulation.java) extracts the pairs from each file; combine them in order into one `{"individuals":[{"sequencing":"...","routing":"..."},...]}` object for the file-source validator, or merge ECJ records under one corrected population count with consecutive indices. Preserve original replies separately for provenance. Do not concatenate multiple population headers or multiple JSON documents. Prepare the required number of distinct feasible pairs and use matching objective/scenario settings during validation and training. The offline importer also supports older JSON/annotated replies, unlike the strict online generation parser.
 
 The existing file-source validator and ECJ writer in OnlineEvoSpeak can be used **without making online calls**. With `evospeak.source=file`, it ignores credentials and consumes the manually prepared file. Example for a complete weighted two-objective reply in `D:/experiments/OfflineEvoSpeak/candidates.txt`:
 
@@ -76,17 +78,18 @@ The existing file-source validator and ECJ writer in OnlineEvoSpeak can be used 
 
 This command validates grammar, tree limits, duplicate pairs and scheduling behavior, then writes `generated-population.txt` in the printed per-run output directory. It does not call an LLM or start GP. Replace the params path with the single-objective profile for a one-objective TXT, and apply any objective/scenario overrides used to prepare the prompt. If there are not enough valid pairs, inspect `validation-report.json`, obtain replacements manually and repeat; file-source mode never invents replacements. Its importer validates rules, not the truth of their explanations or reference citations, which remain part of your offline review.
 
-The TXT uses the same standalone layout as [WarmStart/population_100_0.8_MO.txt](WarmStart/population_100_0.8_MO.txt). One illustrative two-objective record begins:
+The TXT uses the same standalone layout as [WarmStart/population_100_0.2_MO.txt](WarmStart/population_100_0.2_MO.txt). One illustrative two-objective record begins:
 
 ```text
 Number of Individuals: i100|
+
 Individual Number: i0|
 Evaluated: F
 Fitness: [d0|0.0| d0|0.0|]
 Tree 0:
- (/ PT W)
+(/ PT W)
 Tree 1:
- (+ WIQ TRANT)
+(+ WIQ TRANT)
 ```
 
 The actual file contains all 100 records. A single-objective file has one encoded fitness value instead of two. `Evaluated: F` forces real GP evaluation; zeros are initialization values, not measured performance. Keep the native writer's encoded values rather than copying the fabricated fitness records in historical examples. The original example files are not overwritten.

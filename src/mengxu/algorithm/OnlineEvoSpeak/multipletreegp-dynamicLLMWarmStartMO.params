@@ -3,7 +3,7 @@
 parent.0 = evospeak.params
 
 generations = 51
-pop.subpop.0.size = 100
+pop.subpop.0.size = 30
 breed.elite.0 = 2
 select.tournament.size = 4
 expect-training-time = 50000

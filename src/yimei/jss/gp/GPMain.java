@@ -47,7 +47,8 @@ public class GPMain {
         //Multitask Pareto set learning GP - 2026.5.7
 //            gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP.params");
 //        gpRunArgs.add("./src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params");
-        gpRunArgs.add("./src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.local.params");
+//        gpRunArgs.add("./src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.local.params");
+        gpRunArgs.add("./src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params");
         //GP with multi-case fitness -- need to set useLS = true; and warmupSame = true; in Simulation.java
 //        gpRunArgs.add("./src/mengxu/algorithm/averageFitness/multipletreegp-dynamicAverage.params");
 

@@ -7,8 +7,8 @@ The migration updates source packages, params, `GPMain`, tests and VS Code launc
 The workflow is:
 
 1. Load the scheduling scenario, objective mode, weights and LLM settings from params.
-2. Load the provided reference heuristics and ask the selected LLM to extract terminal-grounded insights, then generate a small batch of new pairs with explanations of their expected objective effects. Both objective modes use bullet insights and annotated ECJ-style text.
-3. Check the response schema and reference IDs, parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate/reference-copy pairs, and run bounded scheduling simulations on validation seeds.
+2. Load the provided reference heuristics and ask the selected LLM to generate one complete plain ECJ population TXT for the current batch. Both objective modes return only the population records, without insights, explanations or wrapper markers.
+3. Check the exact population header, record count, indices, unevaluated fitness and two-tree layout, parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate/reference-copy pairs, and run bounded scheduling simulations on validation seeds.
 4. Feed rejection evidence back to the LLM and request replacements within the configured budget.
 5. Publish `generated-population.txt` in native ECJ format only when the required population is complete.
 6. Start a fresh GP state and load that TXT through ECJ's `pop.subpop.0.file` mechanism, then evaluate and evolve the loaded individuals. This is the same workflow for single and weighted multi-objective runs.
@@ -245,19 +245,20 @@ The exact first-batch messages can be exported for manual offline use, with no L
 
 This invokes `EvoSpeakMain --export-prompt <new-output.md>` and uses the same shared system prompt and `PopulationFactory.generationPrompt` as online requests. Override objectives, weights, batch size or `evospeak.prompt-file` through the usual params/`-Overrides` mechanism. Existing files are not overwritten. [Offline instructions and complete single/multi-objective prompt snapshots](../OfflineEvoSpeak/README.md#exact-shared-prompts) explain manual batches and local conversion from the LLM's response to ECJ TXT.
 
-The default generation prompt now follows the supplied **Insights Extraction -> New Heuristic Generation -> Expected Objective Effects** workflow. `warm-start-examples.json` contains the five input heuristics from that prompt, not the 100 individuals in the pasted model answer. Each example retains its reported scalar score as unverified historical metadata. Those scores are not comparable training observations without their original scenario, seeds and normalization, and are never loaded into GP fitness.
+The generation prompt asks the model to use the reference heuristics to design new rules, but to return **only a plain ECJ population TXT**. It no longer requests insights, explanations, citations, JSON or `<START>/<END>` blocks. `warm-start-examples.json` still contains the five input heuristics, not the 100 individuals in an earlier model answer. Each example retains its reported scalar score as unverified historical metadata. Those scores are not comparable training observations without their original scenario, seeds and normalization, and are never loaded into GP fitness.
 
 ```properties
 evospeak.examples-file = warm-start-examples.json
 evospeak.max-examples = 10
-evospeak.generation-language = English
 ```
+
+`evospeak.generation-language` does not affect pure population output: field labels and GP symbols must remain exactly as specified. Use `analysis.language` for separately generated natural-language reports.
 
 The reference file can be a standalone ECJ population file or JSON with an `individuals` array. JSON individuals require `sequencing` and `routing` strings and may include a finite nonnegative `reportedFitness`. Use a small set of selected reference pairs, not a document combining a prompt, prose and a model answer. A missing/malformed reference file or too many examples stops before any generation request. An empty `evospeak.examples-file` disables references. Offline `evospeak.source=file` does not load or require examples.
 
 References are parsed with the actual terminal/function grammar and bounded to depth 32 and 2047 nodes per tree. This allows source heuristics to be more complex than newly generated trees, which still obey `evospeak.max-tree-depth` and `evospeak.max-tree-nodes`. Reference parsing does not establish performance or simulation feasibility. Whole reference pairs are excluded from new LLM-generated populations; reusable substructures are encouraged.
 
-Each batch prompt includes the five canonical pairs, terminal definitions, the real scheduling scenario, configured objective weights and the exact raw or benchmark-normalized score. Both objective modes share the supplied `# Prompt`, `Provided Information`, `Tasks` and `Output Requirements` structure and present the same references between `<START>` and `<END>` in ECJ style. Only objective-related wording and the fitness dimension differ. Historical expressions and scalar scores are preserved; only their placeholder display encodings are replaced by valid ECJ encodings. The model must discuss context-dependent terms and cancellation rather than assume, for example, that additive `MWT` changes job ordering within one machine queue or that `TIS` directly encodes a due date. It must propose varied strategies, not just a long series of terminal substitutions. Exact duplicates/copies are checked in code; semantic novelty and explanation correctness still need scientific review.
+Each batch prompt includes the five canonical pairs, terminal definitions, the real scheduling scenario, configured objective weights and the exact raw or benchmark-normalized score. Both modes share the same prompt structure; only objective-related wording and the fitness dimension differ. The references are labelled as reference data and are separate from the response template. Historical expressions and scalar scores are preserved, but must not be copied into new individuals. The model is asked to account for candidate-invariant terms and protected-division/cancellation effects while designing varied rules; this analysis is not returned in the population text. Syntax, duplication and feasibility are checked in code, not the truth of an LLM's performance claims.
 
 To use the supplied raw `lambda1 * Fmean + lambda2 * WTmean`, where `lambda2 = 1 - lambda1`, disable benchmark normalization. For example, with equal weights:
 
@@ -272,65 +273,41 @@ evospeak.normalization = false
 
 The existing normalization default is unchanged; the supplied prompt does not specify numerical weights. Different weights or single-objective settings are carried into the prompt, not overwritten with 0.5/0.5. When normalization is enabled, the MO prompt explicitly distinguishes the supplied raw formula from the actual benchmark-normalized GP score. `Fmean` and `WTmean` are aliases for the corresponding configured objectives.
 
-### Multi-Objective Reply
+### Strict TXT Reply
 
-The multi-objective system and user prompts request a text response, not JSON-only content. The prompt gives this exact layout with the current batch count. One illustrative pair is:
+The system prompt requires one plain-text ECJ subpopulation. The user prompt ends with the **full numbered template for the current batch**, not a single example that the model must extrapolate. For a batch of 10, indices 0 through 9 are explicitly listed; a remaining batch of one has only index 0. Replace only each `SEQUENCING_RULE_n` and `ROUTING_RULE_n` placeholder with a complete one-line Lisp expression. The output constraints follow any additional user prompt file so the population format is always stated last.
+
+The record layout matches [the requested reference TXT](../OfflineEvoSpeak/WarmStart/population_100_0.2_MO.txt): one population-count header, a blank line, then seven nonblank lines per individual, with one blank line between individuals. This is a complete two-individual MO format example, not the default 100-individual final population:
 
 ```text
-## Insights Extraction
-- MWT can be constant within a sequencing queue, so subtracting W favors larger job weights for finite values. (reference IDs: [1])
+Number of Individuals: i2|
 
-## New Heuristics
-<START>
-Number of Individuals: i1|
 Individual Number: i0|
+Evaluated: F
+Fitness: [d0|0.0| d0|0.0|]
+Tree 0:
+PT
+Tree 1:
+WIQ
+
+Individual Number: i1|
 Evaluated: F
 Fitness: [d0|0.0| d0|0.0|]
 Tree 0:
 (/ PT W)
 Tree 1:
 (+ WIQ TRANT)
-Sequencing: PT/W favors short operations and larger positive job weights.
-Routing: WIQ+TRANT balances queued work and transport time.
-Expected objective trade-off: Both objectives may benefit, but the effect depends on congestion and due dates and requires testing.
-Reference IDs: [1]
-<END>
 ```
 
-Use the exact headings, field labels, contiguous zero-based indices and one `<START>/<END>` block. Counts must match the requested batch. The parser also accepts one enclosing Markdown fence and older JSON responses in either mode for compatibility. `RulePopulation.generationObject` extracts insights, rule strings, explanations and citations into the existing validation structure. It never uses the model's fitness field as training fitness. The original reply is saved as `generation-response-<batch>.txt`; the validated `generated-population.txt` contains only native ECJ population records, without prose.
+For single objective, use the identical layout with `Fitness: [d0|0.0|]`. Both modes retain Tree 0 (sequencing) and Tree 1 (routing). The single profile still minimizes its configured objective, by default raw mean weighted tardiness (`WTmean`).
 
-### Single-Objective Reply
+`RulePopulation.fromGeneratedText` rejects Markdown fences/headings, JSON, `<START>/<END>`, repeated population headers, noncontiguous indices, extra fields, multiline trees, `Evaluated: T`, wrong fitness dimensions and historical/invented fitness values. Harmless blank-line/trailing-space differences, CRLF and a UTF-8 BOM are tolerated on input; the final writer uses the canonical reference layout. Individual expressions must also pass the existing real GP parser and simulation checks. Strict validation prevents a malformed response from entering GP; prompt wording cannot guarantee that a remote model will always comply.
 
-The single-objective prompt uses the same template, system message, references and output structure as MO, changing only the target description and related wording. With the supplied single-objective params it minimizes raw mean weighted tardiness (`WTmean`), not a weighted combination with `Fmean`. Other configured `evospeak.objective.0` values and normalization settings are respected. The reply uses one fitness value and `Expected objective effect:`:
+The reference's historical `Fitness: [d12345678901234560104|2570.0|]` is not copied: it is a placeholder scalar record, not a valid new two-objective fitness value. The model must use the prescribed zero fitness line for the configured objective count. ECJ then serializes fresh unevaluated individuals. Thus the **record layout** matches the example, while the generated rules, count/indices and valid initial fitness reflect the new run.
 
-```text
-## Insights Extraction
-- MWT can be constant within a sequencing queue, so subtracting W favors larger job weights for finite values. (reference IDs: [1])
+The default request size remains 10; the final published TXT contains 100 accepted individuals at default settings. A malformed batch is rejected before rule evaluation, while an invalid or duplicate rule is rejected individually. Only the remaining number is requested on the next batch. Console progress includes batch number, newly accepted count, total accepted count and format rejection reason. Failures are saved as corrective feedback in `validation-report.json`. The budget is still bounded and a short population never starts GP.
 
-## New Heuristics
-<START>
-Number of Individuals: i1|
-Individual Number: i0|
-Evaluated: F
-Fitness: [d0|0.0|]
-Tree 0:
-(/ PT W)
-Tree 1:
-(+ WIQ TRANT)
-Sequencing: PT/W favors short operations and larger positive job weights.
-Routing: WIQ+TRANT balances queued work and transport time.
-Expected objective effect: Prioritizing important jobs and limiting queue delays may reduce WTmean, but the effect depends on due dates and congestion and requires testing.
-Reference IDs: [1]
-<END>
-```
-
-For output-file and older JSON compatibility, the extracted objective explanation remains stored under `explanation.objectiveTradeOff` in both modes; for single objective its content describes the effect on that one objective.
-
-This one-pair example shows the schema, not a complete 100-individual response. Actual responses must contain exactly the requested batch count, 1-12 nonempty insights (up to 2000 characters each), and three nonempty explanation fields per pair (up to 4000 characters each). Reference IDs are zero-based, distinct and must exist in the supplied set; when references are disabled, use empty ID arrays. Insights and explanations are requested in the same content call, with no additional insight-only request.
-
-Malformed batch structure/count/insights rejects the batch. Missing required labels or malformed record structure in a text reply also reject the batch before parsing trees. Semantically invalid explanation fields/citations or rules reject the affected pair during review. All failures are retained as corrective feedback for replacement batches, within the same bounded generation budget. Accepted rules and their explanations stay aligned after candidate rejection. The native ECJ population remains in the original `Number of Individuals`, `Individual Number`, `Evaluated: F`, `Fitness`, `Tree 0` and `Tree 1` style, serialized by ECJ itself.
-
-Completed online generation also produces `warm-start-report.md` with bullet-point insights and the validated rule pairs plus sequencing, routing and expected-objective explanations. `reference-heuristics.json` snapshots the exact reference facts sent to the model; `generated-rules.json` preserves the explanations, task score and batch insights. Both generated population formats remain readable by the existing offline and independent analysis tools. These narrative fields are LLM interpretations, not measured performance or a proof of feasibility.
+`generation-response-<batch>.txt` retains the raw response, including rejected responses for diagnosis. Only `generated-population.txt` is the complete validated GP input. `generated-rules.json` records accepted rules, their source batches and the configured task, with `responseFormat=ecj-population-txt`; it does not fabricate explanations or insights. `warm-start-report.md` lists validated rules and batch counts. Use the independent `RuleAnalysisMain` workflow when natural-language explanations are needed; generation does not make an extra analysis call.
 
 ## Generation and Feasibility
 
@@ -357,20 +334,21 @@ At defaults, generation permits at most 40 content batches, each with at most 3 
 
 ### TXT Before GP
 
-Both objective profiles save the same standalone layout used by [the original population example](../OfflineEvoSpeak/WarmStart/population_100_0.8_MO.txt). For a 100-individual multi-objective run, the beginning has this form (one illustrative record shown):
+Both objective profiles save the same standalone layout used by [the requested population example](../OfflineEvoSpeak/WarmStart/population_100_0.2_MO.txt). For a 100-individual multi-objective run, the beginning has this form (one illustrative record shown):
 
 ```text
 Number of Individuals: i100|
+
 Individual Number: i0|
 Evaluated: F
 Fitness: [d0|0.0| d0|0.0|]
 Tree 0:
- (/ PT W)
+(/ PT W)
 Tree 1:
- (+ WIQ TRANT)
+(+ WIQ TRANT)
 ```
 
-The file contains exactly `pop.subpop.0.size` records, numbered from zero. Every individual has both trees: Tree 0 is sequencing and Tree 1 is routing. The single-objective fitness record has one encoded value (`Fitness: [d0|0.0|]`); the two-objective record has two. These zeros mean unevaluated fitness, not measured scheduling results. ECJ writes the encoding; the LLM supplies rules and explanations, not fabricated fitness values. All individuals are evaluated afresh by GP.
+The file contains exactly `pop.subpop.0.size` records, numbered from zero. Every individual has both trees: Tree 0 is sequencing and Tree 1 is routing. The single-objective fitness record has one encoded value (`Fitness: [d0|0.0|]`); the two-objective record has two. These zeros mean unevaluated fitness, not measured scheduling results. ECJ writes the encoding; only whitespace is normalized to the reference's blank-line separation and unindented trees. All individuals are evaluated afresh by GP.
 
 The default profile output locations, relative to the repository root, are:
 
@@ -383,7 +361,7 @@ The launcher prints the absolute TXT path before `Initializing Generation 0`. It
 
 The training random generator starts from the configured run seed independently of LLM preparation. Removing the old, discarded random initialization changes the consumed random-number sequence relative to older V1 runs; do not expect identical later generations across those versions solely from an identical seed.
 
-Offline reuse accepts the original standalone ECJ text, a complete annotated reply from either objective mode in the format above, or `{"individuals":[{"sequencing":"PT","routing":"WIQ"}]}` JSON. An annotated reply must pass through validation/serialization before use by the native ECJ loader, because it contains explanatory text:
+Offline reuse still accepts original standalone ECJ text, older annotated replies, or `{"individuals":[{"sequencing":"PT","routing":"WIQ"}]}` JSON. This backward-compatible file importer is separate from the strict online reply parser: JSON or annotated text is not accepted from new online generation requests. Older annotated replies must pass through validation/serialization before use by the native ECJ loader:
 
 ```properties
 evospeak.source = file
@@ -418,7 +396,7 @@ Invalid expressions are marked in the report without being sent to the LLM. Inte
 
 ## Outputs
 
-Each completed artifact directory contains `status.json`, `validation-report.json`, `generated-population.txt` and `generated-rules.json`. Online runs save generation prompts/responses and a `reference-heuristics.json` snapshot. Completed online generation also saves `warm-start-report.md`; generation insights remain in the batch records of both the validation report and enriched rules JSON. Failed validation does not publish a complete population or warm-start report. GP runs add `generations.jsonl`, `final-population.txt` and `best-rules.txt` (best in the final generation), plus the `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` files at the result paths described above. The statistics log separately contains ECJ's best-of-run record.
+Each completed artifact directory contains `status.json`, `validation-report.json`, `generated-population.txt` and `generated-rules.json`. Online runs save generation prompts/responses and a `reference-heuristics.json` snapshot. Completed online generation also saves `warm-start-report.md` with accepted rules and batch counts, not LLM explanations. Failed validation does not publish a complete population or warm-start report. GP runs add `generations.jsonl`, `final-population.txt` and `best-rules.txt` (best in the final generation), plus the `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` files at the result paths described above. The statistics log separately contains ECJ's best-of-run record.
 
 `status.json` stores the run ID, result paths (including `initialPopulationFile`), `initialPopulationLoaded`, objective settings, configured weights, normalized weights, scenario, validation controls, seed, provider/model and completion state, without API keys. The state reaches `population-ready` after publication, then `completed` after successful GP, or `validated` for generate-only mode. Failures use `failed`. `generations.jsonl` stores the run ID, raw objectives, scalar fitness, normalization denominators, elapsed/cumulative time and the current best rule pair. An inactive objective that becomes non-finite after breeding is represented as JSON null rather than invalid JSON.
 
@@ -438,7 +416,7 @@ The supplied `population_100_0.5_MO.txt` has 100 pairs that pass strict depth-8 
 
 ## Verification
 
-The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict parsing, the original file format, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Example-guided checks cover the supplied five references, unequal/single-objective prompt settings, raw versus normalized score descriptions, invalid citations, empty/missing insights and explanations, wrong batch counts, exact reference copying, malformed reference files, example-free generation and explanation alignment after retries. Launcher checks run two IDs through `GPMain`, verify `GPRun` fallback, isolate arguments/configuration and timing totals, honor explicit result paths, and reject existing result-file collisions.
+The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict population TXT parsing, the original file layout, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Prompt checks cover the five references, unequal/single-objective settings, raw versus normalized scores and full indexed output templates for 1, 10 and 100 records. Format checks reject repeated wrappers/headers, mislabelled indices, JSON, annotations, wrong fitness and multiline trees; recovery checks handle a format-rejected batch followed by an invalid candidate and a one-candidate replacement. Historical JSON/annotated import compatibility remains tested separately. Launcher checks run two IDs through `GPMain`, verify `GPRun` fallback, isolate arguments/configuration and timing totals, honor explicit result paths, and reject existing result-file collisions.
 
 The single- and multi-objective Responses workflows explicitly forbid random-individual initialization, verify that the TXT exists before ECJ loads any individual, compare every loaded tree with the saved file, and check the native fitness dimensions and unevaluated flags. Both modes cover successful two-generation evolution, generate-only publication without GP statistics, and incomplete generation without a partial population or GP initialization.
 

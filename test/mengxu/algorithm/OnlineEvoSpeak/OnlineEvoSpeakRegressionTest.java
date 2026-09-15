@@ -26,6 +26,15 @@ import org.json.JSONArray;
 
 public class OnlineEvoSpeakRegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--population-format-only")) {
+            testStrictPopulationText();
+            testMultiObjectivePrompt();
+            testSingleObjectivePrompt();
+            testPopulationParsing();
+            testOnlinePipelineAndFailureGate();
+            System.out.println("OnlineEvoSpeak strict population TXT regression tests passed.");
+            return;
+        }
         if (args.length == 1 && args[0].equals("--single-prompt-only")) {
             testSingleObjectivePrompt();
             testMultiObjectivePrompt();
@@ -59,6 +68,7 @@ public class OnlineEvoSpeakRegressionTest {
             return;
         }
         testWeightedFitness();
+        testStrictPopulationText();
         testParameterProfiles();
         testMultiObjectiveTextResponse();
         testMultiObjectivePrompt();
@@ -111,6 +121,84 @@ public class OnlineEvoSpeakRegressionTest {
         require(rejected, "All-zero weights must be rejected.");
     }
 
+    private static void testStrictPopulationText() throws Exception {
+        for (int objectives : new int[]{1, 2}) {
+            String text = plainPopulationResponse(twoRuleResponse(), objectives);
+            List<RulePopulation.Rules> rules = RulePopulation.fromGeneratedText(text, 2, objectives);
+            require(rules.size() == 2 && rules.get(1).sequencing.equals("(/ PT W)")
+                    && rules.get(1).routing.equals("(+ WIQ TRANT)"), "Pure ECJ TXT must preserve the two expression lines per individual.");
+            require(RulePopulation.fromGeneratedText("\uFEFF" + text.replace("\n", "\r\n"), 2, objectives).size() == 2,
+                    "A UTF-8 BOM and Windows line endings do not change the population format.");
+            for (String invalid : new String[]{"```text\n" + text + "```", "<START>\n" + text + "<END>",
+                    text + "Insights: these rules may help.\n", twoRuleResponse().toString(), textGenerationResponse(twoRuleResponse(), objectives),
+                    text.replace("Number of Individuals: i2|", "Number of Individuals: i1|"),
+                    text.replace("Individual Number: i1|", "Number of Individuals: i1|"),
+                    text.replace("Individual Number: i1|", "Individual Number: i0|"), text.replace("Evaluated: F", "Evaluated: T"),
+                    text.replace("Tree 1:", "Tree 2:"), text.replace("d0|0.0|", "d12345678901234560104|2570.0|"),
+                    plainPopulationResponse(twoRuleResponse(), objectives == 1 ? 2 : 1),
+                    text.replace("(/ PT W)", "(/ PT\n W)"), text + text}) {
+                boolean rejected = false;
+                try {
+                    RulePopulation.fromGeneratedText(invalid, 2, objectives);
+                } catch (IllegalArgumentException expected) {
+                    rejected = true;
+                }
+                require(rejected, "Malformed or annotated output must not be accepted as a strict initial population TXT.");
+            }
+        }
+        GPRuleEvolutionState state = parsingState();
+        Path file = Files.createTempFile("onlineevospeak-reference-layout-", ".txt");
+        try {
+            for (int objectives : new int[]{1, 2}) {
+                state.population.subpops[0].species.f_prototype = fitness(objectives, 1.0, 1.0);
+                List<GPIndividual> individuals = new java.util.ArrayList<>();
+                for (RulePopulation.Rules rules : RulePopulation.fromJson(twoRuleResponse())) {
+                    individuals.add(RulePopulation.parse(state, rules, 8, 255));
+                }
+                RulePopulation.write(file, state, individuals);
+                require(Files.readString(file).replace("\r\n", "\n").equals(plainPopulationResponse(twoRuleResponse(), objectives)),
+                        "Native writer output must match the reference blank lines, field order and unindented one-line trees.");
+                ec.Subpopulation loaded = (ec.Subpopulation) state.population.subpops[0].emptyClone();
+                try (java.io.LineNumberReader reader = new java.io.LineNumberReader(Files.newBufferedReader(file))) {
+                    loaded.readSubpopulation(state, reader);
+                }
+                require(loaded.individuals.length == 2 && !loaded.individuals[0].evaluated
+                        && ((WeightedFitness) loaded.individuals[0].fitness).getObjectives().length == objectives,
+                        "Reference-style TXT must remain readable by native ECJ with the correct objective dimension.");
+            }
+        } finally {
+            state.output.close();
+            Files.deleteIfExists(file);
+        }
+    }
+
+    private static void assertPopulationTemplate(String prompt, int count, int objectives) {
+        String header = "Number of Individuals: i" + count + "|\n";
+        int start = prompt.lastIndexOf("\n\n" + header);
+        require(start >= 0, "The prompt must end with a complete population template for the current batch count.");
+        String template = prompt.substring(start + 2);
+        require(template.lines().filter(line -> line.startsWith("Number of Individuals:")).count() == 1
+                && template.lines().filter(line -> line.startsWith("Individual Number:")).count() == count
+                && template.endsWith("ROUTING_RULE_" + (count - 1) + "\n"),
+                "The response template must list all records once, including the final index, without omitted-record examples.");
+        String filled = template.replaceAll("SEQUENCING_RULE_\\d+", "PT").replaceAll("ROUTING_RULE_\\d+", "WIQ");
+        require(RulePopulation.fromGeneratedText(filled, count, objectives).size() == count,
+                "Replacing only expression placeholders must yield a valid pure population TXT.");
+    }
+
+    private static String plainPopulationResponse(JSONObject response, int objectives) {
+        JSONArray individuals = response.getJSONArray("individuals");
+        String fitness = objectives == 1 ? "Fitness: [d0|0.0|]" : "Fitness: [d0|0.0| d0|0.0|]";
+        StringBuilder text = new StringBuilder("Number of Individuals: i").append(individuals.length()).append("|\n");
+        for (int index = 0; index < individuals.length(); index++) {
+            JSONObject individual = individuals.getJSONObject(index);
+            text.append("\nIndividual Number: i").append(index).append("|\nEvaluated: F\n").append(fitness)
+                    .append("\nTree 0:\n").append(individual.getString("sequencing"))
+                    .append("\nTree 1:\n").append(individual.getString("routing")).append('\n');
+        }
+        return text.toString();
+    }
+
     private static void testMultiObjectiveTextResponse() throws Exception {
         JSONObject expected = twoRuleResponse();
         String text = textGenerationResponse(expected);
@@ -153,22 +241,28 @@ public class OnlineEvoSpeakRegressionTest {
             PopulationFactory factory = new PopulationFactory(state, config, null, null);
             String prompt = factory.generationPrompt(10);
             require(prompt.startsWith("# Prompt\n") && prompt.contains("### **Provided Information:**")
-                && prompt.contains("1. **Insights Extraction**:") && prompt.contains("2. **New Heuristic Generation**:")
+                && prompt.contains("1. **Reference Analysis (not returned)**:") && prompt.contains("2. **New Heuristic Generation**:")
                 && prompt.contains("### **Output Requirements:**"), "Multi-objective prompt must follow the supplied structure.");
             require(prompt.contains("lambda1 * Fmean + lambda2 * WTmean, where lambda2 = 1 - lambda1.")
                 && prompt.contains("Actual optimized score: 0.8 * (mean-flowtime / benchmark[0]) + 0.2 * (mean-weighted-tardiness / benchmark[1])"),
                 "Distinguish the supplied raw formula from actual normalized GP settings.");
             JSONObject examples = new JSONObject(Files.readString(config.path("evospeak.examples-file", "")));
-            require(prompt.contains("<START>\n\nNumber of Individuals: i5|"), "Display the supplied five reference individuals as ECJ text.");
+            require(prompt.contains("Number of Individuals: i5|") && prompt.contains("REFERENCE DATA ONLY"),
+                "Keep the five reference individuals clearly separate from the output template.");
             for (Object item : examples.getJSONArray("individuals")) {
             JSONObject example = (JSONObject) item;
             require(prompt.contains(example.getString("sequencing")) && prompt.contains(example.getString("routing"))
                 && prompt.contains(String.valueOf(example.getDouble("reportedFitness"))),
                 "Preserve all supplied reference trees and reported scores.");
             }
-            require(factory.systemPrompt().contains("bullet-point insights") && !factory.systemPrompt().contains("JSON")
-                && prompt.contains("Evaluated: F\nFitness: [d0|0.0| d0|0.0|]") && prompt.contains("Reference IDs:"),
-                "The system and user prompts must agree on annotated ECJ output, never measured initial fitness.");
+            require(factory.systemPrompt().contains("Return only one complete plain-text ECJ subpopulation")
+                && prompt.contains("Evaluated: F\nFitness: [d0|0.0| d0|0.0|]")
+                && !prompt.contains("\n<START>") && !prompt.contains("\n<END>")
+                && !prompt.contains("Reference IDs:") && !prompt.contains("Expected objective trade-off:"),
+                "System and user prompts must request only the population, not annotations or wrapper blocks.");
+            for (int count : new int[]{1, 10, 100}) {
+                assertPopulationTemplate(factory.generationPrompt(count), count, 2);
+            }
             config.set("evospeak.normalization", false);
             require(new PopulationFactory(state, config, null, null).generationPrompt(10)
                 .contains("Actual optimized score: 0.8 * mean-flowtime + 0.2 * mean-weighted-tardiness"),
@@ -194,10 +288,14 @@ public class OnlineEvoSpeakRegressionTest {
                     "The single prompt must use the configured single objective, not a weighted combination.");
             require(!prompt.contains("lambda") && !prompt.contains("Fmean") && !prompt.contains("both objectives")
                     && !prompt.contains("weighted combination") && !prompt.contains("raw weighted sum")
-                    && prompt.contains("Expected objective effect:") && prompt.contains("Fitness: [d0|0.0|]\nTree 0:"),
+                    && !prompt.contains("Expected objective effect:") && prompt.contains("Fitness: [d0|0.0|]\nTree 0:"),
                     "Remove all second-objective wording and use a one-objective fitness placeholder while retaining both trees.");
-            require(factory.systemPrompt().equals(PopulationFactory.SYSTEM_PROMPT) && factory.systemPrompt().contains("bullet-point insights")
-                    && !factory.systemPrompt().contains("JSON"), "Single and multi must share the annotated text system prompt.");
+                require(factory.systemPrompt().equals(PopulationFactory.SYSTEM_PROMPT)
+                    && factory.systemPrompt().contains("Return only one complete plain-text ECJ subpopulation"),
+                    "Single and multi must share the pure TXT system prompt.");
+                for (int count : new int[]{1, 10, 100}) {
+                assertPopulationTemplate(factory.generationPrompt(count), count, 1);
+                }
             EvoSpeakConfig multi = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params"));
             ec.Fitness original = state.population.subpops[0].species.f_prototype;
             try {
@@ -216,10 +314,10 @@ public class OnlineEvoSpeakRegressionTest {
                     .contains("Actual optimized score: 1.0 * (mean-weighted-tardiness / benchmark[0])"),
                     "Single-objective normalization must be described according to params.");
             JSONObject expected = twoRuleResponse();
-            String text = textGenerationResponse(expected, 1);
-            require(text.contains("Fitness: [d0|0.0|]\nTree 0:") && text.contains("Expected objective effect:")
-                    && RulePopulation.generationObject(text).similar(expected),
-                    "Single-objective annotated replies must retain insights, rules and objective explanations for validation.");
+                String text = plainPopulationResponse(expected, 1);
+                require(text.contains("Fitness: [d0|0.0|]\nTree 0:") && !text.contains("Expected objective effect:")
+                    && RulePopulation.fromGeneratedText(text, 2, 1).size() == 2,
+                    "Single-objective population replies must contain only the GP records.");
         } finally {
             state.output.close();
         }
@@ -482,30 +580,19 @@ public class OnlineEvoSpeakRegressionTest {
                     "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/contract", "llm.timeout-seconds=5",
                     "evospeak.batch-size=2", "evospeak.max-batches=1", "pop.subpop.0.size=2", "breed.elite.0=1",
                     "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001");
-            Map<String, JSONObject> failures = new LinkedHashMap<>();
-            JSONObject missingInsights = twoRuleResponse();
-            missingInsights.remove("insights");
-            failures.put("insights", missingInsights);
-            JSONObject emptyInsights = twoRuleResponse();
-            emptyInsights.getJSONArray("insights").getJSONObject(0).put("observation", " ");
-            failures.put("nonempty text", emptyInsights);
-            JSONObject unknownReference = twoRuleResponse();
-            unknownReference.getJSONArray("insights").getJSONObject(0).put("referenceIds", new JSONArray().put(99));
-            failures.put("Unknown or repeated reference ID", unknownReference);
-            JSONObject fractionalReference = twoRuleResponse();
-            fractionalReference.getJSONArray("insights").getJSONObject(0).put("referenceIds", new JSONArray().put(1.5));
-            failures.put("1.5", fractionalReference);
-            JSONObject missingExplanation = twoRuleResponse();
-            missingExplanation.getJSONArray("individuals").getJSONObject(1).remove("explanation");
-            failures.put("explanation", missingExplanation);
-            JSONObject missingTradeOff = twoRuleResponse();
-            missingTradeOff.getJSONArray("individuals").getJSONObject(1).getJSONObject("explanation").put("objectiveTradeOff", "");
-            failures.put("objectiveTradeOff", missingTradeOff);
+            String valid = plainPopulationResponse(twoRuleResponse(), 2);
+            Map<String, String> failures = new LinkedHashMap<>();
+            failures.put("plain ECJ TXT", twoRuleResponse().toString());
+            failures.put("seven nonblank lines", valid + "Insights: unwanted explanation\n");
+            failures.put("Number of Individuals appears only once", valid.replace("Individual Number: i1|", "Number of Individuals: i1|"));
+            failures.put("Evaluated: F", valid.replace("Evaluated: F", "Evaluated: T"));
+            failures.put("Tree 0: and Tree 1:", valid.replace("Tree 1:", "Tree 2:"));
+            failures.put("Do not copy historical fitness", valid.replace("d0|0.0|", "d12345678901234560104|2570.0|"));
             JSONObject shortBatch = twoRuleResponse();
             shortBatch.getJSONArray("individuals").remove(1);
-            failures.put("exactly 2 individuals", shortBatch);
-            for (Map.Entry<String, JSONObject> failure : failures.entrySet()) {
-                response.set(failure.getValue().toString());
+            failures.put("Return exactly 2 individuals", plainPopulationResponse(shortBatch, 2));
+            for (Map.Entry<String, String> failure : failures.entrySet()) {
+                response.set(failure.getValue());
                 Path output = Files.createTempDirectory(root, "rejected-");
                 boolean rejected = false;
                 try {
@@ -524,7 +611,7 @@ public class OnlineEvoSpeakRegressionTest {
                     .put(new RulePopulation.Rules("PT", "WIQ").json())
                     .put(new RulePopulation.Rules("NOR", "PT").json())).toString());
             config.set("evospeak.examples-file", examples.toString());
-            response.set(twoRuleResponse().toString());
+            response.set(valid);
             Path copied = Files.createTempDirectory(root, "copied-");
             try {
                 new PopulationFactory(state, config, new LlmClient(config, name -> "test-key"), copied).create();
@@ -546,12 +633,7 @@ public class OnlineEvoSpeakRegressionTest {
             }
 
             config.set("evospeak.examples-file", "");
-            JSONObject noExamples = twoRuleResponse();
-            noExamples.getJSONArray("insights").getJSONObject(0).put("referenceIds", new JSONArray());
-            for (Object item : noExamples.getJSONArray("individuals")) {
-                ((JSONObject) item).getJSONObject("explanation").put("referenceIds", new JSONArray());
-            }
-            response.set(noExamples.toString());
+            response.set(valid);
             List<GPIndividual> accepted = new PopulationFactory(state, config, new LlmClient(config, name -> "test-key"),
                     Files.createTempDirectory(root, "no-examples-")).create();
             require(accepted.size() == 2, "Optional example-free generation must continue to work.");
@@ -788,26 +870,27 @@ public class OnlineEvoSpeakRegressionTest {
                 loadedWarmStartRules.clear();
                     int workflowObjectives = workflow.integer("eval.problem.eval-model.objectives", 1);
                     JSONObject expectedPopulation = twoRuleResponse();
-                    String generationResponse = textGenerationResponse(expectedPopulation, workflowObjectives);
+                    String generationResponse = plainPopulationResponse(expectedPopulation, workflowObjectives);
                     responseBody.set(responsesEnvelope(generationResponse));
                 Path run = EvoSpeakMain.run(workflow, new LlmClient(workflow, name -> "azure-test-key"));
                 require(requestBody.get().getString("input").contains("mean-weighted-tardiness"),
                     "Responses population generation must preserve the configured objective prompt.");
                     require(requestBody.get().getString("instructions").equals(PopulationFactory.SYSTEM_PROMPT)
-                        && requestBody.get().getString("instructions").contains("bullet-point insights"),
-                        "Both objective modes must send the shared annotated-text system prompt.");
-                    require(requestBody.get().getString("input").contains(workflowObjectives == 1
-                        ? "Expected objective effect:" : "Expected objective trade-off:"),
-                        "The actual request must describe the configured single or multiple objectives.");
+                        && requestBody.get().getString("instructions").contains("plain-text ECJ subpopulation"),
+                        "Both objective modes must request only a pure ECJ population TXT.");
+                    require(requestBody.get().getString("input").contains("Number of Individuals appears exactly ONCE")
+                        && requestBody.get().getString("input").contains(RulePopulation.initialFitnessLine(workflowObjectives)),
+                        "The actual prompt must prohibit repeated headers and prescribe the correct initial fitness dimension.");
                     require(Files.readString(run.resolve("generation-response-0.txt")).equals(generationResponse),
                         "Retain the original LLM reply in its requested format.");
                     JSONObject generatedRules = new JSONObject(Files.readString(run.resolve("generated-rules.json")));
-                    require(generatedRules.getJSONArray("generationBatches").getJSONObject(0).getJSONArray("insights")
-                        .similar(expectedPopulation.getJSONArray("insights")), "Bullet insights and citations must survive generation.");
+                    require(generatedRules.getString("responseFormat").equals("ecj-population-txt")
+                        && !generatedRules.getJSONArray("generationBatches").getJSONObject(0).has("insights"),
+                        "Pure TXT generation must not require or fabricate insight content.");
                     for (int index = 0; index < 2; index++) {
-                        require(generatedRules.getJSONArray("individuals").getJSONObject(index).getJSONObject("explanation")
-                            .similar(expectedPopulation.getJSONArray("individuals").getJSONObject(index).getJSONObject("explanation")),
-                            "Annotated ECJ explanations must stay aligned with each accepted pair.");
+                        require(!generatedRules.getJSONArray("individuals").getJSONObject(index).has("explanation")
+                            && generatedRules.getJSONArray("individuals").getJSONObject(index).getInt("generationBatch") == 0,
+                            "Save rule provenance without manufacturing explanations absent from the plain response.");
                     }
                 JSONObject runStatus = new JSONObject(Files.readString(run.resolve("status.json")));
                 require(runStatus.getString("state").equals("completed") && runStatus.getString("api").equals("responses")
@@ -820,6 +903,8 @@ public class OnlineEvoSpeakRegressionTest {
                 require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2,
                     "Responses-generated rules must retain the native ECJ population format.");
                 String serialized = Files.readString(run.resolve("generated-population.txt"));
+                require(serialized.replace("\r\n", "\n").equals(generationResponse),
+                    "The published TXT must match the reference layout exactly, including blank lines and unindented trees.");
                 require(serialized.startsWith("Number of Individuals: i2|")
                     && serialized.lines().filter(line -> line.equals("Evaluated: F")).count() == 2
                     && serialized.lines().filter(line -> line.startsWith("Fitness: [")).count() == 2
@@ -867,14 +952,14 @@ public class OnlineEvoSpeakRegressionTest {
                 Path imported = EvoSpeakMain.run(offlineReply, null);
                 require(Files.readString(imported.resolve("generated-population.txt")).equals(serialized)
                     && loadedWarmStartRules.isEmpty(),
-                    "An offline annotated response must validate into the same native TXT without any LLM call or GP initialization.");
+                    "An offline pure population response must validate into the same native TXT without any LLM call or GP initialization.");
                 Path failureRoot = workflowRoot.resolve("failed-generation");
                 generationOnly.set("evospeak.run-gp", true);
                 generationOnly.set("evospeak.output-directory", failureRoot);
                 JSONObject invalidPopulation = generatedResponse(new JSONArray()
                     .put(new RulePopulation.Rules("UNKNOWN", "WIQ").json())
                     .put(new RulePopulation.Rules("PT", "WIQ").json()));
-                responseBody.set(responsesEnvelope(textGenerationResponse(invalidPopulation, workflowObjectives)));
+                responseBody.set(responsesEnvelope(plainPopulationResponse(invalidPopulation, workflowObjectives)));
                 boolean blocked = false;
                 try {
                     EvoSpeakMain.run(generationOnly, new LlmClient(generationOnly, name -> "azure-test-key"));
@@ -1348,15 +1433,25 @@ public class OnlineEvoSpeakRegressionTest {
                 String prompt = request.getJSONArray("messages").getJSONObject(1).getString("content");
                 int batch = requests.getAndIncrement();
                 JSONArray individuals = new JSONArray();
-                if (batch == 0) {
+                if (batch <= 1) {
+                    if (batch == 1) {
+                        require(prompt.contains("plain ECJ TXT") && prompt.contains("Number of Individuals appears exactly ONCE"),
+                                "A rejected wrapper must provide both the format error and a complete indexed template in the next prompt.");
+                    }
                     individuals.put(new RulePopulation.Rules("PT", "WIQ").json())
                             .put(new RulePopulation.Rules("(+ PT UNKNOWN)", "WIQ").json());
                 } else {
                     require(prompt.contains("Unknown") || prompt.contains("UNKNOWN"), "Rejected rules must be fed back to the LLM.");
+                    require(prompt.contains("exactly 1 NEW, DISTINCT pairs") && prompt.endsWith("ROUTING_RULE_0\n"),
+                            "The final batch must request and template only the missing individual.");
                     individuals.put(new RulePopulation.Rules("(/ PT W)", "(+ WIQ TRANT)").json());
                 }
+                String generated = plainPopulationResponse(new JSONObject().put("individuals", individuals), 1);
+                if (batch == 0) {
+                    generated = "<START>\n" + generated + "<END>\n";
+                }
                 byte[] response = new JSONObject().put("choices", new JSONArray().put(new JSONObject().put("finish_reason", "stop")
-                        .put("message", new JSONObject().put("content", generatedResponse(individuals).toString()))))
+                        .put("message", new JSONObject().put("content", generated))))
                         .toString().getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, response.length);
                 exchange.getResponseBody().write(response);
@@ -1368,24 +1463,26 @@ public class OnlineEvoSpeakRegressionTest {
                 EvoSpeakConfig config = new EvoSpeakConfig(Paths.get(EvoSpeakConfig.DEFAULT_PARAMS),
                         "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/generate",
                         "evospeak.output-directory=" + root.toString().replace('\\', '/'),
-                        "evospeak.batch-size=2", "evospeak.max-batches=2", "evospeak.objective-mode=single",
+                        "evospeak.batch-size=2", "evospeak.max-batches=3", "evospeak.objective-mode=single",
                         "evospeak.normalization=false", "pop.subpop.0.size=2", "breed.elite.0=1", "generations=2",
                         "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
                         "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
                 Path run = EvoSpeakMain.run(config, new LlmClient(config, name -> "test-key"));
-                require(requests.get() == 2, "One rejected candidate must trigger a replacement batch.");
+                require(requests.get() == 3, "A format-rejected batch and an invalid candidate must receive bounded replacement batches.");
                 JSONObject validation = new JSONObject(Files.readString(run.resolve("validation-report.json")));
-                require(validation.getInt("accepted") == 2 && validation.getJSONArray("checks").length() == 3, "Validation audit counts");
+                require(validation.getInt("accepted") == 2 && validation.getJSONArray("checks").length() == 4
+                        && validation.getJSONArray("batches").getJSONObject(0).has("formatError"), "Validation audit counts");
                 JSONObject generated = new JSONObject(Files.readString(run.resolve("generated-rules.json")));
-                require(generated.getJSONArray("individuals").getJSONObject(1).getJSONObject("explanation")
-                    .getString("objectiveTradeOff").contains("trade-off"), "Accepted rules must retain their explanations after a retry.");
+                require(!generated.getJSONArray("individuals").getJSONObject(1).has("explanation")
+                    && generated.getJSONArray("individuals").getJSONObject(1).getInt("generationBatch") == 2,
+                    "Accepted rules must retain their source batch, without requiring generated explanation fields.");
                 require(generated.getJSONArray("individuals").getJSONObject(1).getString("sequencing").equals("(/ PT W)"),
-                    "Explanations and validated canonical expressions must stay aligned.");
+                    "Validated canonical expressions must stay aligned after replacement batches.");
                 require(RulePopulation.read(run.resolve("generated-rules.json")).size() == 2, "Enriched JSON must remain compatible with offline reuse and analysis.");
                 String warmStartReport = Files.readString(run.resolve("warm-start-report.md"));
-                require(warmStartReport.contains("## Insights Extraction") && warmStartReport.contains("- MWT")
-                    && warmStartReport.contains("Tree 0:") && warmStartReport.contains("Expected objective trade-off:"),
-                    "Warm-start report must contain bullet insights, ECJ-style rule pairs and expected effects.");
+                require(warmStartReport.contains("## Generation Batches") && warmStartReport.contains("## Validated Heuristics")
+                    && warmStartReport.contains("Tree 0:") && !warmStartReport.contains("Expected objective trade-off:"),
+                    "Warm-start report must record generation and validated rules, without fabricated explanations.");
                 require(!warmStartReport.contains("UNKNOWN"), "Rejected candidates must not appear among accepted heuristics.");
                 require(Files.exists(run.resolve("reference-heuristics.json")), "Save the reference facts used for generation.");
                 JSONObject firstGeneration = new JSONObject(Files.readAllLines(run.resolve("generations.jsonl")).get(0));

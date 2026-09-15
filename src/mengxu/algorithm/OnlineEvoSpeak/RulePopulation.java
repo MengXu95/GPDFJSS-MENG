@@ -7,6 +7,7 @@ import ec.gp.GPIndividual;
 import ec.gp.GPInitializer;
 import ec.gp.GPNode;
 import ec.gp.GPTree;
+import ec.util.Code;
 import ec.util.DecodeReturn;
 import ec.util.Output;
 import org.json.JSONArray;
@@ -15,6 +16,7 @@ import yimei.jss.gp.terminal.TerminalERCUniform;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,6 +79,56 @@ public final class RulePopulation {
             content = content.substring(start + 1, end).trim();
         }
         return new JSONObject(content);
+    }
+
+    static String initialFitnessLine(int objectives) {
+        if (objectives != 1 && objectives != 2) {
+            throw new IllegalArgumentException("Initial population requires one or two objectives.");
+        }
+        return "Fitness: [" + Code.encode(0.0) + (objectives == 2 ? " " + Code.encode(0.0) : "") + "]";
+    }
+
+    public static List<Rules> fromGeneratedText(String response, int expected, int objectives) {
+        if (expected < 1 || expected > 1000) {
+            throw new IllegalArgumentException("Generated population size must be between 1 and 1000.");
+        }
+        String fitness = initialFitnessLine(objectives);
+        String text = response.replace("\r\n", "\n");
+        if (text.startsWith("\uFEFF")) {
+            text = text.substring(1);
+        }
+        List<String> lines = new ArrayList<>();
+        for (String line : text.split("\n", -1)) {
+            if (!line.isBlank()) {
+                lines.add(line.stripTrailing());
+            }
+        }
+        String header = "Number of Individuals: " + Code.encode(expected);
+        if (lines.isEmpty() || !lines.get(0).equals(header)) {
+            throw new IllegalArgumentException("Return exactly " + expected + " individuals as plain ECJ TXT. "
+                    + "The first line must be '" + header + "'; no Markdown, JSON or <START>/<END> markers.");
+        }
+        if (lines.size() != 1 + expected * 7) {
+            throw new IllegalArgumentException("Plain ECJ TXT requires one population header and exactly seven nonblank lines per individual. "
+                    + "Do not repeat the population header or include insights, explanations, citations, markers or extra trees.");
+        }
+        List<Rules> rules = new ArrayList<>();
+        for (int index = 0; index < expected; index++) {
+            int start = 1 + index * 7;
+            if (!lines.get(start).equals("Individual Number: " + Code.encode(index))) {
+                throw new IllegalArgumentException("Record " + index + " must start with 'Individual Number: "
+                        + Code.encode(index) + "'. Number of Individuals appears only once, at the top.");
+            }
+            if (!lines.get(start + 1).equals("Evaluated: F") || !lines.get(start + 2).equals(fitness)) {
+                throw new IllegalArgumentException("Individual " + index + " must use 'Evaluated: F' and '" + fitness
+                        + "'. Do not copy historical fitness or invent evaluated scores.");
+            }
+            if (!lines.get(start + 3).equals("Tree 0:") || !lines.get(start + 5).equals("Tree 1:")) {
+                throw new IllegalArgumentException("Individual " + index + " requires Tree 0: and Tree 1:, each followed by one expression line.");
+            }
+            rules.add(new Rules(lines.get(start + 4), lines.get(start + 6)));
+        }
+        return rules;
     }
 
     public static JSONObject generationObject(String response) {
@@ -270,8 +322,21 @@ public final class RulePopulation {
     public static void write(Path file, EvolutionState state, List<? extends Individual> individuals) throws IOException {
         Subpopulation population = (Subpopulation) state.population.subpops[0].emptyClone();
         population.individuals = individuals.toArray(new Individual[0]);
+        StringWriter serialized = new StringWriter();
+        try (PrintWriter nativeWriter = new PrintWriter(serialized)) {
+            population.printSubpopulation(state, nativeWriter);
+        }
         try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(file, StandardCharsets.UTF_8))) {
-            population.printSubpopulation(state, writer);
+            for (String line : serialized.toString().split("\\R")) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                if (trimmed.startsWith("Individual Number:")) {
+                    writer.println();
+                }
+                writer.println(trimmed);
+            }
             if (writer.checkError()) {
                 throw new IOException("Failed to write population: " + file);
             }
