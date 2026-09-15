@@ -7,7 +7,7 @@ The migration updates source packages, params, `GPMain`, tests and VS Code launc
 The workflow is:
 
 1. Load the scheduling scenario, objective mode, weights and LLM settings from params.
-2. Load the provided reference heuristics and ask the selected LLM to extract terminal-grounded insights, then generate a small JSON batch of new pairs with explanations of their expected objective trade-offs.
+2. Load the provided reference heuristics and ask the selected LLM to extract terminal-grounded insights, then generate a small batch of new pairs with explanations of their expected objective effects. Both objective modes use bullet insights and annotated ECJ-style text.
 3. Check the response schema and reference IDs, parse against the actual ECJ GP grammar, enforce tree limits, reject duplicate/reference-copy pairs, and run bounded scheduling simulations on validation seeds.
 4. Feed rejection evidence back to the LLM and request replacements within the configured budget.
 5. Publish `generated-population.txt` in native ECJ format only when the required population is complete.
@@ -243,7 +243,7 @@ The exact first-batch messages can be exported for manual offline use, with no L
 .\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action prompt -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStartMO.params -ExtraArgs @('.\out\offline-multi-prompt.md')
 ```
 
-This invokes `EvoSpeakMain --export-prompt <new-output.md>` and uses the same system prompt and `PopulationFactory.generationPrompt` as online requests. Override objectives, weights, batch size or `evospeak.prompt-file` through the usual params/`-Overrides` mechanism. Existing files are not overwritten. [Offline instructions and complete single/multi-objective prompt snapshots](../OfflineEvoSpeak/README.md#exact-shared-prompts) explain manual batches and local conversion from the LLM's JSON response to ECJ TXT.
+This invokes `EvoSpeakMain --export-prompt <new-output.md>` and uses the same shared system prompt and `PopulationFactory.generationPrompt` as online requests. Override objectives, weights, batch size or `evospeak.prompt-file` through the usual params/`-Overrides` mechanism. Existing files are not overwritten. [Offline instructions and complete single/multi-objective prompt snapshots](../OfflineEvoSpeak/README.md#exact-shared-prompts) explain manual batches and local conversion from the LLM's response to ECJ TXT.
 
 The default generation prompt now follows the supplied **Insights Extraction -> New Heuristic Generation -> Expected Objective Effects** workflow. `warm-start-examples.json` contains the five input heuristics from that prompt, not the 100 individuals in the pasted model answer. Each example retains its reported scalar score as unverified historical metadata. Those scores are not comparable training observations without their original scenario, seeds and normalization, and are never loaded into GP fitness.
 
@@ -257,9 +257,9 @@ The reference file can be a standalone ECJ population file or JSON with an `indi
 
 References are parsed with the actual terminal/function grammar and bounded to depth 32 and 2047 nodes per tree. This allows source heuristics to be more complex than newly generated trees, which still obey `evospeak.max-tree-depth` and `evospeak.max-tree-nodes`. Reference parsing does not establish performance or simulation feasibility. Whole reference pairs are excluded from new LLM-generated populations; reusable substructures are encouraged.
 
-Each batch prompt includes the five canonical pairs, per-tree terminal meanings/counts and structural warnings, the real scheduling scenario, normalized configured weights and the exact raw or benchmark-normalized score. The model must discuss context-dependent terms and cancellation rather than assume, for example, that additive `MWT` changes job ordering within one machine queue or that `TIS` directly encodes a due date. It must propose varied strategies, not just a long series of terminal substitutions. Exact duplicates/copies are checked in code; semantic novelty and explanation correctness still need scientific review.
+Each batch prompt includes the five canonical pairs, terminal definitions, the real scheduling scenario, configured objective weights and the exact raw or benchmark-normalized score. Both objective modes share the supplied `# Prompt`, `Provided Information`, `Tasks` and `Output Requirements` structure and present the same references between `<START>` and `<END>` in ECJ style. Only objective-related wording and the fitness dimension differ. Historical expressions and scalar scores are preserved; only their placeholder display encodings are replaced by valid ECJ encodings. The model must discuss context-dependent terms and cancellation rather than assume, for example, that additive `MWT` changes job ordering within one machine queue or that `TIS` directly encodes a due date. It must propose varied strategies, not just a long series of terminal substitutions. Exact duplicates/copies are checked in code; semantic novelty and explanation correctness still need scientific review.
 
-To reproduce the attachment's raw `lambda1 * Fmean + lambda2 * WTmean`, where `lambda2 = 1 - lambda1`, explicitly select:
+To use the supplied raw `lambda1 * Fmean + lambda2 * WTmean`, where `lambda2 = 1 - lambda1`, disable benchmark normalization. For example, with equal weights:
 
 ```properties
 evospeak.objective-mode = multi
@@ -270,33 +270,65 @@ evospeak.weight.1 = 0.5
 evospeak.normalization = false
 ```
 
-The existing normalization default is unchanged. Different weights or single-objective settings are carried into the prompt, rather than overwritten by the attachment's illustrative 0.5/0.5 choice. `Fmean` and `WTmean` are identified as aliases for the corresponding configured objectives.
+The existing normalization default is unchanged; the supplied prompt does not specify numerical weights. Different weights or single-objective settings are carried into the prompt, not overwritten with 0.5/0.5. When normalization is enabled, the MO prompt explicitly distinguishes the supplied raw formula from the actual benchmark-normalized GP score. `Fmean` and `WTmean` are aliases for the corresponding configured objectives.
 
-The LLM returns structured content rather than fabricating ECJ `Fitness` numbers:
+### Multi-Objective Reply
 
-```json
-{
-	"insights": [
-		{"observation": "In reference 1, MWT is constant in one sequencing queue, so (- MWT W) favors larger W for finite values.", "referenceIds": [1]}
-	],
-	"individuals": [
-		{
-			"sequencing": "(/ PT W)",
-			"routing": "(+ WIQ TRANT)",
-			"explanation": {
-				"sequencing": "Smaller PT/W favors short operations and higher positive job weights.",
-				"routing": "Smaller WIQ+TRANT balances queued work with transport time.",
-				"objectiveTradeOff": "These priorities may reduce flow time and protect important jobs, but their tardiness effect depends on due dates and congestion; improvement requires testing.",
-				"referenceIds": [1]
-			}
-		}
-	]
-}
+The multi-objective system and user prompts request a text response, not JSON-only content. The prompt gives this exact layout with the current batch count. One illustrative pair is:
+
+```text
+## Insights Extraction
+- MWT can be constant within a sequencing queue, so subtracting W favors larger job weights for finite values. (reference IDs: [1])
+
+## New Heuristics
+<START>
+Number of Individuals: i1|
+Individual Number: i0|
+Evaluated: F
+Fitness: [d0|0.0| d0|0.0|]
+Tree 0:
+(/ PT W)
+Tree 1:
+(+ WIQ TRANT)
+Sequencing: PT/W favors short operations and larger positive job weights.
+Routing: WIQ+TRANT balances queued work and transport time.
+Expected objective trade-off: Both objectives may benefit, but the effect depends on congestion and due dates and requires testing.
+Reference IDs: [1]
+<END>
 ```
+
+Use the exact headings, field labels, contiguous zero-based indices and one `<START>/<END>` block. Counts must match the requested batch. The parser also accepts one enclosing Markdown fence and older JSON responses in either mode for compatibility. `RulePopulation.generationObject` extracts insights, rule strings, explanations and citations into the existing validation structure. It never uses the model's fitness field as training fitness. The original reply is saved as `generation-response-<batch>.txt`; the validated `generated-population.txt` contains only native ECJ population records, without prose.
+
+### Single-Objective Reply
+
+The single-objective prompt uses the same template, system message, references and output structure as MO, changing only the target description and related wording. With the supplied single-objective params it minimizes raw mean weighted tardiness (`WTmean`), not a weighted combination with `Fmean`. Other configured `evospeak.objective.0` values and normalization settings are respected. The reply uses one fitness value and `Expected objective effect:`:
+
+```text
+## Insights Extraction
+- MWT can be constant within a sequencing queue, so subtracting W favors larger job weights for finite values. (reference IDs: [1])
+
+## New Heuristics
+<START>
+Number of Individuals: i1|
+Individual Number: i0|
+Evaluated: F
+Fitness: [d0|0.0|]
+Tree 0:
+(/ PT W)
+Tree 1:
+(+ WIQ TRANT)
+Sequencing: PT/W favors short operations and larger positive job weights.
+Routing: WIQ+TRANT balances queued work and transport time.
+Expected objective effect: Prioritizing important jobs and limiting queue delays may reduce WTmean, but the effect depends on due dates and congestion and requires testing.
+Reference IDs: [1]
+<END>
+```
+
+For output-file and older JSON compatibility, the extracted objective explanation remains stored under `explanation.objectiveTradeOff` in both modes; for single objective its content describes the effect on that one objective.
 
 This one-pair example shows the schema, not a complete 100-individual response. Actual responses must contain exactly the requested batch count, 1-12 nonempty insights (up to 2000 characters each), and three nonempty explanation fields per pair (up to 4000 characters each). Reference IDs are zero-based, distinct and must exist in the supplied set; when references are disabled, use empty ID arrays. Insights and explanations are requested in the same content call, with no additional insight-only request.
 
-Malformed batch structure/count/insights rejects the batch. A missing or malformed individual explanation rejects that pair. All failures are retained as corrective feedback for replacement batches, within the same bounded generation budget. Accepted rules and their explanations stay aligned after candidate rejection. The native ECJ population remains in the original `Number of Individuals`, `Individual Number`, `Evaluated: F`, `Fitness`, `Tree 0` and `Tree 1` style, serialized by ECJ itself.
+Malformed batch structure/count/insights rejects the batch. Missing required labels or malformed record structure in a text reply also reject the batch before parsing trees. Semantically invalid explanation fields/citations or rules reject the affected pair during review. All failures are retained as corrective feedback for replacement batches, within the same bounded generation budget. Accepted rules and their explanations stay aligned after candidate rejection. The native ECJ population remains in the original `Number of Individuals`, `Individual Number`, `Evaluated: F`, `Fitness`, `Tree 0` and `Tree 1` style, serialized by ECJ itself.
 
 Completed online generation also produces `warm-start-report.md` with bullet-point insights and the validated rule pairs plus sequencing, routing and expected-objective explanations. `reference-heuristics.json` snapshots the exact reference facts sent to the model; `generated-rules.json` preserves the explanations, task score and batch insights. Both generated population formats remain readable by the existing offline and independent analysis tools. These narrative fields are LLM interpretations, not measured performance or a proof of feasibility.
 
@@ -351,7 +383,7 @@ The launcher prints the absolute TXT path before `Initializing Generation 0`. It
 
 The training random generator starts from the configured run seed independently of LLM preparation. Removing the old, discarded random initialization changes the consumed random-number sequence relative to older V1 runs; do not expect identical later generations across those versions solely from an identical seed.
 
-Offline reuse accepts either the original ECJ-shaped text or `{"individuals":[{"sequencing":"PT","routing":"WIQ"}]}` JSON:
+Offline reuse accepts the original standalone ECJ text, a complete annotated reply from either objective mode in the format above, or `{"individuals":[{"sequencing":"PT","routing":"WIQ"}]}` JSON. An annotated reply must pass through validation/serialization before use by the native ECJ loader, because it contains explanatory text:
 
 ```properties
 evospeak.source = file

@@ -27,6 +27,11 @@ public final class RulePopulation {
     private static final Pattern COUNT = Pattern.compile("(?m)^Number of Individuals: i(\\d+)\\|\\h*$");
     private static final Pattern INDIVIDUAL = Pattern.compile("(?m)^Individual Number: i(\\d+)\\|\\h*$");
     private static final Pattern TREE = Pattern.compile("(?m)^Tree (\\d+):\\h*$");
+        private static final Pattern INSIGHT = Pattern.compile("(?s)^-\\h+(.+?)\\h+\\(reference IDs:\\h*(\\[[^\\r\\n]*\\])\\)\\h*$");
+        private static final Pattern ANNOTATED_RULE = Pattern.compile("(?s)\\s*Evaluated:\\h*F\\h*\\n"
+            + "\\s*Fitness:\\h*\\[[^\\r\\n]*\\]\\h*\\n\\s*Tree 0:\\h*\\n(.*?)"
+            + "\\n\\h*Tree 1:\\h*\\n(.*?)\\nSequencing:\\h*(.*?)\\nRouting:\\h*(.*?)"
+            + "\\nExpected objective (?:trade-off|effect):\\h*(.*?)\\nReference IDs:\\h*(\\[[^\\r\\n]*\\])\\s*");
 
     private RulePopulation() { }
 
@@ -45,7 +50,11 @@ public final class RulePopulation {
     }
 
     public static List<Rules> fromJson(String response) {
-        JSONArray values = jsonObject(response).getJSONArray("individuals");
+        return fromJson(jsonObject(response));
+    }
+
+    static List<Rules> fromJson(JSONObject response) {
+        JSONArray values = response.getJSONArray("individuals");
         if (values.length() == 0 || values.length() > 1000) {
             throw new IllegalArgumentException("LLM response must contain between 1 and 1000 individuals.");
         }
@@ -70,6 +79,82 @@ public final class RulePopulation {
         return new JSONObject(content);
     }
 
+    public static JSONObject generationObject(String response) {
+        String text = response.replace("\r\n", "\n").trim();
+        if (text.startsWith("\uFEFF")) {
+            text = text.substring(1).trim();
+        }
+        if (text.startsWith("```")) {
+            int start = text.indexOf('\n');
+            int end = text.lastIndexOf("```");
+            if (start < 0 || end <= start || !text.substring(end + 3).trim().isEmpty()) {
+                throw new IllegalArgumentException("Incomplete generation code block.");
+            }
+            text = text.substring(start + 1, end).trim();
+        }
+        if (text.startsWith("{")) {
+            return jsonObject(text);
+        }
+        String[] start = text.split("(?m)^<START>\\h*$", -1);
+        if (start.length != 2) {
+            throw new IllegalArgumentException("Return exactly one <START>/<END> block for the new heuristics.");
+        }
+        String[] end = start[1].split("(?m)^<END>\\h*$", -1);
+        if (end.length != 2 || !end[1].trim().isEmpty()) {
+            throw new IllegalArgumentException("Missing <END> or unexpected text after the new heuristics.");
+        }
+        Matcher headings = Pattern.compile("(?s)^## Insights Extraction\\h*\\n(.*?)\\n## New Heuristics\\h*$")
+                .matcher(start[0].trim());
+        if (!headings.matches()) {
+            throw new IllegalArgumentException("Use the exact headings ## Insights Extraction and ## New Heuristics.");
+        }
+        JSONArray insights = new JSONArray();
+        for (String bullet : headings.group(1).trim().split("\\n(?=-\\h+)")) {
+            Matcher insight = INSIGHT.matcher(bullet.trim());
+            if (!insight.matches()) {
+                throw new IllegalArgumentException("Each insight must be a bullet ending with (reference IDs: [integer IDs]).");
+            }
+            insights.put(new JSONObject().put("observation", insight.group(1).trim())
+                    .put("referenceIds", new JSONArray(insight.group(2))));
+        }
+        String population = end[0].trim();
+        Matcher count = COUNT.matcher(population);
+        if (!count.find() || count.start() != 0) {
+            throw new IllegalArgumentException("Missing ECJ Number of Individuals header in the generated block.");
+        }
+        int expected = Integer.parseInt(count.group(1));
+        if (expected < 1 || expected > 1000) {
+            throw new IllegalArgumentException("Generated block must contain between 1 and 1000 individuals.");
+        }
+        List<Integer> starts = new ArrayList<>();
+        List<Integer> bodies = new ArrayList<>();
+        Matcher records = INDIVIDUAL.matcher(population);
+        while (records.find()) {
+            if (Integer.parseInt(records.group(1)) != starts.size()) {
+                throw new IllegalArgumentException("Generated individual numbers must be contiguous and start at zero.");
+            }
+            starts.add(records.start());
+            bodies.add(records.end());
+        }
+        if (starts.size() != expected || !population.substring(count.end(), starts.get(0)).trim().isEmpty()) {
+            throw new IllegalArgumentException("Generated population count or header does not match its records.");
+        }
+        JSONArray individuals = new JSONArray();
+        for (int index = 0; index < starts.size(); index++) {
+            int finish = index + 1 < starts.size() ? starts.get(index + 1) : population.length();
+            Matcher record = ANNOTATED_RULE.matcher(population.substring(bodies.get(index), finish));
+            if (!record.matches()) {
+                throw new IllegalArgumentException("Individual " + index + " must have Evaluated: F, Fitness, Tree 0, Tree 1, "
+                    + "Sequencing, Routing, Expected objective effect (or trade-off) and Reference IDs fields in that order.");
+            }
+            JSONObject explanation = new JSONObject().put("sequencing", record.group(3).trim())
+                    .put("routing", record.group(4).trim()).put("objectiveTradeOff", record.group(5).trim())
+                    .put("referenceIds", new JSONArray(record.group(6)));
+            individuals.put(new Rules(record.group(1), record.group(2)).json().put("explanation", explanation));
+        }
+        return new JSONObject().put("insights", insights).put("individuals", individuals);
+    }
+
     public static List<Rules> read(Path file) throws IOException {
         if (Files.size(file) > 10_000_000) {
             throw new IOException("Population file exceeds the 10 MB safety limit.");
@@ -80,6 +165,9 @@ public final class RulePopulation {
         }
         if (text.trim().startsWith("{")) {
             return fromJson(text);
+        }
+        if (text.contains("<START>")) {
+            return fromJson(generationObject(text));
         }
         Matcher count = COUNT.matcher(text);
         if (!count.find()) {

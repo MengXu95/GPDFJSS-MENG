@@ -26,6 +26,18 @@ import org.json.JSONArray;
 
 public class OnlineEvoSpeakRegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--single-prompt-only")) {
+            testSingleObjectivePrompt();
+            testMultiObjectivePrompt();
+            System.out.println("OnlineEvoSpeak single-objective prompt regression tests passed.");
+            return;
+        }
+        if (args.length == 1 && args[0].equals("--multi-prompt-only")) {
+            testMultiObjectiveTextResponse();
+            testMultiObjectivePrompt();
+            System.out.println("OnlineEvoSpeak multi-objective text regression tests passed.");
+            return;
+        }
         if (args.length == 1 && args[0].equals("--prompt-only")) {
             testPromptExport();
             System.out.println("OnlineEvoSpeak offline prompt regression tests passed.");
@@ -48,6 +60,9 @@ public class OnlineEvoSpeakRegressionTest {
         }
         testWeightedFitness();
         testParameterProfiles();
+        testMultiObjectiveTextResponse();
+        testMultiObjectivePrompt();
+        testSingleObjectivePrompt();
         testPromptExport();
         testPopulationParsing();
         testLlmProviders();
@@ -96,6 +111,148 @@ public class OnlineEvoSpeakRegressionTest {
         require(rejected, "All-zero weights must be rejected.");
     }
 
+    private static void testMultiObjectiveTextResponse() throws Exception {
+        JSONObject expected = twoRuleResponse();
+        String text = textGenerationResponse(expected);
+        JSONObject parsed = RulePopulation.generationObject(text);
+        require(parsed.similar(expected), "ECJ-style rules, bullet insights and explanations must retain the JSON validation contract.");
+        require(RulePopulation.generationObject("```text\r\n" + text.replace("\n", "\r\n") + "\r\n```").similar(expected),
+                "Text replies must tolerate one surrounding Markdown fence and Windows line endings.");
+        require(RulePopulation.generationObject(expected.toString()).similar(expected), "Existing JSON replies remain supported.");
+        Path responseFile = Files.createTempFile("onlineevospeak-text-response-", ".txt");
+        try {
+            Files.writeString(responseFile, text);
+            List<RulePopulation.Rules> rules = RulePopulation.read(responseFile);
+            require(rules.size() == 2 && rules.get(1).sequencing.equals("(/ PT W)")
+                    && rules.get(1).routing.equals("(+ WIQ TRANT)"), "Offline reply import must separate explanations from GP expressions.");
+        } finally {
+            Files.deleteIfExists(responseFile);
+        }
+        for (String invalid : new String[]{text.replace("<END>", ""), text + "\nUnrequested text",
+                text.replace("i2|", "i3|"), text.replace("Individual Number: i1|", "Individual Number: i0|"),
+                text.replace("## Insights Extraction", "## Missing Insights"), text.replace("Expected objective trade-off:", "Missing trade-off:"),
+                text.replace("Evaluated: F", "Evaluated: T"), text.replace("Reference IDs: [1]", "Reference IDs: invalid")}) {
+            boolean rejected = false;
+            try {
+                RulePopulation.generationObject(invalid);
+            } catch (IllegalArgumentException | org.json.JSONException expectedFailure) {
+                rejected = true;
+            }
+            require(rejected, "Malformed annotated ECJ generation responses must fail before rule validation.");
+        }
+    }
+
+        private static void testMultiObjectivePrompt() throws Exception {
+        EvoSpeakConfig config = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params"),
+            "stat=ec.Statistics", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName());
+        EvoSpeakEvolutionState state = (EvoSpeakEvolutionState) Evolve.initialize(config.parameters, 0);
+        state.output.setThrowsErrors(true);
+        try {
+            state.setup(state, null);
+            state.population = state.initializer.setupPopulation(state, 0);
+            PopulationFactory factory = new PopulationFactory(state, config, null, null);
+            String prompt = factory.generationPrompt(10);
+            require(prompt.startsWith("# Prompt\n") && prompt.contains("### **Provided Information:**")
+                && prompt.contains("1. **Insights Extraction**:") && prompt.contains("2. **New Heuristic Generation**:")
+                && prompt.contains("### **Output Requirements:**"), "Multi-objective prompt must follow the supplied structure.");
+            require(prompt.contains("lambda1 * Fmean + lambda2 * WTmean, where lambda2 = 1 - lambda1.")
+                && prompt.contains("Actual optimized score: 0.8 * (mean-flowtime / benchmark[0]) + 0.2 * (mean-weighted-tardiness / benchmark[1])"),
+                "Distinguish the supplied raw formula from actual normalized GP settings.");
+            JSONObject examples = new JSONObject(Files.readString(config.path("evospeak.examples-file", "")));
+            require(prompt.contains("<START>\n\nNumber of Individuals: i5|"), "Display the supplied five reference individuals as ECJ text.");
+            for (Object item : examples.getJSONArray("individuals")) {
+            JSONObject example = (JSONObject) item;
+            require(prompt.contains(example.getString("sequencing")) && prompt.contains(example.getString("routing"))
+                && prompt.contains(String.valueOf(example.getDouble("reportedFitness"))),
+                "Preserve all supplied reference trees and reported scores.");
+            }
+            require(factory.systemPrompt().contains("bullet-point insights") && !factory.systemPrompt().contains("JSON")
+                && prompt.contains("Evaluated: F\nFitness: [d0|0.0| d0|0.0|]") && prompt.contains("Reference IDs:"),
+                "The system and user prompts must agree on annotated ECJ output, never measured initial fitness.");
+            config.set("evospeak.normalization", false);
+            require(new PopulationFactory(state, config, null, null).generationPrompt(10)
+                .contains("Actual optimized score: 0.8 * mean-flowtime + 0.2 * mean-weighted-tardiness"),
+                "Raw multi-objective mode must use the supplied objective formula directly.");
+            testExamplePrompt(state);
+        } finally {
+            state.output.close();
+        }
+        }
+
+    private static void testSingleObjectivePrompt() throws Exception {
+        EvoSpeakConfig config = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.params"),
+                "stat=ec.Statistics", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName());
+        EvoSpeakEvolutionState state = (EvoSpeakEvolutionState) Evolve.initialize(config.parameters, 0);
+        state.output.setThrowsErrors(true);
+        try {
+            state.setup(state, null);
+            state.population = state.initializer.setupPopulation(state, 0);
+            PopulationFactory factory = new PopulationFactory(state, config, null, null);
+            String prompt = factory.generationPrompt(10);
+            require(prompt.startsWith("# Prompt\n") && prompt.contains("The goal is to minimize the single objective **mean weighted tardiness (WTmean)**")
+                    && prompt.contains("Actual optimized score: 1.0 * mean-weighted-tardiness"),
+                    "The single prompt must use the configured single objective, not a weighted combination.");
+            require(!prompt.contains("lambda") && !prompt.contains("Fmean") && !prompt.contains("both objectives")
+                    && !prompt.contains("weighted combination") && !prompt.contains("raw weighted sum")
+                    && prompt.contains("Expected objective effect:") && prompt.contains("Fitness: [d0|0.0|]\nTree 0:"),
+                    "Remove all second-objective wording and use a one-objective fitness placeholder while retaining both trees.");
+            require(factory.systemPrompt().equals(PopulationFactory.SYSTEM_PROMPT) && factory.systemPrompt().contains("bullet-point insights")
+                    && !factory.systemPrompt().contains("JSON"), "Single and multi must share the annotated text system prompt.");
+            EvoSpeakConfig multi = new EvoSpeakConfig(Paths.get("src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.params"));
+            ec.Fitness original = state.population.subpops[0].species.f_prototype;
+            try {
+                state.population.subpops[0].species.f_prototype = fitness(2, 0.8, 0.2);
+                String multiPrompt = new PopulationFactory(state, multi, null, null).generationPrompt(10);
+                String information = "### **Provided Information:**";
+                String tasks = "### **Tasks:**";
+                require(prompt.substring(prompt.indexOf(information), prompt.indexOf(tasks))
+                        .equals(multiPrompt.substring(multiPrompt.indexOf(information), multiPrompt.indexOf(tasks))),
+                        "Terminal meanings, all five reference rules and scores must be identical between objective modes.");
+            } finally {
+                state.population.subpops[0].species.f_prototype = original;
+            }
+            config.set("evospeak.normalization", true);
+            require(new PopulationFactory(state, config, null, null).generationPrompt(10)
+                    .contains("Actual optimized score: 1.0 * (mean-weighted-tardiness / benchmark[0])"),
+                    "Single-objective normalization must be described according to params.");
+            JSONObject expected = twoRuleResponse();
+            String text = textGenerationResponse(expected, 1);
+            require(text.contains("Fitness: [d0|0.0|]\nTree 0:") && text.contains("Expected objective effect:")
+                    && RulePopulation.generationObject(text).similar(expected),
+                    "Single-objective annotated replies must retain insights, rules and objective explanations for validation.");
+        } finally {
+            state.output.close();
+        }
+    }
+
+    private static String textGenerationResponse(JSONObject response) {
+        return textGenerationResponse(response, 2);
+    }
+
+    private static String textGenerationResponse(JSONObject response, int objectiveCount) {
+        StringBuilder text = new StringBuilder("## Insights Extraction\n");
+        for (Object value : response.getJSONArray("insights")) {
+            JSONObject insight = (JSONObject) value;
+            text.append("- ").append(insight.getString("observation")).append(" (reference IDs: ")
+                    .append(insight.getJSONArray("referenceIds")).append(")\n");
+        }
+        JSONArray individuals = response.getJSONArray("individuals");
+        text.append("\n## New Heuristics\n<START>\nNumber of Individuals: i").append(individuals.length()).append("|\n");
+        for (int index = 0; index < individuals.length(); index++) {
+            JSONObject individual = individuals.getJSONObject(index);
+            JSONObject explanation = individual.getJSONObject("explanation");
+                text.append("Individual Number: i").append(index).append("|\nEvaluated: F\nFitness: ")
+                    .append(objectiveCount == 1 ? "[d0|0.0|]" : "[d0|0.0| d0|0.0|]").append("\nTree 0:\n")
+                    .append(individual.getString("sequencing")).append("\nTree 1:\n").append(individual.getString("routing"))
+                    .append("\nSequencing: ").append(explanation.getString("sequencing"))
+                    .append("\nRouting: ").append(explanation.getString("routing"))
+                    .append(objectiveCount == 1 ? "\nExpected objective effect: " : "\nExpected objective trade-off: ")
+                    .append(explanation.getString("objectiveTradeOff"))
+                    .append("\nReference IDs: ").append(explanation.getJSONArray("referenceIds")).append("\n\n");
+        }
+        return text.append("<END>").toString();
+    }
+
     private static void testPromptExport() throws Exception {
         Path root = Files.createTempDirectory("onlineevospeak-prompt-export-");
         for (String profile : new String[]{"multipletreegp-dynamicLLMWarmStart.params", "multipletreegp-dynamicLLMWarmStartMO.params"}) {
@@ -120,12 +277,13 @@ public class OnlineEvoSpeakRegressionTest {
             try {
                 state.setup(state, null);
                 state.population = state.initializer.setupPopulation(state, 0);
-                String prompt = new PopulationFactory(state, config, null, null).generationPrompt(10);
-                require(exported.contains("```text\n" + PopulationFactory.SYSTEM_PROMPT + "\n```")
+                PopulationFactory factory = new PopulationFactory(state, config, null, null);
+                String prompt = factory.generationPrompt(10);
+                require(exported.contains("```text\n" + factory.systemPrompt() + "\n```")
                         && exported.contains("```text\n" + prompt + "\n```"),
                         "Offline prompt export must exactly match both messages used by online generation.");
                 require(prompt.contains("100 individuals") && prompt.contains("exactly 10 NEW, DISTINCT pairs")
-                        && prompt.contains("reference data") && prompt.contains("terminalsUsed"),
+                    && prompt.contains("reference data") && prompt.contains("Number of Individuals: i5|"),
                         "Export must include the configured population/batch sizes, actual references and terminal facts.");
             } finally {
                 state.output.close();
@@ -628,10 +786,29 @@ public class OnlineEvoSpeakRegressionTest {
                     "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
                     "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
                 loadedWarmStartRules.clear();
-                responseBody.set(responsesEnvelope(twoRuleResponse().toString()));
+                    int workflowObjectives = workflow.integer("eval.problem.eval-model.objectives", 1);
+                    JSONObject expectedPopulation = twoRuleResponse();
+                    String generationResponse = textGenerationResponse(expectedPopulation, workflowObjectives);
+                    responseBody.set(responsesEnvelope(generationResponse));
                 Path run = EvoSpeakMain.run(workflow, new LlmClient(workflow, name -> "azure-test-key"));
                 require(requestBody.get().getString("input").contains("mean-weighted-tardiness"),
                     "Responses population generation must preserve the configured objective prompt.");
+                    require(requestBody.get().getString("instructions").equals(PopulationFactory.SYSTEM_PROMPT)
+                        && requestBody.get().getString("instructions").contains("bullet-point insights"),
+                        "Both objective modes must send the shared annotated-text system prompt.");
+                    require(requestBody.get().getString("input").contains(workflowObjectives == 1
+                        ? "Expected objective effect:" : "Expected objective trade-off:"),
+                        "The actual request must describe the configured single or multiple objectives.");
+                    require(Files.readString(run.resolve("generation-response-0.txt")).equals(generationResponse),
+                        "Retain the original LLM reply in its requested format.");
+                    JSONObject generatedRules = new JSONObject(Files.readString(run.resolve("generated-rules.json")));
+                    require(generatedRules.getJSONArray("generationBatches").getJSONObject(0).getJSONArray("insights")
+                        .similar(expectedPopulation.getJSONArray("insights")), "Bullet insights and citations must survive generation.");
+                    for (int index = 0; index < 2; index++) {
+                        require(generatedRules.getJSONArray("individuals").getJSONObject(index).getJSONObject("explanation")
+                            .similar(expectedPopulation.getJSONArray("individuals").getJSONObject(index).getJSONObject("explanation")),
+                            "Annotated ECJ explanations must stay aligned with each accepted pair.");
+                    }
                 JSONObject runStatus = new JSONObject(Files.readString(run.resolve("status.json")));
                 require(runStatus.getString("state").equals("completed") && runStatus.getString("api").equals("responses")
                     && Files.readAllLines(run.resolve("generations.jsonl")).size() == 2,
@@ -674,7 +851,7 @@ public class OnlineEvoSpeakRegressionTest {
                 generationOnly.set("pop.subpop.0.species", FileBackedTestSpecies.class.getName());
                 generationOnly.set("evospeak.run-gp", false);
                 generationOnly.set("evospeak.output-directory", workflowRoot.resolve("generate-only"));
-                responseBody.set(responsesEnvelope(twoRuleResponse().toString()));
+                responseBody.set(responsesEnvelope(generationResponse));
                 Path generatedOnly = EvoSpeakMain.run(generationOnly, new LlmClient(generationOnly, name -> "azure-test-key"));
                 JSONObject generatedStatus = new JSONObject(Files.readString(generatedOnly.resolve("status.json")));
                 require(generatedStatus.getString("state").equals("validated") && !generatedStatus.getBoolean("initialPopulationLoaded")
@@ -683,12 +860,21 @@ public class OnlineEvoSpeakRegressionTest {
                 require(!Files.exists(Paths.get(generatedStatus.getString("statisticsFile")))
                     && !Files.exists(generatedOnly.resolve("generations.jsonl")),
                     "Generate-only mode must not initialize GP statistics or run generations.");
+                EvoSpeakConfig offlineReply = generationOnly.copy();
+                offlineReply.set("evospeak.source", "file");
+                offlineReply.set("evospeak.population-file", run.resolve("generation-response-0.txt"));
+                offlineReply.set("evospeak.output-directory", workflowRoot.resolve("offline-text-import"));
+                Path imported = EvoSpeakMain.run(offlineReply, null);
+                require(Files.readString(imported.resolve("generated-population.txt")).equals(serialized)
+                    && loadedWarmStartRules.isEmpty(),
+                    "An offline annotated response must validate into the same native TXT without any LLM call or GP initialization.");
                 Path failureRoot = workflowRoot.resolve("failed-generation");
                 generationOnly.set("evospeak.run-gp", true);
                 generationOnly.set("evospeak.output-directory", failureRoot);
-                responseBody.set(responsesEnvelope(generatedResponse(new JSONArray()
+                JSONObject invalidPopulation = generatedResponse(new JSONArray()
                     .put(new RulePopulation.Rules("UNKNOWN", "WIQ").json())
-                    .put(new RulePopulation.Rules("PT", "WIQ").json())).toString()));
+                    .put(new RulePopulation.Rules("PT", "WIQ").json()));
+                responseBody.set(responsesEnvelope(textGenerationResponse(invalidPopulation, workflowObjectives)));
                 boolean blocked = false;
                 try {
                     EvoSpeakMain.run(generationOnly, new LlmClient(generationOnly, name -> "azure-test-key"));
