@@ -10,13 +10,17 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 public final class EvoSpeakMain {
     private EvoSpeakMain() { }
@@ -77,22 +81,18 @@ public final class EvoSpeakMain {
         String prefix = "job." + runId;
         Path root = config.path("evospeak.output-directory", "runs");
         Files.createDirectories(root);
-        Path directory = Files.createTempDirectory(root, prefix + "-");
+        Path directory = root.resolve(prefix).toAbsolutePath().normalize();
         Path initialPopulationFile = directory.resolve("generated-population.txt");
         Path statisticsFile = config.text("stat.file", "$out.stat").equals("$out.stat")
             ? directory.resolve(prefix + ".out.stat")
             : config.parameters.getFile(new Parameter("stat.file"), null).toPath().toAbsolutePath().normalize();
         Path timeFile = statisticsFile.resolveSibling(prefix + ".time.csv");
         Path cumulativeTimeFile = statisticsFile.resolveSibling(prefix + ".timeSumGen.csv");
-        for (Path resultFile : new Path[]{statisticsFile, timeFile, cumulativeTimeFile}) {
-            if (Files.exists(resultFile)) {
-                throw new java.nio.file.FileAlreadyExistsException(resultFile.toString(), null,
-                        "Choose a different run ID or results directory to avoid replacing existing results.");
-            }
-        }
+        resetRunOutputs(config, directory, statisticsFile, timeFile, cumulativeTimeFile);
         Files.createDirectories(statisticsFile.getParent());
         config.set("stat.file", statisticsFile);
         JSONObject status = new JSONObject().put("started", Instant.now().toString()).put("state", "preparing")
+            .put("outputPolicy", "overwrite-seed")
             .put("runId", runId).put("statisticsFile", statisticsFile.toString()).put("artifactDirectory", directory.toString())
             .put("initialPopulationFile", initialPopulationFile.toString()).put("initialPopulationLoaded", false)
             .put("timeFile", timeFile.toString()).put("cumulativeTimeFile", cumulativeTimeFile.toString())
@@ -148,6 +148,53 @@ public final class EvoSpeakMain {
             if (state != null) {
                 state.output.close();
             }
+        }
+    }
+
+    private static void resetRunOutputs(EvoSpeakConfig config, Path directory, Path... resultFiles) throws IOException {
+        if (Files.isSymbolicLink(directory)) {
+            throw new IOException("Refusing to overwrite a seed directory that is a symbolic link: " + directory);
+        }
+        Files.createDirectories(directory);
+        Set<Path> outputs = new LinkedHashSet<>(Arrays.asList(resultFiles));
+        Set<String> names = new LinkedHashSet<>(Arrays.asList("status.json", "validation-report.json", "reference-heuristics.json",
+                "generated-population.txt", "generated-rules.json", "warm-start-report.md", "generations.jsonl",
+                "final-population.txt", "best-rules.txt"));
+        String prefix = directory.getFileName().toString();
+        names.add(prefix + ".out.stat");
+        names.add(prefix + ".time.csv");
+        names.add(prefix + ".timeSumGen.csv");
+        try (Stream<Path> entries = Files.list(directory)) {
+            entries.filter(path -> {
+                String name = path.getFileName().toString();
+                return names.contains(name) || name.matches("generation-(prompt|response)-\\d+\\.txt")
+                        || name.matches("analysis-(best|final|initial)\\.md")
+                        || name.matches("analysis-[0-9a-fA-F-]{36}\\.md");
+            }).forEach(outputs::add);
+        }
+        Set<Path> inputs = new LinkedHashSet<>();
+        inputs.add(config.parameterFile);
+        String[] inputKeys = config.text("evospeak.source", "llm").equals("file")
+                ? new String[]{"evospeak.population-file"} : new String[]{"evospeak.examples-file", "evospeak.prompt-file"};
+        for (String key : inputKeys) {
+            if (!config.text(key, "").isEmpty()) {
+                inputs.add(config.path(key, "").toAbsolutePath().normalize());
+            }
+        }
+        for (Path output : outputs) {
+            if (Files.isDirectory(output, LinkOption.NOFOLLOW_LINKS)) {
+                throw new IOException("Expected a generated output file, but found a directory: " + output);
+            }
+            for (Path input : inputs) {
+                if (input.equals(output.toAbsolutePath().normalize())
+                        || (Files.exists(input) && Files.exists(output) && Files.isSameFile(input, output))) {
+                    throw new IOException("The input file would be overwritten by this seed run: " + input
+                            + ". Use an input file outside the overwritten outputs.");
+                }
+            }
+        }
+        for (Path output : outputs) {
+            Files.deleteIfExists(output);
         }
     }
 

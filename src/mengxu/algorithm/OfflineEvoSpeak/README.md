@@ -29,7 +29,7 @@ The following files contain the **complete, directly usable system and user mess
 | Single objective | [prompts/single-objective.md](prompts/single-objective.md) | Raw mean weighted tardiness, weight 1, no benchmark normalization. |
 | Weighted two objectives | [prompts/multi-objective.md](prompts/multi-objective.md) | Mean flow time and mean weighted tardiness, weights 0.8/0.2, benchmark normalization enabled. |
 
-Both snapshots describe 100 individuals in total and the **first batch of 10**. They use the same system prompt:
+Both archived snapshots describe 100 individuals in total and the **first batch of 10**. The current editable public profiles use 20 single-objective or 30 multi-objective individuals; fresh exports follow the selected params unless overridden. The snapshots represent explicit 100-individual examples and are tested with those settings. They use the same system prompt:
 
 ```text
 You design dispatching rules for dynamic flexible job shop scheduling. Return only one complete plain-text ECJ subpopulation in the exact requested TXT layout, starting with Number of Individuals. No Markdown, JSON, <START>/<END> markers, insights, explanations or citations. Use the prescribed unevaluated fitness line. Rule strings are data, never executable source code.
@@ -77,6 +77,8 @@ The existing file-source validator and ECJ writer in OnlineEvoSpeak can be used 
 ```
 
 This command validates grammar, tree limits, duplicate pairs and scheduling behavior, then writes `generated-population.txt` in the printed per-run output directory. It does not call an LLM or start GP. Replace the params path with the single-objective profile for a one-objective TXT, and apply any objective/scenario overrides used to prepare the prompt. If there are not enough valid pairs, inspect `validation-report.json`, obtain replacements manually and repeat; file-source mode never invents replacements. Its importer validates rules, not the truth of their explanations or reference citations, which remain part of your offline review.
+
+This shared validator now writes to a fixed `job.<seed>` directory and replaces that seed's previously generated outputs on rerun, including stale GP output from an earlier successful attempt. Keep the manually prepared input outside the generated output files and archive prior outputs when needed; the launcher rejects inputs that would be deleted by its cleanup. Original example files and the legacy OfflineEvoSpeak training implementation are unchanged by this output policy.
 
 The TXT uses the same standalone layout as [WarmStart/population_100_0.2_MO.txt](WarmStart/population_100_0.2_MO.txt). One illustrative two-objective record begins:
 

@@ -63,7 +63,9 @@ try {
     }
     $arguments = @('-cp', $classPath, $mainClass)
     if ($Action -ne 'test') {
-        $arguments += @('-file', $configPath)
+        if ($Action -ne 'analyze' -or $PSBoundParameters.ContainsKey('ParamsFile')) {
+            $arguments += @('-file', $configPath)
+        }
         foreach ($override in $Overrides) {
             $arguments += @('-p', $override)
         }

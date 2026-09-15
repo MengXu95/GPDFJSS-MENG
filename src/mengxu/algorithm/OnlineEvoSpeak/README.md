@@ -23,7 +23,7 @@ In VS Code, select one of these Run and Debug configurations:
 
 - **OnlineEvoSpeak: Offline Smoke**: no API key required; two handwritten example rules, three GP generations.
 - **OnlineEvoSpeak: LLM Generate and Train**: uses `evospeak.params` and automatically calls the configured LLM.
-- **OnlineEvoSpeak: Explain Latest Population**: analyzes the most recent generated population using the configured LLM.
+- **OnlineEvoSpeak: Analyze Single and Multi Results**: analyzes the latest completed final-generation best rule in each objective directory, using its corresponding profile.
 
 The pre-launch task compiles the required source and reflection-loaded ECJ classes. In IntelliJ, run `EvoSpeakMain.main()` or select OnlineEvoSpeak in `GPMain.main()` with the repository root as the working directory and `libraries/*.jar` on the classpath. Running `GPRun` directly is not the V1 entry point because it bypasses generation configuration.
 
@@ -46,7 +46,7 @@ Two profiles in this directory inherit the V1 infrastructure from `evospeak.para
 | [multipletreegp-dynamicLLMWarmStart.params](multipletreegp-dynamicLLMWarmStart.params) | Mean weighted tardiness | 1.0 | Disabled, matching the original single-objective evaluation |
 | [multipletreegp-dynamicLLMWarmStartMO.params](multipletreegp-dynamicLLMWarmStartMO.params) | Mean flow time and mean weighted tardiness | 0.8 / 0.2 | Enabled, matching `weight-objective0=0.8` and `manual-normalization=true` |
 
-Both retain 100 individuals, 51 generations, two trees, two elites, tournament size 4, crossover/mutation/reproduction probabilities 0.80/0.15/0.05, utilization 0.85, due-date factor 1.5, 5000 recorded jobs and 1000 warmup jobs. They use V1's state, evaluator, safe weighted fitness and complete-population validation instead of the old package classes or silent random filling. The old `limit-total-evaluation-times` parameter is not a V1 stopping condition; these profiles use the generation budget. The original offline file paths are available through `evospeak.population-file`, but `evospeak.source=llm` remains active.
+The current public profiles use 20 individuals for single objective and 30 for multiple objectives, with 51 generations, two trees, two elites, tournament size 4, crossover/mutation/reproduction probabilities 0.80/0.15/0.05, utilization 0.85, due-date factor 1.5, 5000 recorded jobs and 1000 warmup jobs. Population size is configurable; the generic base and archived prompt examples use 100. The profiles use V1's state, evaluator, safe weighted fitness and complete-population validation instead of the old package classes or silent random filling. The old `limit-total-evaluation-times` parameter is not a V1 stopping condition; these profiles use the generation budget. The original offline file paths are available through `evospeak.population-file`, but `evospeak.source=llm` remains active.
 
 Both profiles now select the supplied Azure deployment `gpt-5.6-luna` on `hackathon-qh` through the Responses API. The generic `evospeak.params` keeps its OpenAI-compatible Chat Completions default. Selecting one of the Azure profiles does not change the original EvoSpeak implementation or its objective settings.
 
@@ -75,7 +75,7 @@ For **GPMain**, change the selected parameter-file line to that same path; `GPMa
 .\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action train -ParamsFile .\src\mengxu\algorithm\OnlineEvoSpeak\multipletreegp-dynamicLLMWarmStartMO.local.params
 ```
 
-Use `RuleAnalysisMain` with the same selected profile to find results under its `runs/single-objective` or `runs/multi-objective` directory. Selecting the generic default params does not automatically switch to one of these profiles or load a private companion file.
+For training, select the desired profile explicitly; the generic default params do not automatically load a private companion file. For analysis, `RuleAnalysisMain` without `-file` automatically chooses the single/multi private profiles when available, or their public equivalents, as described below.
 
 ## Run Through GPMain
 
@@ -93,11 +93,11 @@ The common GP result files are:
 
 `resultsDirectory` defaults to the working directory, matching the original launcher. The timing CSV headers are `Gen,Time` and `Gen,timeSumGen`; times are seconds and the cumulative total resets for each ID. They measure GP generation work, excluding initial LLM generation and warm-start validation.
 
-LLM prompts, populations, explanations, validation evidence and JSON metrics stay grouped in `evospeak.output-directory/job.<id>-<unique-suffix>/`. The suffix preserves separate attempts with the same seed. Its `status.json` records the ID and absolute locations of the statistics, timing files and artifact directory. Standalone `EvoSpeakMain` also uses `seed.0` as its run ID: with the default `stat.file=$out.stat`, the three common result files are placed inside that artifact directory. An explicit `stat.file` is honored using ECJ path resolution, with timing CSVs written beside it.
+LLM prompts, populations, validation evidence and JSON metrics are written to the fixed `evospeak.output-directory/job.<id>/` directory. There is no random suffix. `status.json` records `outputPolicy=overwrite-seed` and the absolute statistics, timing and artifact paths. Standalone `EvoSpeakMain` uses `seed.0` as its run ID: with `stat.file=$out.stat`, the three common result files are inside that seed directory. Explicit `stat.file` paths are honored, with timing CSVs beside them. `GPMain` retains its requested `resultsDirectory` instead of relocating files when they already exist.
 
-OnlineEvoSpeak never replaces existing statistics or timing files. When `GPMain` finds any of the three `job.<id>` result files already in `resultsDirectory`, it prints a notice and places all three new result files inside a fresh `evospeak.output-directory/job.<id>-<unique-suffix>/` artifact directory instead. The requested run ID and random seed stay unchanged, and the old files remain untouched. For example, rerunning ID 22 does not require deleting `job.22.out.stat` or changing the seed. The console and `status.json` show the new output location.
+**Rerunning the same seed replaces its existing generated output.** Before generation, the launcher removes that seed's known populations, reports, metrics, previous prompt/response batches and default analysis reports, plus the selected statistics and timing files. This prevents a failed or generate-only rerun from leaving old best rules or stale successful GP results. The earlier attempt is not recoverable from this directory after overwrite; archive it before rerunning when needed. Other seeds, manually named files such as notes, and historical `job.<id>-<suffix>` directories are not deleted. The latter remain readable by the analyzer until a fixed `job.<id>` directory supersedes them.
 
-Direct `EvoSpeakMain` runs with an explicit conflicting `stat.file` still fail rather than silently redirect that requested path. Choose another path or leave the default `stat.file=$out.stat` to use an isolated artifact directory. Caller configuration and base launcher arguments are not mutated between runs. A result-file conflict is checked before population generation; reaching that check means the credential was found locally, not that the provider has authenticated it.
+The cleanup is restricted to known output filenames; it does not recursively erase the output root. A seed directory that is a symbolic link, an output path that is a directory, or an input file that would be overwritten causes an error before output deletion. For offline replay of a saved population, keep the input outside the overwritten output files or use a different output root. Do not train or analyze the same seed concurrently. Since `GPMain` statistics are keyed only by seed in `resultsDirectory`, single and multi runs sharing that directory and seed overwrite those common statistics; use distinct result directories or standalone `EvoSpeakMain` to keep them separate. The populations in the two profile-specific mode directories remain separate.
 
 ## LLM Configuration
 
@@ -353,8 +353,8 @@ The file contains exactly `pop.subpop.0.size` records, numbered from zero. Every
 The default profile output locations, relative to the repository root, are:
 
 ```text
-src/mengxu/algorithm/OnlineEvoSpeak/runs/single-objective/job.<seed>-<suffix>/generated-population.txt
-src/mengxu/algorithm/OnlineEvoSpeak/runs/multi-objective/job.<seed>-<suffix>/generated-population.txt
+src/mengxu/algorithm/OnlineEvoSpeak/runs/single-objective/job.<seed>/generated-population.txt
+src/mengxu/algorithm/OnlineEvoSpeak/runs/multi-objective/job.<seed>/generated-population.txt
 ```
 
 The launcher prints the absolute TXT path before `Initializing Generation 0`. It then sets `pop.subpop.0.file` to that path and loads the saved individuals through ECJ, rather than replacing a random population with an in-memory list. There is no random fill or wrapping of a short input; a size mismatch stops evolution. The original EvoSpeak example file is not overwritten. `status.json` records `initialPopulationFile` and whether the training state actually loaded it (`initialPopulationLoaded`).
@@ -370,17 +370,49 @@ evospeak.population-file = ../OfflineEvoSpeak/WarmStart/population_100_0.5_MO.tx
 
 Old serialized fitness values are ignored. Accepted expressions are converted to correctly constrained GP individuals with fresh fitness and `Evaluated: F`. Offline reuse also writes a validated TXT in the new run directory and starts GP from that file. Use `evospeak.population-file` for input, not ECJ's full-population `pop.file`; the launcher manages `pop.subpop.0.file` after validation. Offline inputs with insufficient distinct validated pairs fail rather than fabricate replacements; switch back to `source=llm` for automated generation.
 
-Relative OfflineEvoSpeak/analysis file paths are resolved relative to the params file. Each run uses an ID-labelled `job.<seed>-<unique-suffix>` directory under `runs`. Statistics paths follow ECJ conventions; `GPMain` supplies an absolute path in its selected results directory.
+Relative params file paths are resolved relative to the params file; analysis path arguments such as `--results-dir` and `--population` are resolved relative to the working directory. Each new run uses a fixed `job.<seed>` directory under its configured output root. Statistics paths follow ECJ conventions; `GPMain` supplies an absolute path in its selected results directory.
 
 ## Independent Rule Analysis
 
-Run `RuleAnalysisMain.main()` without training. With no population path, it chooses the newest generated population. To focus on a small selection:
+Run `mengxu.algorithm.OnlineEvoSpeak.RuleAnalysisMain` independently of GP. **With no arguments**, it looks in both `runs/single-objective` and `runs/multi-objective`, using each mode's corresponding private params if present, otherwise the public profile. It selects the latest eligible completed `best-rules.txt` separately in each mode and analyzes its sequencing/routing pair. If one mode has no eligible result it is skipped; if neither has one, the program reports that no result is available. This performs LLM calls, not GP training.
+
+From the repository root:
 
 ```powershell
-.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--population','path\to\generated-population.txt','--indices','0,1','--prompt','Explain the congestion and urgency trade-off.','--output','path\to\report.md')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--mode','single','--seed','22')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--mode','multi','--seed','22')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--mode','both','--rules','best')
 ```
 
-Alternatively use `--prompt-file` for a UTF-8 prompt document. Params equivalents are `analysis.population-file`, `analysis.indices`, `analysis.prompt`, `analysis.prompt-file` and `analysis.output-file`. `analysis.language=Chinese` is the default. `analysis.max-individuals` caps the number analyzed; each selected valid pair uses one content request, with at most `analysis.max-attempts` schema attempts (default 2), each subject to the HTTP retry budget.
+In IDEA, the same choices are program arguments for `RuleAnalysisMain`, for example `--mode multi --seed 22 --rules best`. `--seed latest` is the default and uses the selected result file's modification time among eligible runs. A specific seed restricts selection to that ID. These options belong to the analysis main, not `GPMain`.
+
+| Option | Result Read | Meaning |
+|---|---|---|
+| `--rules best` (default) | `best-rules.txt` | Best rule of the final generation, not necessarily the best across every generation. |
+| `--rules final` | `final-population.txt` | All rules in the final population; combine with `--indices` to limit LLM calls. |
+| `--rules initial` | `generated-population.txt` | Validated initial population before GP; also works for generate-only runs. |
+
+Best/final auto-selection requires `state=completed` when a saved status exists. Initial selection also permits `validated` or `population-ready`. Failed/in-progress runs are skipped, not silently replaced with their initial population. Older result directories without status remain readable if the requested file exists. A fixed `job.<seed>` directory supersedes same-seed suffixed directories, including when its latest attempt failed, so stale historical success is not mistaken for the rerun. An explicit `--population` chooses exactly that file instead of auto-selection.
+
+`--results-dir` accepts the common results root, a mode directory, or one seed directory. For example, `--results-dir src/mengxu/algorithm/OnlineEvoSpeak/runs --mode both --seed 22`. `-file` or `-ParamsFile` explicitly selects a configuration and its credentials; without `--mode`, its `evospeak.objective-mode` is used. With `--mode both` and one explicit params file, that one LLM configuration is used for both directories. Without an explicit file, mode-specific private profiles are selected automatically. Do not put keys in command-line arguments.
+
+To analyze selected final rules or an explicit population:
+
+```powershell
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--mode','multi','--seed','22','--rules','final','--indices','0,1')
+.\src\mengxu\algorithm\OnlineEvoSpeak\run.ps1 -Action analyze -ExtraArgs @('--mode','single','--population','path\to\generated-population.txt','--indices','0,1','--prompt','Explain the urgency effects.','--output','path\to\report.md')
+```
+
+Default reports have fixed names in the selected seed directory:
+
+```text
+runs/single-objective/job.22/analysis-best.md
+runs/multi-objective/job.22/analysis-best.md
+```
+
+`final` and `initial` use `analysis-final.md` and `analysis-initial.md`. Rerunning analysis overwrites the selected report. `--output` chooses a report path for a single mode; `--population` and `--output` cannot be combined with `--mode both`. The analyzer refuses to overwrite its rule input, prompt input or selected params file. The next training rerun removes the default analysis reports for that seed so they cannot describe outdated rules.
+
+Use `--prompt-file` for a UTF-8 analysis-focus document. Params equivalents are `analysis.mode`, `analysis.seed`, `analysis.rules`, `analysis.results-directory`, `analysis.population-file`, `analysis.indices`, `analysis.prompt`, `analysis.prompt-file` and `analysis.output-file`. `analysis.language=Chinese` is the default. `analysis.max-individuals` caps the number analyzed; each selected valid pair uses one content request, with at most `analysis.max-attempts` schema attempts (default 2), each subject to the HTTP retry budget.
 
 Reports contain:
 
@@ -388,11 +420,12 @@ Reports contain:
 - Per-tree terminal occurrence tables grounded in `JobShopAttribute.value`, not guessed from abbreviations.
 - Separate natural-language sequencing, routing, interaction and limitations sections.
 - Structural notes about cancellation or identical numerator/denominator subtrees.
+- The saved run's objective mode, seed, objective names, weights and normalization setting when available, rather than guesses from the currently selected training params. Only allowlisted experiment fields are included; credentials and network settings are excluded.
 - The user prompt and model identity for traceability.
 
 Prompts explain that lower priority wins, same-job routing ties keep the first option, `W` is job importance rather than objective preference, `MWT`/`rDD`/`SL` can be negative, and machine-level terms may be constant in a sequencing queue. `Div.eval` checks positive zero with `Double.compare` and returns 1; negative zero is not protected by that exact implementation. Non-finite results are rejected by validation.
 
-Invalid expressions are marked in the report without being sent to the LLM. Interrupted/failed reports are explicitly marked INCOMPLETE. Existing output files are not overwritten. Natural-language interpretations remain model-generated and should be checked before use in a paper; the tool does not invent experimental evidence.
+The analyzer initializes grammar/species prototypes only, with no random population, scheduling evaluation or GP run. Invalid expressions are marked in the report without being sent to the LLM. Interrupted/failed reports are explicitly marked INCOMPLETE. Natural-language interpretations remain model-generated and should be checked before use in a paper; the tool does not invent experimental evidence.
 
 ## Outputs
 
@@ -400,7 +433,7 @@ Each completed artifact directory contains `status.json`, `validation-report.jso
 
 `status.json` stores the run ID, result paths (including `initialPopulationFile`), `initialPopulationLoaded`, objective settings, configured weights, normalized weights, scenario, validation controls, seed, provider/model and completion state, without API keys. The state reaches `population-ready` after publication, then `completed` after successful GP, or `validated` for generate-only mode. Failures use `failed`. `generations.jsonl` stores the run ID, raw objectives, scalar fitness, normalization denominators, elapsed/cumulative time and the current best rule pair. An inactive objective that becomes non-finite after breeding is represented as JSON null rather than invalid JSON.
 
-The default `runs` directory is Git-ignored because prompts, responses and experiment artifacts can be large or sensitive. Archive a run directory explicitly when needed for reproducibility. LLM generation is not guaranteed deterministic; reuse the saved population with the same GP seed for a controlled replay.
+The default `runs` directory is Git-ignored because prompts, responses and experiment artifacts can be large or sensitive. Archive a run directory before rerunning its seed when needed for reproducibility. LLM generation is not guaranteed deterministic; use a saved population outside the overwritten files with the same GP seed for a controlled replay.
 
 ## Offline Implementation Notes
 
@@ -416,7 +449,9 @@ The supplied `population_100_0.5_MO.txt` has 100 pairs that pass strict depth-8 
 
 ## Verification
 
-The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict population TXT parsing, the original file layout, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Prompt checks cover the five references, unequal/single-objective settings, raw versus normalized scores and full indexed output templates for 1, 10 and 100 records. Format checks reject repeated wrappers/headers, mislabelled indices, JSON, annotations, wrong fitness and multiline trees; recovery checks handle a format-rejected batch followed by an invalid candidate and a one-candidate replacement. Historical JSON/annotated import compatibility remains tested separately. Launcher checks run two IDs through `GPMain`, verify `GPRun` fallback, isolate arguments/configuration and timing totals, honor explicit result paths, and reject existing result-file collisions.
+The regression runner covers weighted/single-objective scoring, normalization-disabled operation, strict population TXT parsing, the original file layout, native ECJ serialization round-trip, real bounded simulation validation, all four provider envelopes, authentication/missing-key/truncation failures, rejection feedback, GP blocking on insufficient valid individuals, automatic real GP runs, and independent report generation. Prompt checks cover the five references, unequal/single-objective settings, raw versus normalized scores and full indexed output templates for 1, 10 and 100 records. The archived prompt examples use explicit 100-individual test settings so editable experiment budgets need not remain 100. Format checks reject repeated wrappers/headers, mislabelled indices, JSON, annotations, wrong fitness and multiline trees; recovery checks handle a format-rejected batch followed by an invalid candidate and a one-candidate replacement. Historical JSON/annotated import compatibility remains tested separately. Launcher checks verify fixed seed paths, repeated-run overwrite, stale-file removal, other-seed/manual-file preservation, protected inputs, and `GPRun` fallback. Native ECJ population readers close their file handles so same-JVM reruns work on Windows.
+
+Analysis regression covers mode-specific automatic profiles, both mode directories, selected/latest seeds, best/final/initial selection, completed/generated-only status filtering, fixed-directory priority over legacy suffixed results, recorded objective context without secrets, report overwrite and input protection. All model requests in regression tests use local mock servers.
 
 The single- and multi-objective Responses workflows explicitly forbid random-individual initialization, verify that the TXT exists before ECJ loads any individual, compare every loaded tree with the saved file, and check the native fitness dimensions and unevaluated flags. Both modes cover successful two-generation evolution, generate-only publication without GP statistics, and incomplete generation without a partial population or GP initialization.
 

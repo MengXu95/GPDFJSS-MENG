@@ -26,6 +26,17 @@ import org.json.JSONArray;
 
 public class OnlineEvoSpeakRegressionTest {
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--analysis-only")) {
+            testResultDirectoryAnalysis();
+            System.out.println("OnlineEvoSpeak result-directory analysis regression tests passed.");
+            return;
+        }
+        if (args.length == 1 && args[0].equals("--overwrite-only")) {
+            testOfflinePipeline();
+            testGPMainRuns();
+            System.out.println("OnlineEvoSpeak seed overwrite regression tests passed.");
+            return;
+        }
         if (args.length == 1 && args[0].equals("--population-format-only")) {
             testStrictPopulationText();
             testMultiObjectivePrompt();
@@ -69,6 +80,7 @@ public class OnlineEvoSpeakRegressionTest {
         }
         testWeightedFitness();
         testStrictPopulationText();
+        testResultDirectoryAnalysis();
         testParameterProfiles();
         testMultiObjectiveTextResponse();
         testMultiObjectivePrompt();
@@ -84,7 +96,115 @@ public class OnlineEvoSpeakRegressionTest {
         System.out.println("OnlineEvoSpeak regression tests passed.");
     }
 
-    private static WeightedFitness fitness(int objectives, double firstWeight, double secondWeight) {
+        private static void testResultDirectoryAnalysis() throws Exception {
+        Path root = Files.createTempDirectory("onlineevospeak-result-analysis-");
+        AtomicInteger requests = new AtomicInteger();
+        List<String> observedModes = new java.util.ArrayList<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/analysis", exchange -> {
+            JSONObject body = new JSONObject(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String prompt = body.getJSONArray("messages").getJSONObject(1).getString("content");
+            require(prompt.contains("terminalsUsed") && prompt.contains("objectiveMode") && !prompt.contains("must-not-leak"),
+                "Directory analysis must provide verified terminals and allowlisted run context, never raw private settings.");
+            observedModes.add(prompt.contains("\"objectiveMode\": \"single\"") ? "single" : "multi");
+            requests.incrementAndGet();
+            JSONObject explanation = new JSONObject().put("sequencing", "The selected sequencing tree orders queued jobs.")
+                .put("routing", "The selected routing tree ranks machine options.")
+                .put("interaction", "Interpret both trees using the recorded objective mode.")
+                .put("limitations", "No measured improvement follows from this qualitative interpretation.");
+            byte[] response = new JSONObject().put("choices", new JSONArray().put(new JSONObject().put("finish_reason", "stop")
+                .put("message", new JSONObject().put("content", explanation.toString())))).toString().getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        try {
+            String onePair = plainPopulationResponse(new JSONObject().put("individuals", new JSONArray()
+                .put(new RulePopulation.Rules("(/ PT W)", "WIQ").json())), 1);
+            for (String mode : new String[]{"single", "multi"}) {
+            Path directory = Files.createDirectories(root.resolve(mode.equals("single") ? "single-objective" : "multi-objective").resolve("job.22"));
+            for (String name : new String[]{"best-rules.txt", "final-population.txt", "generated-population.txt"}) {
+                Files.writeString(directory.resolve(name), onePair);
+            }
+            JSONObject settings = new JSONObject().put("evospeak.objective.0", mode.equals("single") ? "mean-weighted-tardiness" : "mean-flowtime")
+                .put("evospeak.objective.1", "mean-weighted-tardiness").put("evospeak.weight.0", mode.equals("single") ? "1.0" : "0.8")
+                .put("evospeak.weight.1", "0.2").put("evospeak.normalization", mode.equals("multi"))
+                .put("llm.api-key", "must-not-leak");
+            Files.writeString(directory.resolve("status.json"), new JSONObject().put("runId", 22).put("seed", "22")
+                .put("state", "completed").put("objectiveMode", mode).put("settings", settings).toString());
+            Path legacy = Files.createDirectories(directory.resolveSibling("job.22-12345"));
+            Files.writeString(legacy.resolve("best-rules.txt"), onePair);
+            Files.setLastModifiedTime(legacy.resolve("best-rules.txt"), java.nio.file.attribute.FileTime.fromMillis(Long.MAX_VALUE / 1000));
+            Path incomplete = Files.createDirectories(directory.resolveSibling("job.23"));
+            Files.writeString(incomplete.resolve("generated-population.txt"), onePair);
+            Files.writeString(incomplete.resolve("best-rules.txt"), onePair);
+            Files.writeString(incomplete.resolve("status.json"), new JSONObject().put("state", "validated").put("objectiveMode", mode).toString());
+            }
+            List<String> arguments = new java.util.ArrayList<>(Arrays.asList("-file", EvoSpeakConfig.DEFAULT_PARAMS,
+                "--mode", "both", "--results-dir", root.toString(), "--seed", "22",
+                "-p", "llm.endpoint=http://127.0.0.1:" + server.getAddress().getPort() + "/analysis",
+                "-p", "llm.api-key=analysis-test-key", "-p", "llm.proxy=direct", "-p", "llm.timeout-seconds=3",
+                "-p", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName()));
+            List<RuleAnalysisMain.AnalysisTarget> selected = RuleAnalysisMain.selectResults(arguments.toArray(new String[0]));
+            require(selected.size() == 2 && selected.get(0).population.equals(root.resolve("single-objective/job.22/best-rules.txt"))
+                && selected.get(1).population.equals(root.resolve("multi-objective/job.22/best-rules.txt")),
+                "Both mode roots must be discovered and fixed seed directories must take priority over legacy suffix directories.");
+                List<String> automaticArgs = new java.util.ArrayList<>(arguments.subList(2, arguments.size()));
+                automaticArgs.addAll(Arrays.asList("-p", "llm.provider=openai-compatible", "-p", "llm.api=chat-completions"));
+                List<RuleAnalysisMain.AnalysisTarget> automatic = RuleAnalysisMain.selectResults(automaticArgs.toArray(new String[0]));
+                require(automatic.size() == 2 && automatic.get(0).config.text("evospeak.objective-mode", "").equals("single")
+                    && automatic.get(1).config.text("evospeak.objective-mode", "").equals("multi")
+                    && automatic.get(0).config.configuredApiKey().equals("analysis-test-key")
+                    && automatic.get(1).config.configuredApiKey().equals("analysis-test-key"),
+                    "Without -file, each mode must load its own profile while respecting explicit credential overrides.");
+            RuleAnalysisMain.main(arguments.toArray(new String[0]));
+            require(requests.get() == 2 && observedModes.equals(Arrays.asList("single", "multi")),
+                "Analyze the final best rule separately under each saved objective mode without starting GP.");
+            for (RuleAnalysisMain.AnalysisTarget target : selected) {
+            String report = Files.readString(target.output);
+            require(target.output.getFileName().toString().equals("analysis-best.md") && report.contains("Analysis complete")
+                && !report.contains("must-not-leak"), "Write a deterministic report in the selected result directory without credential data.");
+            Files.writeString(target.output, "old report");
+            RuleAnalysisMain.analyze(target.config, new LlmClient(target.config), target.population, target.output);
+            require(!Files.readString(target.output).contains("old report"), "Repeated analysis must replace the selected report.");
+            }
+            EvoSpeakConfig config = selected.get(0).config.copy();
+            config.set("analysis.seed", "latest");
+            require(RuleAnalysisMain.resolvePopulation(config).equals(selected.get(0).population),
+                "Latest optimized result must skip a newer generated-only run and obsolete suffix copies.");
+            config.set("analysis.rules", "initial");
+            config.set("analysis.seed", 23);
+            require(RuleAnalysisMain.resolvePopulation(config).equals(root.resolve("single-objective/job.23/generated-population.txt")),
+                "Initial populations can be selected explicitly from generated-only runs.");
+            config.set("analysis.rules", "best");
+            boolean missingBest = false;
+            try {
+            RuleAnalysisMain.resolvePopulation(config);
+            } catch (java.io.FileNotFoundException expected) {
+            missingBest = true;
+            }
+            require(missingBest, "Do not present initial or stale files as a completed optimized result.");
+            config.set("analysis.seed", 22);
+            config.set("analysis.rules", "final");
+            config.set("analysis.results-directory", root.resolve("single-objective/job.22"));
+            require(RuleAnalysisMain.resolvePopulation(config).equals(root.resolve("single-objective/job.22/final-population.txt")),
+                "An explicit seed directory must support selecting its final population.");
+            Path input = selected.get(0).population;
+            String preserved = Files.readString(input);
+            boolean protectedInput = false;
+            try {
+            RuleAnalysisMain.analyze(config, new LlmClient(config, name -> "test-key"), input, input);
+            } catch (java.io.IOException expected) {
+            protectedInput = expected.getMessage().contains("overwrite an input");
+            }
+            require(protectedInput && Files.readString(input).equals(preserved), "Analysis must never replace its own rule input.");
+        } finally {
+            server.stop(0);
+        }
+        }
+
+        private static WeightedFitness fitness(int objectives, double firstWeight, double secondWeight) {
         EvolutionState state = new EvolutionState();
         state.parameters = new ParameterDatabase();
         state.output = new Output(true);
@@ -359,10 +479,12 @@ public class OnlineEvoSpeakRegressionTest {
             Path output = root.resolve(profile + ".md");
             EvoSpeakConfig config = new EvoSpeakConfig(parameters,
                     "stat=ec.Statistics", "llm.provider=not-used-for-prompt-export",
+                    "pop.subpop.0.size=100", "evospeak.batch-size=10",
                     "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName(),
                     "evospeak.output-directory=" + noRun);
             EvoSpeakMain.main(new String[]{"--export-prompt", output.toString(), "-file", parameters.toString(),
                     "-p", "stat=ec.Statistics", "-p", "llm.provider=not-used-for-prompt-export",
+                    "-p", "pop.subpop.0.size=100", "-p", "evospeak.batch-size=10",
                     "-p", "pop.subpop.0.species=" + FileBackedTestSpecies.class.getName(),
                     "-p", "evospeak.output-directory=" + noRun});
             String exported = Files.readString(output);
@@ -408,7 +530,8 @@ public class OnlineEvoSpeakRegressionTest {
             require(config.text("evospeak.objective.0", "").equals(index == 0 ? "mean-weighted-tardiness" : "mean-flowtime"),
                     "Profiles must preserve the original objectives.");
             require(config.flag("evospeak.normalization", true) == (index == 1), "Profiles must preserve raw single and normalized multi fitness.");
-            require(config.integer("pop.subpop.0.size", 0) == 100 && config.integer("generations", 0) == 51, "Original GP budget");
+                require(config.integer("pop.subpop.0.size", 0) >= Integer.parseInt(config.text("breed.elite.0", "0"))
+                    && config.integer("generations", 0) > 0, "Configured GP budget must accommodate elites and at least one generation.");
             require(config.text("state", "").equals(EvoSpeakEvolutionState.class.getName()), "Profiles must use the V1 pipeline.");
             require(Files.isRegularFile(config.path("evospeak.examples-file", "")), "Relative profile references must resolve.");
                 require(config.text("llm.provider", "").equals("azure-openai") && config.text("llm.api", "").equals("responses")
@@ -1286,7 +1409,7 @@ public class OnlineEvoSpeakRegressionTest {
             "evospeak.validation.jobs=100", "evospeak.validation.warmup=10", "evospeak.validation.seeds=17001",
             "eval.problem.eval-model.sim-models.0.num-jobs=200", "eval.problem.eval-model.sim-models.0.warmup-jobs=20");
         Path run = EvoSpeakMain.run(config, null);
-        require(run.getFileName().toString().startsWith("job.0-"), "Artifact directories must identify the run seed.");
+        require(run.getFileName().toString().equals("job.0"), "Artifact directories must use only the run seed without a random suffix.");
         require(Files.exists(run.resolve("job.0.out.stat")), "Default statistics must use the original job-ID naming convention.");
         require(config.text("stat.file", "").equals("$out.stat"), "Running must not modify the caller's statistics configuration.");
         require(RulePopulation.read(run.resolve("generated-population.txt")).size() == 2, "Validated warm-start size");
@@ -1299,32 +1422,52 @@ public class OnlineEvoSpeakRegressionTest {
         config.set("stat.file", explicitStatistics);
         Path nextRun = EvoSpeakMain.run(config, null);
         require(Files.exists(explicitStatistics), "An explicitly requested statistics path must be honored.");
-        require(nextRun.getFileName().toString().startsWith("job.7-"), "The next run must have its own artifact ID.");
+        require(nextRun.getFileName().toString().equals("job.7"), "The next run must have its own fixed seed directory.");
         JSONObject status = new JSONObject(Files.readString(nextRun.resolve("status.json")));
         require(status.getLong("runId") == 7 && status.getString("seed").equals("7"), "Run metadata must match its seed.");
         require(Paths.get(status.getString("statisticsFile")).equals(explicitStatistics), "Record the actual statistics file location.");
         checkTimingFiles(directory, nextRun, 7);
-        byte[] previousResults = Files.readAllBytes(explicitStatistics);
-        boolean collisionRejected = false;
+        byte[] otherSeed = Files.readAllBytes(run.resolve("generated-population.txt"));
+        Files.writeString(explicitStatistics, "old statistics");
+        Files.writeString(nextRun.resolve("generation-response-99.txt"), "obsolete batch");
+        Files.writeString(nextRun.resolve("analysis-best.md"), "old analysis");
+        Files.writeString(nextRun.resolve("notes.txt"), "user notes");
+        config.set("generations", 1);
+        Path repeated = EvoSpeakMain.run(config, null);
+        require(repeated.equals(nextRun) && !Files.readString(explicitStatistics).equals("old statistics")
+            && Files.readAllLines(repeated.resolve("generations.jsonl")).size() == 1,
+            "Same-seed reruns must overwrite statistics and replace rather than append generation output.");
+        require(!Files.exists(repeated.resolve("generation-response-99.txt")) && !Files.exists(repeated.resolve("analysis-best.md"))
+            && Files.readString(repeated.resolve("notes.txt")).equals("user notes")
+            && Arrays.equals(otherSeed, Files.readAllBytes(run.resolve("generated-population.txt"))),
+            "Remove stale generated files only for the current seed while preserving user notes and other seeds.");
+        checkTimingFiles(directory, repeated, 7);
+        config.set("evospeak.run-gp", false);
+        require(EvoSpeakMain.run(config, null).equals(repeated) && !Files.exists(explicitStatistics)
+            && !Files.exists(directory.resolve("job.7.time.csv")) && !Files.exists(repeated.resolve("generations.jsonl"))
+            && !Files.exists(repeated.resolve("best-rules.txt")),
+            "Generate-only overwrite must remove old training output instead of leaving stale success artifacts.");
+        Path protectedInput = repeated.resolve("generated-population.txt");
+        byte[] protectedBytes = Files.readAllBytes(protectedInput);
+        EvoSpeakConfig conflictingInput = config.copy();
+        conflictingInput.set("evospeak.population-file", protectedInput);
+        boolean inputProtected = false;
         try {
-            EvoSpeakMain.run(config, null);
-        } catch (java.nio.file.FileAlreadyExistsException expected) {
-            collisionRejected = true;
+            EvoSpeakMain.run(conflictingInput, null);
+        } catch (java.io.IOException expected) {
+            inputProtected = expected.getMessage().contains("input file would be overwritten");
         }
-        require(collisionRejected && Arrays.equals(previousResults, Files.readAllBytes(explicitStatistics)),
-                "Existing run statistics must never be silently overwritten.");
+        require(inputProtected && Arrays.equals(protectedBytes, Files.readAllBytes(protectedInput)),
+            "Never delete a file needed as input to the same overwrite run.");
+        config.set("evospeak.run-gp", true);
         config.set("seed.0", 8);
         config.set("stat.file", directory.resolve("job.8.out.stat"));
         Path existingTiming = directory.resolve("job.8.time.csv");
         Files.writeString(existingTiming, "existing timing results");
-        boolean timingCollisionRejected = false;
-        try {
-            EvoSpeakMain.run(config, null);
-        } catch (java.nio.file.FileAlreadyExistsException expected) {
-            timingCollisionRejected = true;
-        }
-        require(timingCollisionRejected && Files.readString(existingTiming).equals("existing timing results")
-            && !Files.exists(directory.resolve("job.8.out.stat")), "Timing collisions must be rejected before starting GP.");
+        Path eighthRun = EvoSpeakMain.run(config, null);
+        require(eighthRun.getFileName().toString().equals("job.8") && !Files.readString(existingTiming).equals("existing timing results")
+                && Files.exists(directory.resolve("job.8.out.stat")), "Existing seed timing files must be replaced with the new run.");
+        checkTimingFiles(directory, eighthRun, 8);
         }
 
     private static void testGPMainRuns() throws Exception {
@@ -1338,8 +1481,8 @@ public class OnlineEvoSpeakRegressionTest {
             GPMain.runExperiment(arguments, runId, directory);
             require(Files.exists(directory.resolve("job." + runId + ".out.stat")), "GPMain must preserve each run's statistics ID.");
             try (java.util.stream.Stream<Path> entries = Files.list(artifacts)) {
-                String prefix = "job." + runId + "-";
-                Path run = entries.filter(path -> path.getFileName().toString().startsWith(prefix)).findFirst().orElseThrow();
+                String prefix = "job." + runId;
+                Path run = entries.filter(path -> path.getFileName().toString().equals(prefix)).findFirst().orElseThrow();
                 JSONObject status = new JSONObject(Files.readString(run.resolve("status.json")));
                 require(status.getLong("runId") == runId && status.getString("seed").equals(String.valueOf(runId)),
                         "The launcher must pass its current ID, not a stale override.");
@@ -1367,22 +1510,21 @@ public class OnlineEvoSpeakRegressionTest {
             String savedResult = "Previous experiment " + prefix + suffixes[index];
             Files.writeString(existing, savedResult);
             GPMain.runExperiment(arguments, runId, directory);
-            require(Files.readString(existing).equals(savedResult), "Existing experiment output must remain untouched.");
+            require(!Files.readString(existing).equals(savedResult), "Same-seed experiment output must be replaced.");
             for (String suffix : suffixes) {
                 Path oldLocation = directory.resolve(prefix + suffix);
-                require(oldLocation.equals(existing) || !Files.exists(oldLocation),
-                        "A collided run must not mix new files with previous results.");
+                require(Files.isRegularFile(oldLocation), "All seed statistics and timing files must stay in the selected results directory.");
             }
             try (java.util.stream.Stream<Path> entries = Files.list(artifacts)) {
-                Path run = entries.filter(path -> path.getFileName().toString().startsWith(prefix + "-")).findFirst().orElseThrow();
+                Path run = entries.filter(path -> path.getFileName().toString().equals(prefix)).findFirst().orElseThrow();
                 JSONObject status = new JSONObject(Files.readString(run.resolve("status.json")));
                 require(status.getLong("runId") == runId && status.getString("seed").equals(String.valueOf(runId)),
-                        "Automatic result isolation must retain the requested run ID and seed.");
-                require(Paths.get(status.getString("statisticsFile")).equals(run.resolve(prefix + ".out.stat")),
-                        "The new statistics path must be recorded in the fresh artifact directory.");
-                require(status.getString("state").equals("completed") && Files.exists(run.resolve(prefix + ".out.stat")),
-                        "The collided run must complete normally in the new directory.");
-                checkTimingFiles(run, run, runId);
+                        "Overwriting must retain the requested run ID and seed.");
+                    require(Paths.get(status.getString("statisticsFile")).equals(directory.resolve(prefix + ".out.stat"))
+                        && status.getString("outputPolicy").equals("overwrite-seed"),
+                        "Reruns must retain the requested statistics path and record the overwrite policy.");
+                    require(status.getString("state").equals("completed"), "The same-seed overwrite must complete normally.");
+                    checkTimingFiles(directory, run, runId);
             }
         }
     }
@@ -1499,11 +1641,14 @@ public class OnlineEvoSpeakRegressionTest {
                 }
                 require(blocked, "Insufficient feasible individuals must block GP.");
                 try (java.util.stream.Stream<Path> runs = Files.list(root)) {
-                    Path failed = runs.filter(Files::isDirectory).filter(path -> !path.equals(run)).findFirst().orElseThrow();
-                    require(!Files.exists(failed.resolve("generations.jsonl")), "A failed validation must not run any GP generations.");
-                    require(!Files.exists(failed.resolve("generated-population.txt")), "A failed validation must not publish a usable population.");
-                    require(new JSONObject(Files.readString(failed.resolve("status.json"))).getString("state").equals("failed"), "Failed run status");
+                    require(runs.filter(Files::isDirectory).count() == 1, "A same-seed failure must reuse the fixed directory, not create a suffix.");
                 }
+                require(!Files.exists(run.resolve("generations.jsonl")) && !Files.exists(run.resolve("best-rules.txt"))
+                        && !Files.exists(run.resolve("final-population.txt")) && !Files.exists(run.resolve("job.0.out.stat"))
+                        && !Files.exists(run.resolve("job.0.time.csv")) && !Files.exists(run.resolve("generation-response-2.txt")),
+                        "A failed overwrite must not leave prior successful training outputs or old batch responses.");
+                require(!Files.exists(run.resolve("generated-population.txt")), "A failed validation must not publish a usable population.");
+                require(new JSONObject(Files.readString(run.resolve("status.json"))).getString("state").equals("failed"), "Failed run status");
             } finally {
                 server.stop(0);
             }

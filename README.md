@@ -180,7 +180,7 @@ The most common outputs are:
 
 These outputs are usually written to the project root unless redirected in the parameter file.
 
-OnlineEvoSpeak launched through `GPMain` follows the same `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` naming in `resultsDirectory`. Its additional LLM/validation artifacts are grouped under `evospeak.output-directory/job.<id>-<unique-suffix>/`; `status.json` links the run ID to the result paths. If any of the three result files already exists, `GPMain` saves all new results in that fresh artifact directory instead, preserving both the requested seed and previous files. See [the OnlineEvoSpeak guide](src/mengxu/algorithm/OnlineEvoSpeak/README.md) for model configuration and offline smoke testing.
+OnlineEvoSpeak launched through `GPMain` follows the same `job.<id>.out.stat`, `job.<id>.time.csv` and `job.<id>.timeSumGen.csv` naming in `resultsDirectory`. Additional LLM/validation artifacts use a fixed `evospeak.output-directory/job.<id>/` directory, with no random suffix. Rerunning a seed replaces its known generated outputs, statistics and timing files instead of moving them elsewhere; archive an attempt before rerunning when needed. `RuleAnalysisMain` can read single- and multi-objective results by mode, seed and best/final/initial rule selection. See [the OnlineEvoSpeak guide](src/mengxu/algorithm/OnlineEvoSpeak/README.md) for commands and overwrite scope.
 
 ---
 
@@ -266,6 +266,6 @@ The EvoSpeak family now has two explicit directories: [OfflineEvoSpeak](src/meng
 
 > In the current `GPMain.java`, the active line points to OnlineEvoSpeak:
 >
-> [src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.local.params](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStart.local.params)
+> [src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params](src/mengxu/algorithm/OnlineEvoSpeak/multipletreegp-dynamicLLMWarmStartMO.local.params)
 
-That private profile is Git-ignored and selects the single-objective Azure workflow in this workspace. Use the corresponding multi-objective private profile when needed. On a fresh checkout, create the private companion following the OnlineEvoSpeak README; do not commit API keys. Java classes now use `mengxu.algorithm.OnlineEvoSpeak` and `mengxu.algorithm.OfflineEvoSpeak.WarmStart`, so rebuild and update saved IDE launch configurations after the rename.
+That private profile is Git-ignored and currently selects the multi-objective Azure workflow in this workspace; the single-objective option remains beside it in `GPMain`. On a fresh checkout, create the private companion following the OnlineEvoSpeak README; do not commit API keys. Java classes now use `mengxu.algorithm.OnlineEvoSpeak` and `mengxu.algorithm.OfflineEvoSpeak.WarmStart`, so rebuild and update saved IDE launch configurations after the rename.

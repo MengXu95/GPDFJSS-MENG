@@ -25,12 +25,12 @@
     },
     {
       "type": "java",
-      "name": "OnlineEvoSpeak: Explain Latest Population",
+      "name": "OnlineEvoSpeak: Analyze Single and Multi Results",
       "request": "launch",
       "mainClass": "mengxu.algorithm.OnlineEvoSpeak.RuleAnalysisMain",
       "classPaths": ["${workspaceFolder}/out/onlineevospeak-classes", "${workspaceFolder}/libraries/*"],
       "cwd": "${workspaceFolder}",
-      "args": ["-file", "${workspaceFolder}/src/mengxu/algorithm/OnlineEvoSpeak/evospeak.params"],
+      "args": ["--mode", "both", "--rules", "best"],
       "console": "integratedTerminal",
       "preLaunchTask": "OnlineEvoSpeak: Compile"
     }

@@ -75,18 +75,7 @@ public class GPMain {
                 String[] arguments = runArguments.toArray(new String[0]);
                 ParameterDatabase parameters = Evolve.loadParameterDatabase(arguments);
                 if (EvoSpeakEvolutionState.class.getName().equals(parameters.getString(new Parameter("state"), null))) {
-                        String prefix = "job." + runId;
-                        boolean existingResults = Files.exists(directory.resolve(prefix + ".out.stat"))
-                                || Files.exists(directory.resolve(prefix + ".time.csv"))
-                                || Files.exists(directory.resolve(prefix + ".timeSumGen.csv"));
-                        if (existingResults) {
-                                System.out.println("OnlineEvoSpeak run " + runId + " already has results in " + directory
-                                        + ". Existing files will be kept; this attempt will use a new " + prefix
-                                        + "-<unique-suffix> directory under evospeak.output-directory with the same seed.");
-                                runArguments.add("-p");
-                                runArguments.add("stat.file=$out.stat");
-                        }
-                        EvoSpeakMain.main(runArguments.toArray(new String[0]));
+                        EvoSpeakMain.main(arguments);
                 } else {
                         GPRun.main(arguments);
                 }

@@ -81,9 +81,9 @@ public class EvoSpeakEvolutionState extends GPRuleEvolutionState {
         Path statistics = parameters.getFile(new Parameter("stat.file"), null).toPath();
         String prefix = "job." + jobSeed;
         try (BufferedWriter times = Files.newBufferedWriter(statistics.resolveSibling(prefix + ".time.csv"),
-                StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+            StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
              BufferedWriter cumulative = Files.newBufferedWriter(statistics.resolveSibling(prefix + ".timeSumGen.csv"),
-                     StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
+                 StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             times.write("Gen,Time");
             times.newLine();
             cumulative.write("Gen,timeSumGen");

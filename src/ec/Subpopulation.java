@@ -258,7 +258,8 @@ public class Subpopulation implements Group
             if (stream == null)
                 state.output.fatal("Could not load subpopulation from file", file);
 
-            try { readSubpopulation(state, new LineNumberReader(new InputStreamReader(stream))); }
+            try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream)))
+                { readSubpopulation(state, reader); }
             catch (IOException e) { state.output.fatal("An IOException occurred when trying to read from the file " + state.parameters.getString(file, (Parameter) null) + ".  The IOException was: \n" + e,
                     file, null); }
             if (len < individuals.length)
