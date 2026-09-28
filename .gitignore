@@ -12,5 +12,7 @@ src/mengxu/algorithm/OnlineEvoSpeak/*.local.params
 *.pdf
 *.zip
 *.png
+/presentation/MPSLGP_Algorithm_Flowchart.pptx
+/src/mengxu/algorithm/multiobjective/MPSLGP/paper-draft/
 .Rproj.user
 venv/
