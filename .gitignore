@@ -4,9 +4,11 @@ out/
 test/**
 !test/**/
 !test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPRegressionTest.java
+!test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPPaperTrainingMainTest.java
 !test/mengxu/algorithm/OnlineEvoSpeak/OnlineEvoSpeakRegressionTest.java
 src/mengxu/algorithm/OnlineEvoSpeak/runs/
 src/mengxu/algorithm/OnlineEvoSpeak/*.local.params
+src/mengxu/ruleanalysis/MPSLGP/paper-runs/
 *.csv
 *.stat
 *.pdf

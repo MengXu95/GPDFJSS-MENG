@@ -89,6 +89,8 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	public int numTasks;
 
+	public int taskAllocationOffset;
+
 	public double transferProbability;
 
 	public double taskInheritanceProbability;
@@ -100,6 +102,8 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	public int transferStartGeneration;
 
 	public boolean adaptiveTransfer;
+
+	public boolean useNoTransferGate = true;
 
 	public int preferenceRegions;
 
@@ -283,6 +287,9 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		if (numTasks < 1) {
 			state.output.fatal("mpslgp.num-tasks must be positive.", numTasksParam);
 		}
+		Parameter taskAllocationOffsetParam = new Parameter("mpslgp.task-allocation-offset");
+		this.taskAllocationOffset = Math.floorMod(
+				state.parameters.getIntWithDefault(taskAllocationOffsetParam, null, 0), numTasks);
 
 		super.setup(this, base);
 
@@ -330,6 +337,9 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 		Parameter adaptiveTransferParam = new Parameter("mpslgp.adaptive-transfer");
 		this.adaptiveTransfer = state.parameters.getBoolean(adaptiveTransferParam, null, false);
+
+		Parameter useNoTransferGateParam = new Parameter("mpslgp.use-no-transfer-gate");
+		this.useNoTransferGate = state.parameters.getBoolean(useNoTransferGateParam, null, true);
 
 		Parameter preferenceRegionsParam = new Parameter("mpslgp.preference-regions");
 		this.preferenceRegions = Math.max(1, state.parameters.getIntWithDefault(preferenceRegionsParam, null, 5));
@@ -414,8 +424,10 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	}
 
 	public int selectAdaptiveDonorTask(int receivingTask, int region, int thread) {
-		double[] donorProbabilities = donorTransferProbabilities(transferUtility, receivingTask, region);
-		double totalTransferProbability = totalTransferProbability(donorProbabilities);
+		double[] donorProbabilities = useNoTransferGate
+				? donorTransferProbabilities(transferUtility, receivingTask, region)
+				: donorSoftmaxWeights(receivingTask, region);
+		double totalTransferProbability = useNoTransferGate ? totalTransferProbability(donorProbabilities) : 1.0;
 		double draw = random[thread].nextDouble();
 		double cumulative = 0.0;
 		for (int donorTask = 0; donorTask < donorProbabilities.length; donorTask++) {
@@ -505,6 +517,16 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		int tasks = Math.max(1, numTasks);
 		double[] probabilities = new double[tasks];
 		if (receivingTask < 0 || receivingTask >= tasks || region < 0 || region >= preferenceRegions) {
+			return probabilities;
+		}
+		if (!useNoTransferGate) {
+			// The ablation spends the whole effective budget on the donor-only softmax,
+			// without either U0 or per-donor floors changing the conditional distribution.
+			double[] weights = donorSoftmaxWeights(utilityMatrix, receivingTask, region);
+			double transferBudget = boundedMaxTransferProbability();
+			for (int donorTask = 0; donorTask < tasks; donorTask++) {
+				probabilities[donorTask] = transferBudget * weights[donorTask];
+			}
 			return probabilities;
 		}
 		double maxUtility = noTransferUtility;
@@ -731,9 +753,13 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		if (individual != null && individual.fitness instanceof PSLMultiObjectiveFitness) {
 			PSLMultiObjectiveFitness fitness = (PSLMultiObjectiveFitness) individual.fitness;
 			if (fitness.getTaskIndex() < 0) {
-				fitness.setTaskIndex(index % Math.max(1, numTasks));
+				fitness.setTaskIndex(taskAtAllocationPosition(index));
 			}
 		}
+	}
+
+	private int taskAtAllocationPosition(int position) {
+		return (int) Math.floorMod((long) position + taskAllocationOffset, (long) Math.max(1, numTasks));
 	}
 
 	public int getTaskIndex(Individual individual) {
@@ -846,8 +872,9 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		int base = targetSize / tasks;
 		int remainder = targetSize % tasks;
 		int shortage = 0;
-		for (int task = 0; task < tasks; task++) {
-			desired[task] = base + (task < remainder ? 1 : 0);
+		for (int position = 0; position < tasks; position++) {
+			int task = taskAtAllocationPosition(position);
+			desired[task] = base + (position < remainder ? 1 : 0);
 			if (available[task] < desired[task]) {
 				shortage += desired[task] - available[task];
 				desired[task] = available[task];
@@ -857,7 +884,8 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		while (shortage > 0) {
 			int bestTask = -1;
 			int bestSurplus = 0;
-			for (int task = 0; task < tasks; task++) {
+			for (int position = 0; position < tasks; position++) {
+				int task = taskAtAllocationPosition(position);
 				int surplus = available[task] - desired[task];
 				if (surplus > bestSurplus) {
 					bestSurplus = surplus;

@@ -6,6 +6,7 @@ import ec.Population;
 import ec.Subpopulation;
 import ec.gp.GPIndividual;
 import ec.gp.GPTree;
+import ec.util.MersenneTwisterFast;
 import ec.util.Parameter;
 import ec.util.ParameterDatabase;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -19,7 +20,16 @@ public class MPSLGPRegressionTest {
             "src/mengxu/algorithm/multiobjective/MPSLGP/multipletreegp-dynamic-MPSLGP-3tasks.params";
 
     public static void main(String[] args) throws Exception {
+        testAdaptiveTransferProbabilities();
+        testTransferModeSelection();
+        testUngatedTransferCreditWithoutSimulation();
+        testTaskAllocationOffset();
+        if (java.util.Arrays.asList(args).contains("--core-only")) {
+            System.out.println("MPSLGP core regression tests passed (no simulations).");
+            return;
+        }
         testTaskInitialization();
+        testConfigurationOverrides();
         testSurrogateCacheAlignment();
         testTaskLocalSurrogate();
         testTaskReferenceIsolation();
@@ -36,9 +46,12 @@ public class MPSLGPRegressionTest {
         return Evolve.loadParameterDatabase(new String[]{"-file", System.getProperty("mpslgp.params", PARAMETER_FILE)});
     }
 
-    private static GPRuleEvolutionStatePSL initializedState() {
+    private static GPRuleEvolutionStatePSL initializedState(String... overrides) {
         ParameterDatabase parameters = parameters();
         parameters.set(new Parameter("stat"), "ec.Statistics");
+        for (int index = 0; index < overrides.length; index += 2) {
+            parameters.set(new Parameter(overrides[index]), overrides[index + 1]);
+        }
         GPRuleEvolutionStatePSL state = (GPRuleEvolutionStatePSL) Evolve.initialize(parameters, 0);
         state.setup(state, null);
         return state;
@@ -49,6 +62,8 @@ public class MPSLGPRegressionTest {
         try {
             PSLEvaluator evaluator = (PSLEvaluator) state.evaluator;
             require(state.numTasks == 3, "Expected three configured tasks.");
+            require(state.useNoTransferGate, "The no-transfer gate must remain enabled by default.");
+            require(state.taskAllocationOffset == 0, "Task allocation must start at task zero by default.");
             require(evaluator.mpslgpProblems != null && evaluator.mpslgpProblems.length == 3,
                     "Each task must have its own evaluation problem.");
             double[] expectedUtilizations = {0.70, 0.75, 0.80};
@@ -64,6 +79,287 @@ public class MPSLGPRegressionTest {
         } finally {
             state.output.close();
         }
+    }
+
+    private static void testConfigurationOverrides() {
+        GPRuleEvolutionStatePSL state = initializedState("mpslgp.use-no-transfer-gate", "false",
+                "mpslgp.task-allocation-offset", "-4");
+        try {
+            require(!state.useNoTransferGate, "The parameter must disable the no-transfer gate.");
+            require(state.taskAllocationOffset == 2, "Configured offsets must be normalized to the task count.");
+        } finally {
+            state.output.close();
+        }
+    }
+
+    private static GPRuleEvolutionStatePSL adaptiveState(double[][][] utilities) throws ReflectiveOperationException {
+        GPRuleEvolutionStatePSL state = new GPRuleEvolutionStatePSL();
+        state.numTasks = utilities.length;
+        state.preferenceRegions = utilities[0][0].length;
+        state.adaptiveTransfer = true;
+        state.transferStartGeneration = 0;
+        state.transferProbability = 0.4;
+        state.maxAdaptiveTransferProbability = 0.8;
+        state.adaptiveTransferTemperature = 0.4;
+        java.lang.reflect.Field field = GPRuleEvolutionStatePSL.class.getDeclaredField("transferUtility");
+        field.setAccessible(true);
+        field.set(state, utilities);
+        return state;
+    }
+
+    private static void testAdaptiveTransferProbabilities() throws ReflectiveOperationException {
+        for (int tasks : new int[]{2, 3}) {
+            double[][][] utilities = new double[tasks][tasks][2];
+            double[][] directedUtilities = {{0.0, 1.1, -0.6}, {-1.3, 0.0, -0.2}, {0.4, 0.8, 0.0}};
+            for (int receiver = 0; receiver < tasks; receiver++) {
+                for (int donor = 0; donor < tasks; donor++) {
+                    utilities[receiver][donor][0] = directedUtilities[receiver][donor];
+                    utilities[receiver][donor][1] = -0.5 * directedUtilities[receiver][donor] - 0.2;
+                }
+            }
+            GPRuleEvolutionStatePSL state = adaptiveState(utilities);
+            require(state.useNoTransferGate, "A newly constructed state must preserve the enabled gate.");
+            for (boolean gate : new boolean[]{true, false}) {
+                state.useNoTransferGate = gate;
+                for (boolean scale : new boolean[]{false, true}) {
+                    state.scaleTransferBudgetByDonorCount = scale;
+                    double budget = scale ? 0.8 / (tasks - 1) : 0.8;
+                    for (double temperature : new double[]{0.4, 1.2}) {
+                        state.adaptiveTransferTemperature = temperature;
+                        for (double minimum : new double[]{0.0, 0.35}) {
+                            state.minAdaptiveTransferProbability = minimum;
+                            for (double localUtility : new double[]{-0.3, 0.3}) {
+                                state.noTransferUtility = localUtility;
+                                for (int receiver = 0; receiver < tasks; receiver++) {
+                                    for (int region = 0; region < 2; region++) {
+                                        assertTransferProbabilities(state, utilities, receiver, region, budget);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            state.useNoTransferGate = false;
+            state.scaleTransferBudgetByDonorCount = false;
+            state.maxAdaptiveTransferProbability = 1.0e-15;
+            for (int receiver = 0; receiver < tasks; receiver++) {
+                assertTransferProbabilities(state, utilities, receiver, 0, 1.0e-15);
+            }
+            state.maxAdaptiveTransferProbability = 0.8;
+            state.adaptiveTransferTemperature = 1.0e-4;
+            for (double utility : new double[]{-1000.0, 1000.0}) {
+                state.noTransferUtility = -utility;
+                for (int donor = 1; donor < tasks; donor++) {
+                    utilities[0][donor][0] = utility;
+                }
+                for (int donor = 1; donor < tasks; donor++) {
+                    requireClose(0.8 / (tasks - 1), state.adaptiveTransferProbability(0, donor, 0),
+                            "Donor-only softmax must remain stable independently of U0 and utility sign");
+                }
+                requireClose(0.8, state.adaptiveTransferProbability(0, 0),
+                        "Ungated total must equal the budget even when all utilities are negative");
+            }
+        }
+    }
+
+    private static void assertTransferProbabilities(GPRuleEvolutionStatePSL state, double[][][] utilities,
+                                                     int receiver, int region, double budget) {
+        double[] masses = new double[state.numTasks];
+        double donorMass = 0.0;
+        for (int donor = 0; donor < state.numTasks; donor++) {
+            if (donor != receiver) {
+                masses[donor] = Math.exp(utilities[receiver][donor][region] / state.adaptiveTransferTemperature);
+                donorMass += masses[donor];
+            }
+        }
+        double denominator = donorMass + (state.useNoTransferGate
+                ? Math.exp(state.noTransferUtility / state.adaptiveTransferTemperature) : 0.0);
+        double[] expected = new double[state.numTasks];
+        double total = 0.0;
+        for (int donor = 0; donor < state.numTasks; donor++) {
+            if (donor != receiver) {
+                expected[donor] = budget * masses[donor] / denominator;
+                if (state.useNoTransferGate) {
+                    expected[donor] = Math.max(state.minAdaptiveTransferProbability,
+                            Math.min(state.maxAdaptiveTransferProbability, expected[donor]));
+                }
+                total += expected[donor];
+            }
+        }
+        double actualTotal = state.adaptiveTransferProbability(receiver, region);
+        requireClose(Math.min(budget, total), actualTotal, "Total directed donor probability");
+        double conditionalSum = 0.0;
+        for (int donor = 0; donor < state.numTasks; donor++) {
+            double probability = state.adaptiveTransferProbability(receiver, donor, region);
+            requireClose(expected[donor] * (total > budget ? budget / total : 1.0), probability,
+                    "Directed probability for receiver " + receiver + ", donor " + donor + ", region " + region);
+            if (donor != receiver) {
+                double conditional = probability / actualTotal;
+                if (!state.useNoTransferGate) {
+                    requireClose(masses[donor] / donorMass, conditional, "Donor conditional softmax");
+                }
+                state.random = new MersenneTwisterFast[]{new FixedDrawRandom(conditionalSum + conditional / 2.0)};
+                require(state.selectAdaptiveDonorTask(receiver, region, 0) == donor,
+                        "Donor sampling must use conditional, not unconditional probabilities.");
+                conditionalSum += conditional;
+            }
+        }
+        requireClose(1.0, conditionalSum, "Conditional donor probabilities must sum to one");
+        if (!state.useNoTransferGate) {
+            requireClose(budget, actualTotal, "Disabling the gate must spend the effective transfer budget");
+            requireClose(1.0 - budget, 1.0 - actualTotal, "Ungated local probability");
+        }
+    }
+
+    private static final class FixedDrawRandom extends MersenneTwisterFast {
+        private final double draw;
+
+        FixedDrawRandom(double draw) {
+            super(1234);
+            this.draw = draw;
+        }
+
+        @Override
+        public double nextDouble() {
+            return draw;
+        }
+    }
+
+    private static void testTransferModeSelection() throws ReflectiveOperationException {
+        GPRuleEvolutionStatePSL state = adaptiveState(new double[3][3][1]);
+        state.population = populationState(individual(1.0, 0.0, 0), individual(2.0, 0.0, 1),
+                individual(3.0, 0.0, 2)).population;
+        state.transferStartGeneration = 5;
+        state.random = new MersenneTwisterFast[]{new FixedDrawRandom(0.1)};
+        PSLParentSelection selection = new PSLParentSelection() {
+            @Override
+            public int produceMOEAD(int start, int subpopulation, ec.EvolutionState state, int thread) {
+                return 0;
+            }
+
+            @Override
+            public int produceMOEADFromSameTask(int start, int subpopulation, ec.EvolutionState state,
+                                              int thread, int requiredTask, int fallbackIndex) {
+                return requiredTask;
+            }
+
+            @Override
+            public int produceMOEADFromDifferentTask(int start, int subpopulation, ec.EvolutionState state,
+                                                   int thread, int excludedTask, int fallbackIndex) {
+                return 1;
+            }
+        };
+        Individual[] parents = new Individual[2];
+        for (boolean gate : new boolean[]{true, false}) {
+            state.useNoTransferGate = gate;
+            state.adaptiveTransfer = true;
+            state.transferProbability = 0.4;
+            state.maxAdaptiveTransferProbability = 0.8;
+            state.numTasks = 3;
+            state.generation = 4;
+            require(!state.usePeerTaskTransfer() && !state.useAdaptiveTransfer(),
+                    "The gate switch must not bypass transfer-start-generation.");
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 0, "Warmup must select a local parent.");
+            state.generation = 5;
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 1, "Adaptive transfer must activate at the start generation.");
+            state.adaptiveTransfer = false;
+            requireClose(0.4, state.adaptiveTransferProbability(0, 0), "Fixed transfer probability");
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 1, "The switch must not change fixed-transfer selection.");
+            state.transferProbability = 0.0;
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 0, "No-transfer mode must remain local.");
+            state.adaptiveTransfer = true;
+            state.maxAdaptiveTransferProbability = 0.0;
+            require(!state.useAdaptiveTransfer(), "A zero adaptive budget must disable transfer.");
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 0, "A zero adaptive budget must select a local parent.");
+            state.maxAdaptiveTransferProbability = 0.8;
+            state.numTasks = 1;
+            selection.produce(2, 2, 0, 0, parents, state, 0);
+            require(state.getTaskIndex(parents[1]) == 0, "A single task must not transfer.");
+        }
+    }
+
+    private static void testUngatedTransferCreditWithoutSimulation() throws ReflectiveOperationException {
+        GPRuleEvolutionStatePSL state = adaptiveState(new double[3][3][2]);
+        state.useNoTransferGate = false;
+        state.scaleTransferBudgetByDonorCount = true;
+        state.contributionAwareTaskInheritance = true;
+        state.donorTaskInheritanceThreshold = 0.65;
+        state.adaptiveTransferLearningRate = 0.2;
+        state.transferImprovementWeight = 1.0;
+        state.transferSurvivalWeight = 0.1;
+        state.transferNoImprovementPenalty = 0.1;
+        PSLInitializer initializer = new PSLInitializer();
+        initializer.numObjectives = 2;
+        initializer.weights = new double[][]{{1.0, 0.0}, {1.0, 0.0}, {1.0, 0.0}};
+        state.initializer = initializer;
+        testTransferProvenance(state);
+        require(state.evaluator == null, "Transfer credit must work from existing fitness without a simulator/evaluator.");
+        for (GPRuleEvolutionStatePSL.TransferDiagnosticRecord record : state.transferDiagnosticRecords) {
+            requireClose(0.4, record.totalTransferProbabilityBeforeUpdate, "Ungated budget before learning");
+            requireClose(0.4, record.totalTransferProbabilityAfterUpdate, "Ungated budget after learning");
+            requireClose(0.6, record.noTransferProbabilityBeforeUpdate, "Local probability before learning");
+            requireClose(0.6, record.noTransferProbabilityAfterUpdate, "Local probability after learning");
+        }
+    }
+
+    private static void testTaskAllocationOffset() {
+        for (int tasks : new int[]{1, 2, 3}) {
+            for (int offset : new int[]{0, 1, 2, -1, 4, Integer.MIN_VALUE, Integer.MAX_VALUE}) {
+                for (int size = 1; size <= 2 * tasks + 1; size++) {
+                    Individual[] initial = new Individual[size];
+                    for (int index = 0; index < size; index++) {
+                        initial[index] = individual(index, 0.0, -1);
+                    }
+                    GPRuleEvolutionStatePSL state = populationState(initial);
+                    state.numTasks = tasks;
+                    state.taskAllocationOffset = offset;
+                    state.assignTaskIndicesIfNeeded();
+                    int[] expected = new int[tasks];
+                    for (int index = 0; index < size; index++) {
+                        int task = (int) Math.floorMod((long) index + offset, (long) tasks);
+                        require(state.getTaskIndex(initial[index]) == task, "Initial round-robin rotation");
+                        expected[task]++;
+                    }
+                    state.assignTaskIndexIfNeeded(initial[0], size + 1);
+                    require(state.getTaskIndex(initial[0]) == Math.floorMod(offset, tasks),
+                            "An inherited task label must not be reassigned.");
+                    Individual[] candidates = new Individual[tasks * (size + 1)];
+                    for (int index = 0; index < candidates.length; index++) {
+                        candidates[index] = individual(index, 0.0, index % tasks);
+                    }
+                    state.population.subpops[0].individuals = candidates;
+                    state.balanceTaskDistributionForSurvival(0, size);
+                    int[] survivors = new int[tasks];
+                    int previousScore = -1;
+                    for (int index = 0; index < size; index++) {
+                        Individual survivor = state.population.subpops[0].individuals[index];
+                        survivors[state.getTaskIndex(survivor)]++;
+                        int score = (int) ((PSLMultiObjectiveFitness) survivor.fitness).getObjectives()[0];
+                        require(score > previousScore, "Balanced truncation must retain ranking order.");
+                        previousScore = score;
+                    }
+                    require(java.util.Arrays.equals(expected, survivors),
+                            "Initial allocation and truncation quota remainders must rotate together.");
+                }
+            }
+        }
+        GPRuleEvolutionStatePSL shortage = populationState(individual(1.0, 0.0, 0), individual(2.0, 0.0, 0),
+                individual(3.0, 0.0, 0), individual(4.0, 0.0, 1), individual(5.0, 0.0, 1),
+                individual(6.0, 0.0, 1));
+        shortage.taskAllocationOffset = 1;
+        shortage.balanceTaskDistributionForSurvival(0, 4);
+        int[] counts = new int[3];
+        for (int index = 0; index < 4; index++) {
+            counts[shortage.getTaskIndex(shortage.population.subpops[0].individuals[index])]++;
+        }
+        require(java.util.Arrays.equals(new int[]{2, 2, 0}, counts),
+                "A missing task's quota must be redistributed to available tasks.");
     }
 
     private static void testTransferProvenance(GPRuleEvolutionStatePSL state) {
