@@ -10,6 +10,7 @@ Main entry points:
 - `multitreeClearingFirstMPSLGP`: local copy of the PSLGP clearing utility, kept inside this package to avoid changing the original PSLGP clearing behavior.
 - `multipletreegp-dynamic-MPSLGP.params`: example two-task MPSLGP configuration.
 - `MPSLGPPaperTrainingMain`: isolated training batches for the paper profiles, with per-run configuration snapshots and resumable attempts.
+- [`MPSLGPPaperTestMain`](../../../ruleanalysis/MPSLGP/MPSLGPPaperTestMain.java): held-out testing of one final training-selected dual-tree heuristic per task from completed MPSLGP runs.
 
 ## Paper training batches
 
@@ -126,6 +127,113 @@ The result root contains one logical run folder per algorithm/indicator/scenario
 Each invocation writes a separate batch report under **`batches\batch-*`**, including the summary and **`algorithm-configurations.csv`**. Summaries identify the actual attempt paths, including those referenced by skipped completed runs. Console events **START**, **GEN**, **DONE**, **FAILED**, and **SKIP** identify algorithm, indicator, scenario, run, and seed, so parallel jobs can be distinguished.
 
 **Budget reporting is not a simulator-call audit.** A paper run has a configured retained-population budget of `1000 x 50 = 50,000` population slots across all tasks. The runner checks recorded output budgets and final statistics/fronts; these checks do not instrument every actual simulation call. Phenotype characterization, normalization baselines, and other evaluation work must not be inferred from that product alone. Transfer diagnostics describe observed offspring credit and survival, not an independent total-call counter. Compare paper-quality training results only after checking effective configurations and the compatible evaluation/testing protocol.
+
+## Paper held-out testing
+
+[`MPSLGPPaperTestMain`](../../../ruleanalysis/MPSLGP/MPSLGPPaperTestMain.java) tests **existing completed MPSLGP training artifacts only**. It does not retrain, execute PSLGP, modify training artifacts, or select individuals using test scores. There is no `--ensemble` option: each task uses exactly **one fixed sequencing/routing rule pair**, selected as the first training-ranked individual in that task's final `Top N individuals by MPSLGP Task:` block. Per-generation best records and printed Pareto fronts are not alternative selection sources. Tree 0 remains sequencing, Tree 1 remains routing, and the printed expressions and preference terminals are preserved without simplification.
+
+For the completed **full / IGD / R1,H3 / seeds 0..4** training batch, the default test schedules **25 task jobs = (2 R1 tasks + 3 H3 tasks) x 5 runs**. Each task job evaluates **200 preferences x 30 replications = 6,000 replications**, for **150,000 replications** across the batch. These are not additional training runs.
+
+### Test protocol and input validation
+
+The test protocol uses the same `SchedulingSet.generateSet` factory and the original PSLGP `generatePreferences` and `calcFitnessWithPreference` helpers. It fixes the **test seed to 968356**, uses **`dynamic-job-shop` / `missing-<utilization>-1.5`** for each task's utilization and objectives, and retains **5,000 recorded jobs + 1,000 warmup jobs** and **`terminalNormalisation = 2`**. A separate child JVM per task job isolates mutable simulator state; `--parallel` controls how many such children run concurrently.
+
+**Final-rule initialization alignment:** `HeterogeneousSimulation` construction consumes RNG draws for fixed transport and machine-rate constants; `DynamicSimulation.reset(seed)` reseeds without rebuilding those constants. Consequently, the first fresh-set evaluation can differ substantially from evaluations after reset. Legacy PSLGP readers evaluate earlier generations before the final rule, so their final-rule CSVs reflect a post-reset starting state. The MPSLGP final-only runner resets the newly generated scheduling set once before testing, then uses the unchanged PSLGP `calcFitnessWithPreference` helper. If an existing baseline CSV instead came from a custom final-only **fresh-set** evaluator, use matching initialization or retest before comparing results.
+
+For each selected training run, the input `completed.properties` identifies the successful attempt directory; do not assume that `attempt-0001` is the successful attempt. Source hashes, generation, and task metadata must verify before evaluation. The completed formal runs have final evaluated **generation 49** (zero-based); the CSV records that actual generation, not 50 or a hard-coded replacement. A missing, altered, ambiguous, or incompatible input fails explicitly instead of falling back to another task, individual, or attempt.
+
+The legacy evaluator excludes invalid replications when calculating fitness. The new test runner rejects an **all-invalid or nonfinite final result**, rather than accepting the legacy `-1` sentinel as successful fitness. The existing PSLGP baseline source remains unchanged.
+
+### Test command-line options
+
+These defaults belong to the **test runner**, not the larger training matrix above.
+
+| Option | Meaning / default |
+| --- | --- |
+| `--algorithms LIST` | Comma-separated MPSLGP profiles to test; default `full`. Does not launch PSLGP. |
+| `--indicators LIST` | Training indicator namespaces to read; default `IGD`. This does not calculate a held-out HV/IGD/GD comparison by itself. |
+| `--scenarios LIST` | Comma-separated scenario IDs; default `R1,H3`. |
+| `--runs N` | Runs per algorithm/indicator/scenario; default `5`. |
+| `--start-run N` | First zero-based training run index/seed; default `0`, giving seeds `0..4` with five runs. |
+| `--tasks LIST` | Optional comma-separated, zero-based task selection; otherwise test all tasks in each selected scenario. |
+| `--preferences N` | Preference samples for the fixed rule pair; default `200`, or `3` in smoke mode. |
+| `--replications N` | Simulation replications per preference; default `30`, or `1` in smoke mode. |
+| `--parallel N` | Concurrent child JVMs, one task job per child; default `1`. |
+| `--heap SIZE` | Heap limit per child JVM; default `2g`. |
+| `--training-root PATH` | Completed training root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-runs`. Alias: `--results PATH`. |
+| `--output PATH` | Test output root; default sibling `paper-tests` beside the training root. |
+| `--skip-existing` | Skip only matching, verified completed test jobs. Alias: `--skip existing`. |
+| `--dry-run` | Inspect the planned test batch without launching evaluation children. |
+| `--smoke` | Isolate outputs under `<output>\smoke` and default to three preferences and one replication. The simulator remains exactly 5,000 recorded + 1,000 warmup jobs. |
+
+**Test smoke is not training smoke.** It reads the selected completed training runs and reduces only the default preference/replication counts, not the PSLGP simulator workload. The smoke configuration below selects seed 0 for both scenarios: five task jobs and 15 preference/replication evaluations by default. It is still a real simulation workload. Use dry run first, and obtain separate approval before launching the full 150,000-replication test batch.
+
+### Test commands and IntelliJ configurations
+
+Build the project first and run from the repository root, using the same JDK, classpath, and VM access option as training:
+
+```powershell
+$java = Join-Path $env:JAVA_HOME 'bin\java.exe'
+$cp = 'out\production\GPDFJSS-MENG;libraries\*'
+$main = 'mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain'
+
+# Inspect the formal 25-task batch; no evaluation children.
+& $java --add-opens java.base/java.lang=ALL-UNNAMED -cp $cp $main --algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing --dry-run
+
+# Bounded test smoke: seed 0, five task jobs, output\smoke; simulator workload unchanged.
+& $java --add-opens java.base/java.lang=ALL-UNNAMED -cp $cp $main --algorithms full --indicators IGD --scenarios R1,H3 --runs 1 --start-run 0 --smoke --parallel 1 --skip-existing
+
+# Formal held-out tests: launch only when explicitly approved.
+& $java --add-opens java.base/java.lang=ALL-UNNAMED -cp $cp $main --algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing
+```
+
+The following shared IDEA configurations use module **GPDFJSS-MENG**, main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain`**, working directory **`$PROJECT_DIR$`**, VM option **`--add-opens java.base/java.lang=ALL-UNNAMED`**, and **Make** before launch, matching the training configurations:
+
+| Configuration | Program arguments | Intended use |
+| --- | --- | --- |
+| [MPSLGP Full R1 H3 5 Seeds Test](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | Formal 25-task test batch; 150,000 replications before verified skips. |
+| [MPSLGP Full R1 H3 Test Dry Run](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Dry%20Run.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing --dry-run` | Inspect the same formal batch without simulations. |
+| [MPSLGP Full R1 H3 Test Smoke](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Smoke.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 1 --start-run 0 --smoke --parallel 1 --skip-existing` | Separate test-smoke namespace; defaults to three preferences and one replication. |
+
+### Test outputs, aggregation, and resuming
+
+Each task job writes to its own numbered attempt under the test root:
+
+```text
+<output>\<algorithm>\<indicator>\<scenario>\runNN\taskNN\attempt-NNNN\
+```
+
+The standard per-run CSV keeps the baseline filename, for example **`missing-0.7-1.5-0-ParetoFront.csv`** for utilization 0.7 and run 0. It has this exact single-heuristic header, including the baseline spelling `ParetoFromGeneration`:
+
+```csv
+Run,ParetoFromGeneration,SeqRuleSize,SeqRuleUniqueTerminals,RoutRuleSize,RoutRuleUniqueTerminals,Obj,TrainFitness0,TestFitness0,TrainFitness1,TestFitness1
+```
+
+A formal task job produces **200 data rows**, one per preference, all using the same selected rule pair and its recorded training objectives. The test fitness in each row comes from the 30-replication evaluation for that preference. This is not a collection of 200 independently selected individuals. A separate **`preference-results.csv`** records the preference index and both weights without changing the baseline CSV schema. **`test.properties`** and **`selected-heuristic.properties`** retain task/objective metadata, source hashes, and the exact selected expressions.
+
+Only when **all selected task jobs succeed** does the batch produce per-target aggregated CSVs under:
+
+```text
+<output>\batches\batch-*\aggregated\<algorithm>\<indicator>\<scenario>\taskNN\
+```
+
+Each aggregate preserves the same baseline header and removes the run index from the filename, for example **`missing-0.7-1.5-ParetoFront.csv`**. The `Run` column preserves each source run's identity; different task targets are not pooled into one front.
+
+Completed test markers hash the test specification and output files. `--skip-existing` skips only an intact successful result with a matching specification; changed configurations at an existing logical job path are explicit errors, not silently reused outputs. Use a separate `--output` root when changing a test specification. Failed attempts are preserved for diagnosis, and matching retries use new attempt directories. Smoke results remain isolated under `<output>\smoke`.
+
+### Comparing held-out results
+
+Test fitness values are **raw objective values**, not independently normalized values for each method or run. A comparable **HV/IGD/GD** analysis needs **common per-target reference data and normalization/reference settings** across methods and runs. Keep heterogeneous task objective pairs separate; selecting a training indicator namespace alone does not establish a valid held-out comparison.
+
+An equal test protocol does **not** erase training-budget differences: MPSLGP uses **1,000 total individuals across tasks**, whereas the PSLGP baseline uses **1,000 individuals per task**. Report that distinction explicitly. Likewise, evaluating one fixed heuristic over preferences is not the same comparison as evaluating a multi-individual Pareto front; disclose and align the selection/front protocol rather than interpreting an equal number of test rows as equivalent search effort or retained solutions.
+
+### Descriptive five-seed result summary
+
+`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain` validates the formal Full/IGD R1/H3 results for seeds 0--4 and writes per-run indicators, mean/sample-standard-deviation summaries, normalized reference fronts, an explicit metric protocol, and input hashes. Its two arguments are the test root and a **new** output directory; `--self-test` checks the metric arithmetic without loading results.
+
+The local indicators pool objective bounds and a nondominated empirical reference separately for each target scenario (scenario 1 pools both R1 and H3). HV uses reference `(1.1,1.1)` after min--max normalization and is divided by `1.21`. IGD/GD use arithmetic mean Euclidean distances as written in the paper, not the alternative `sqrt(sum(squared distances))/n` convention in some legacy helpers. GD includes all 200 preference outcomes, not just the nondominated subset. Standard deviations are across five training seeds, not across preferences or simulation replications.
+
+These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds` alongside separately transcribed published values.
 
 ## Core implementation parameters
 

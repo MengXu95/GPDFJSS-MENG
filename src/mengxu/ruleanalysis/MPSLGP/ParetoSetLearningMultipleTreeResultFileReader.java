@@ -3,7 +3,10 @@ package mengxu.ruleanalysis.MPSLGP;
 import ec.Fitness;
 import ec.multiobjective.MultiObjectiveFitness;
 import mengxu.algorithm.ensemble.EnsembleRule;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import yimei.jss.gp.terminal.JobShopAttribute;
+import yimei.jss.rule.RuleType;
 import yimei.jss.rule.operation.evolved.GPRule;
 import yimei.jss.ruleanalysis.ResultFileReader;
 import yimei.jss.ruleanalysis.RuleTypeV2;
@@ -14,10 +17,284 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ParetoSetLearningMultipleTreeResultFileReader extends ResultFileReader {
+
+	/** The first training-ranked individual of one task, with Tree 0 sequencing and Tree 1 routing. */
+	public static final class SelectedTaskHeuristic {
+		private final int taskIndex;
+		private final int generation;
+		private final GPRule sequencingRule;
+		private final GPRule routingRule;
+		private final double[] trainingObjectives;
+
+		private SelectedTaskHeuristic(int taskIndex, int generation, GPRule sequencingRule,
+									 GPRule routingRule, double[] trainingObjectives) {
+			this.taskIndex = taskIndex;
+			this.generation = generation;
+			this.sequencingRule = sequencingRule;
+			this.routingRule = routingRule;
+			this.trainingObjectives = trainingObjectives.clone();
+		}
+
+		public int getTaskIndex() { return taskIndex; }
+		public int getGeneration() { return generation; }
+		public GPRule getSequencingRule() { return sequencingRule; }
+		public GPRule getRoutingRule() { return routingRule; }
+		public double[] getTrainingObjectives() { return trainingObjectives.clone(); }
+	}
+
+	/**
+	 * Reads rank zero in the final "Top N individuals by MPSLGP Task:" section.
+	 * The writer's training ranking is authoritative; neither generation-best records,
+	 * Pareto fronts nor test scores are candidates. Expressions are not simplified.
+	 *
+	 * All task blocks and their declared positive individual counts are validated, including
+	 * nonselected individuals. Task labels must be unique and contiguous from zero, and must
+	 * match the final generation's best-task labels when those are present. The section ends
+	 * at the task Pareto-front heading or EOF after complete records.
+	 *
+	 * @throws IOException if the file cannot be read, the final generation differs from
+	 *                     expectedGeneration, or the final selection section is missing,
+	 *                     malformed, ambiguous or lacks the requested task
+	 * @throws IllegalArgumentException if file is null or either index is negative
+	 */
+	public static SelectedTaskHeuristic readFinalTaskHeuristic(Path file, int taskIndex,
+															 int expectedGeneration) throws IOException {
+		if (file == null || taskIndex < 0 || expectedGeneration < 0) {
+			throw new IllegalArgumentException("A file and nonnegative task/generation indices are required.");
+		}
+		return new FinalTaskHeuristicReader(file).read(taskIndex, expectedGeneration);
+	}
+
+	private static final class FinalTaskHeuristicReader {
+		private static final String TOP = "Top N individuals by MPSLGP Task:";
+		private static final String FRONTS = "PARETO FRONTS BY MPSLGP TASK";
+		private static final Pattern GENERATION = Pattern.compile("Generation: ([0-9]+)");
+		private static final Pattern TASK = Pattern.compile("MPSLGP Task ([0-9]+) Top ([0-9]+) individuals:");
+		private static final Pattern BEST_TASK = Pattern.compile("MPSLGP Task ([0-9]+):(?: no individuals)?");
+		private static final Pattern FITNESS = Pattern.compile("Fitness: \\[([^\\[\\]]+)\\]");
+		private final Path file;
+		private final List<String> lines;
+		private int position;
+
+		private FinalTaskHeuristicReader(Path file) throws IOException {
+			this.file = file;
+			this.lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+		}
+
+		private IOException invalid(String message) {
+			return new IOException(file + ":" + position + ": " + message);
+		}
+
+		private int integer(String value) throws IOException {
+			try {
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				throw new IOException(file + ":" + position + ": Integer out of range: " + value, e);
+			}
+		}
+
+		private SelectedTaskHeuristic read(int requestedTask, int expectedGeneration) throws IOException {
+			int generation = -1;
+			int generationStart = -1;
+			int topStart = -1;
+			while (position < lines.size()) {
+				String line = lines.get(position++).trim();
+				if (line.startsWith("Generation")) {
+					Matcher match = GENERATION.matcher(line);
+					if (!match.matches()) {
+						throw invalid("Malformed generation header.");
+					}
+					int nextGeneration = integer(match.group(1));
+					if (nextGeneration <= generation) {
+						throw invalid("Duplicate or out-of-order generation.");
+					}
+					generation = nextGeneration;
+					generationStart = position;
+					topStart = -1;
+				} else if (line.startsWith("Top N individuals")) {
+					if (!TOP.equals(line) || generation < 0 || topStart >= 0) {
+						throw invalid("Malformed, misplaced or duplicate Top N section.");
+					}
+					topStart = position;
+				}
+			}
+			if (generation != expectedGeneration) {
+				throw invalid("Expected final generation " + expectedGeneration + ", found " + generation + ".");
+			}
+			if (topStart < 0) {
+				throw invalid("Missing Top N section in final generation.");
+			}
+
+			Set<Integer> bestTasks = new HashSet<>();
+			position = generationStart;
+			while (position < topStart - 1) {
+				String line = lines.get(position++).trim();
+				if (line.startsWith("MPSLGP Task ")) {
+					Matcher match = BEST_TASK.matcher(line);
+					if (!match.matches() || !bestTasks.add(integer(match.group(1)))) {
+						throw invalid("Malformed or duplicate final generation task label.");
+					}
+				} else if (line.startsWith("PARETO FRONTS")) {
+					throw invalid("Final Top N section must precede Pareto fronts.");
+				}
+			}
+
+			Set<Integer> tasks = new HashSet<>();
+			SelectedTaskHeuristic selected = null;
+			position = topStart;
+			String line;
+			while ((line = nextNonBlank()) != null && !FRONTS.equals(line)) {
+				Matcher match = TASK.matcher(line);
+				if (!match.matches()) {
+					throw invalid("Expected a task Top N header; unexpected record or individual count mismatch.");
+				}
+				int task = integer(match.group(1));
+				int count = integer(match.group(2));
+				if (!tasks.add(task)) {
+					throw invalid("Duplicate task block " + task + ".");
+				}
+				if (count <= 0) {
+					throw invalid("Task " + task + " must have a positive Top N count.");
+				}
+				for (int rank = 0; rank < count; rank++) {
+					expect("Evaluated: true");
+					double[] objectives = objectives();
+					expect("Tree 0:");
+					GPRule sequencing = rule(RuleType.SEQUENCING);
+					expect("Tree 1:");
+					GPRule routing = rule(RuleType.ROUTING);
+					if (task == requestedTask && rank == 0) {
+						selected = new SelectedTaskHeuristic(task, generation, sequencing, routing, objectives);
+					}
+				}
+			}
+			for (int task = 0; task < tasks.size(); task++) {
+				if (!tasks.contains(task)) {
+					throw invalid("Task labels must be contiguous from zero.");
+				}
+			}
+			if (!bestTasks.isEmpty() && !tasks.equals(bestTasks)) {
+				throw invalid("Top N task labels do not match final generation task labels.");
+			}
+			if (selected == null) {
+				throw invalid("Missing requested task " + requestedTask + " in final Top N section.");
+			}
+			while ((line = nextNonBlank()) != null) {
+				if (line.startsWith("MPSLGP Task ")) {
+					throw invalid("Misplaced task block after final Top N section.");
+				}
+			}
+			return selected;
+		}
+
+		private String nextNonBlank() {
+			while (position < lines.size()) {
+				String line = lines.get(position++).trim();
+				if (!line.isEmpty()) {
+					return line;
+				}
+			}
+			return null;
+		}
+
+		private void expect(String expected) throws IOException {
+			String line = nextNonBlank();
+			if (!expected.equals(line)) {
+				throw invalid("Expected '" + expected + "', found " + (line == null ? "EOF" : "'" + line + "'") + ".");
+			}
+		}
+
+		private double finiteDouble(String value) throws IOException {
+			try {
+				double number = Double.parseDouble(value);
+				if (!Double.isFinite(number)) {
+					throw invalid("Nonfinite number: " + value);
+				}
+				return number;
+			} catch (NumberFormatException e) {
+				throw new IOException(file + ":" + position + ": Invalid number: " + value, e);
+			}
+		}
+
+		private double[] objectives() throws IOException {
+			String line = nextNonBlank();
+			Matcher match = FITNESS.matcher(line == null ? "" : line);
+			if (!match.matches()) {
+				throw invalid("Expected Fitness: [objective0 objective1].");
+			}
+			String[] values = match.group(1).trim().split("\\s+");
+			if (values.length != 2) {
+				throw invalid("Expected exactly two training objectives.");
+			}
+			return new double[]{finiteDouble(values[0]), finiteDouble(values[1])};
+		}
+
+		private GPRule rule(RuleType type) throws IOException {
+			String expression = nextNonBlank();
+			if (expression == null) {
+				throw invalid("Missing " + type + " tree expression.");
+			}
+			String[] tokens = expression.replace("(", " ( ").replace(")", " ) ").trim().split("\\s+");
+			int[] cursor = {0};
+			String canonical = expression(tokens, cursor);
+			if (cursor[0] != tokens.length) {
+				throw invalid("Extra tokens after tree expression.");
+			}
+			// LispParser assumes valid arity and balanced parentheses and can hang otherwise.
+			GPRule parsed = GPRule.readFromLispExpression(type, canonical);
+			return new GPRule(type, parsed.getGPTree(), expression);
+		}
+
+		private String expression(String[] tokens, int[] cursor) throws IOException {
+			if (cursor[0] == tokens.length) {
+				throw invalid("Incomplete tree expression.");
+			}
+			String token = tokens[cursor[0]++];
+			if ("(".equals(token)) {
+				if (cursor[0] == tokens.length) {
+					throw invalid("Missing tree function.");
+				}
+				String function = tokens[cursor[0]++];
+				int arity;
+				switch (function) {
+					case "+": case "-": case "*": case "/": case "Max": case "Min":
+						arity = 2;
+						break;
+					case "if":
+						arity = 3;
+						break;
+					default:
+						throw invalid("Unknown tree function: " + function);
+				}
+				StringBuilder result = new StringBuilder("(").append(function);
+				for (int child = 0; child < arity; child++) {
+					result.append(' ').append(expression(tokens, cursor));
+				}
+				if (cursor[0] == tokens.length || !")".equals(tokens[cursor[0]++])) {
+					throw invalid("Wrong function arity or missing closing parenthesis.");
+				}
+				return result.append(')').toString();
+			}
+			if (JobShopAttribute.get(token) == null) {
+				if (!NumberUtils.isNumber(token)) {
+					throw invalid("Unknown tree terminal: " + token);
+				}
+				finiteDouble(token);
+			}
+			return token;
+		}
+	}
 
 	private static class ParsedMPSLGPIndividual {
 		private final GPRule[] rules;
