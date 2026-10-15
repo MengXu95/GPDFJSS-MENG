@@ -110,6 +110,7 @@ The shared configurations in `.run` use module **GPDFJSS-MENG**, main class **`m
 | --- | --- | --- |
 | `MPSLGP Paper Dry Run` | `--dry-run --runs 1 --skip-existing` | Inspect all profiles/scenarios without training. |
 | `MPSLGP Paper Training` | `--skip-existing` | Default 1,680-job IGD paper batch. |
+| [MPSLGP Paper No Transfer](../../../../../.run/MPSLGP%20Paper%20No%20Transfer.run.xml) | `--algorithms no-transfer --parallel 4 --skip-existing` | No-transfer only: 240 paper training jobs, four concurrent child JVMs with the default 2 GB heap each. |
 | [MPSLGP Full R1 H3 - 5 Seeds](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --parallel 1 --skip-existing` | Full MPSLGP only: five seeds (0--4) for each of R1 and H3, ten jobs in total. |
 | `MPSLGP Paper Smoke` | `--smoke --scenarios R1,H3 --runs 1 --skip-existing` | Isolated 14-job training smoke batch. |
 | `MPSLGP Paper Indicator Robustness` | `--algorithms full --indicators IGD,HV,GD --skip-existing` | Full-profile aggregation-indicator comparison. |
@@ -117,6 +118,8 @@ The shared configurations in `.run` use module **GPDFJSS-MENG**, main class **`m
 The five-seed configuration uses the formal paper budget (total population 1,000 and 50 evaluated generations), not the smoke budget. R1 contains two same-objective tasks; H3 contains three tasks with mixed objective pairs. Each scenario runs seeds 0, 1, 2, 3, and 4 sequentially, and verified completed runs are skipped.
 
 The child heap is controlled by the runner's `--heap`, not by increasing only the launcher's IntelliJ heap. These configurations do not start final held-out testing.
+
+Select **MPSLGP Paper No Transfer** from IntelliJ's Run configuration list to train the no-transfer profile without changing the existing Full launcher. It uses the standard paper budget and seeds 0--29, writes to `paper-runs\no-transfer\IGD`, and skips matching verified completions. Four child JVMs can use 8 GB of heap in total, plus JVM and IDE overhead.
 
 ### Results, completion checks, and resuming
 
@@ -142,7 +145,7 @@ The test protocol uses the same `SchedulingSet.generateSet` factory and the orig
 
 For each selected training run, the input `completed.properties` identifies the successful attempt directory; do not assume that `attempt-0001` is the successful attempt. Source hashes, generation, and task metadata must verify before evaluation. The completed formal runs have final evaluated **generation 49** (zero-based); the CSV records that actual generation, not 50 or a hard-coded replacement. A missing, altered, ambiguous, or incompatible input fails explicitly instead of falling back to another task, individual, or attempt.
 
-The legacy evaluator excludes invalid replications when calculating fitness. The new test runner rejects an **all-invalid or nonfinite final result**, rather than accepting the legacy `-1` sentinel as successful fitness. The existing PSLGP baseline source remains unchanged.
+The legacy evaluator excludes invalid replications when calculating fitness. When all replications for an objective are invalid, it returns **`-1`**. The test runner preserves this exact sentinel in both CSVs, emits an **`[INVALID FITNESS]`** warning with the preference index, and continues the remaining preferences. Other negative values and nonfinite final results remain errors. The existing PSLGP baseline source remains unchanged.
 
 ### Test command-line options
 
@@ -194,6 +197,9 @@ The following shared IDEA configurations use module **GPDFJSS-MENG**, main class
 | [MPSLGP Full R1 H3 5 Seeds Test](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | Formal 25-task test batch; 150,000 replications before verified skips. |
 | [MPSLGP Full R1 H3 Test Dry Run](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Dry%20Run.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing --dry-run` | Inspect the same formal batch without simulations. |
 | [MPSLGP Full R1 H3 Test Smoke](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Smoke.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 1 --start-run 0 --smoke --parallel 1 --skip-existing` | Separate test-smoke namespace; defaults to three preferences and one replication. |
+| [MPSLGP Full All Groups 30 Seeds Test](../../../../../.run/MPSLGP%20Full%20All%20Groups%2030%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | All 240 Full training runs: 540 task tests and 3,240,000 replications before verified skips. |
+
+The all-group configuration covers 18 group/task targets (six two-task groups and two three-task groups) over seeds 0--29. It reuses the formal test namespace and skips intact matching completed tests, including the initial 25 R1/H3 task tests. Training completion alone does not provide these held-out metrics. The configuration does not launch automatically; start it only when the additional computation is intended.
 
 ### Test outputs, aggregation, and resuming
 
@@ -221,19 +227,42 @@ Each aggregate preserves the same baseline header and removes the run index from
 
 Completed test markers hash the test specification and output files. `--skip-existing` skips only an intact successful result with a matching specification; changed configurations at an existing logical job path are explicit errors, not silently reused outputs. Use a separate `--output` root when changing a test specification. Failed attempts are preserved for diagnosis, and matching retries use new attempt directories. Smoke results remain isolated under `<output>\smoke`.
 
+For newly completed attempts, `completed.properties` and `status.properties` also record `invalid.preference.rows` and `valid.preference.rows`; a row is invalid if either test objective is `-1`. **COMPLETED means the full preference grid was recorded and verified, not that every outcome is valid.** The batch summary message and `[TEST WARNING]` output disclose invalid rows, including when resuming. Old all-valid completions remain reusable without these new count fields. Aggregated raw CSVs retain `-1`, without replacing or dropping affected preferences.
+
 ### Comparing held-out results
 
 Test fitness values are **raw objective values**, not independently normalized values for each method or run. A comparable **HV/IGD/GD** analysis needs **common per-target reference data and normalization/reference settings** across methods and runs. Keep heterogeneous task objective pairs separate; selecting a training indicator namespace alone does not establish a valid held-out comparison.
 
 An equal test protocol does **not** erase training-budget differences: MPSLGP uses **1,000 total individuals across tasks**, whereas the PSLGP baseline uses **1,000 individuals per task**. Report that distinction explicitly. Likewise, evaluating one fixed heuristic over preferences is not the same comparison as evaluating a multi-individual Pareto front; disclose and align the selection/front protocol rather than interpreting an equal number of test rows as equivalent search effort or retained solutions.
 
-### Descriptive five-seed result summary
+### Descriptive result summaries
 
-`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain` validates the formal Full/IGD R1/H3 results for seeds 0--4 and writes per-run indicators, mean/sample-standard-deviation summaries, normalized reference fronts, an explicit metric protocol, and input hashes. Its two arguments are the test root and a **new** output directory; `--self-test` checks the metric arithmetic without loading results.
+`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain` validates a complete selection of formal Full/IGD results and writes per-run indicators, mean/sample-standard-deviation summaries, normalized reference fronts, an explicit metric protocol, and input hashes. Its first two arguments are the test root and a **new** output directory. With no other options it preserves the original R1/H3 seeds 0--4 selection. Optional `--scenarios`, `--runs`, and `--start-run` select a different scope; `--training-root` overrides the default sibling `paper-runs` source. `--invalid-outcomes reject` is the default; `--invalid-outcomes valid-only` explicitly selects conditional metrics over valid preferences, retaining every seed and separately auditing excluded outcomes. At least two runs are required for sample standard deviation. A seed with no valid preferences remains an error. `--self-test` checks the metric arithmetic without loading results.
 
-The local indicators pool objective bounds and a nondominated empirical reference separately for each target scenario (scenario 1 pools both R1 and H3). HV uses reference `(1.1,1.1)` after min--max normalization and is divided by `1.21`. IGD/GD use arithmetic mean Euclidean distances as written in the paper, not the alternative `sqrt(sum(squared distances))/n` convention in some legacy helpers. GD includes all 200 preference outcomes, not just the nondominated subset. Standard deviations are across five training seeds, not across preferences or simulation replications.
+For the complete Full batch, first finish **MPSLGP Full All Groups 30 Seeds Test**, then select [MPSLGP Full All Groups 30 Seeds Summary](../../../../../.run/MPSLGP%20Full%20All%20Groups%2030%20Seeds%20Summary.run.xml) in IDEA. The summary uses main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain`** and these arguments:
 
-These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds` alongside separately transcribed published values.
+```text
+"$PROJECT_DIR$\src\mengxu\ruleanalysis\MPSLGP\paper-tests" "$PROJECT_DIR$\src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\results\full-all-groups-thirty-seeds" --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --invalid-outcomes valid-only
+```
+
+The summary launches no simulations. It verifies the selected training jobs and every expected held-out completion, protocol, source hash, and output before creating the summary directory. Missing tests are explicit errors; it never silently uses fewer seeds. Complete inputs produce 540 per-task run rows, 108,000 preference outcomes and 18 group/task summary rows. `table-vii-mpslgp.csv` contains the MPSLGP HV/IGD/GD means and sample standard deviations; `table-viii.csv` contains the distinct/nondominated outcome and tree-node summaries. Published PSLGP-I values are not recomputed by this program. Rerunning a summary requires a new output directory to preserve its reference data and provenance.
+
+An otherwise complete test can contain invalid-fitness sentinels. The default summary rejects them before writing analysis. The full-batch paper analysis explicitly uses the agreed **valid-only** protocol: remove a preference vector if either objective is `-1`, construct bounds/references and calculate indicators from the remaining vectors, and retain all 30 seeds per target. `validity-per-run.csv`, `validity-summary.csv`, and `invalid-preferences.csv` expose all excluded rows. These are conditional quality scores, not failure-penalized scores or evidence that all preferences succeeded. The complete batch contains 114 invalid vectors among 108,000, in four task runs; no seed is excluded.
+
+After the Java summary, generate the paper table rows and published contextual comparison with:
+
+```powershell
+& '.\src\mengxu\ruleanalysis\MPSLGP\BuildPaperResultTables.ps1' `
+  -SummaryDirectory '.\src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\results\full-all-groups-thirty-seeds' `
+  -PublishedContext '.\src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\published-pslgp-context.csv' `
+  -ReferencePdf '.\src\mengxu\algorithm\multiobjective\MPSLGP\Reference\Pareto_Set_Learning_through_Genetic_Programming_for_Multi-Objective_Dynamic_Scheduling.pdf'
+```
+
+The formatter validates all 18 target rows and all ten published scenarios, preserves existing outputs, and saves `table-vii-comparison.csv`, `table-viii-full.csv`, their LaTeX row fragments, and comparison input hashes. Published PSLGP-I values come directly from reference Tables IV--VI, not a local rerun. Different indicator reference data and population allocations prevent a calibrated cross-method ranking.
+
+The local indicators pool objective bounds and a nondominated empirical reference separately for each target scenario across the selected groups (scenario 1 pools R1 and H3 in the original five-seed selection, and R1/R4/H1/H3 in the full selection). HV uses reference `(1.1,1.1)` after min--max normalization and is divided by `1.21`. IGD/GD use arithmetic mean Euclidean distances as written in the paper, not the alternative `sqrt(sum(squared distances))/n` convention in some legacy helpers. GD includes every valid preference outcome, not just the nondominated subset; under valid-only scoring its denominator can be less than 200. Standard deviations are across the selected training seeds, not across preferences or simulation replications. Changing the selected pool also changes the reference data, so newly computed full-batch scores must replace, not be appended to, the initial five-seed scores.
+
+These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds`; the complete conditional 30-seed analysis is under `paper-draft/results/full-all-groups-thirty-seeds`. Published context covers all ten scenarios in `paper-draft/published-pslgp-context.csv`. The paper's complete Results section and directly updated protocol/conclusion text are highlighted in blue.
 
 ## Core implementation parameters
 

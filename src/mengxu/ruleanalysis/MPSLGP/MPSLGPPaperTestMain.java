@@ -252,7 +252,7 @@ public final class MPSLGPPaperTestMain {
                 String previous = required(marker, "attempt");
                 if (!previous.matches("attempt-\\d{4,}")) { throw new IOException("Invalid completed test attempt."); }
                 Path attempt = directory.resolve(previous);
-                String invalid = verifyCompletion(marker, attempt);
+                String invalid = verifyCompletion(marker, attempt, out);
                 if (invalid == null) {
                     if (!config.skipExisting && !config.dryRun) {
                         throw new IOException("Test already completed; use --skip-existing: " + directory);
@@ -279,7 +279,7 @@ public final class MPSLGPPaperTestMain {
             try {
                 int exit = runner.run(command, attempt, line -> out.println("[TEST PREFERENCE] " + identity() + " " + line));
                 if (exit != 0) { throw new IOException("Worker exit code " + exit + "; log=" + attempt.resolve("testing.log")); }
-                validateOutputs(attempt, spec);
+                int invalidRows = validateOutputs(attempt, spec);
                 verifySource(spec);
                 long seconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start);
                 Map<String, String> result = new TreeMap<>();
@@ -288,11 +288,15 @@ public final class MPSLGPPaperTestMain {
                 result.put("attempt", attempt.getFileName().toString());
                 result.put("finished", Instant.now().toString());
                 result.put("duration.seconds", Long.toString(seconds));
+                result.put("invalid.preference.rows", Integer.toString(invalidRows));
+                result.put("valid.preference.rows", Integer.toString(config.preferences - invalidRows));
                 for (String artifact : artifacts()) { result.put("sha256." + artifact, fileHash(attempt.resolve(artifact))); }
                 atomicWrite(attempt.resolve("status.properties"), serialize(result));
                 atomicWrite(markerFile, serialize(result));
+                reportInvalidRows(out, invalidRows, attempt);
                 out.println("[TEST DONE] " + identity() + " seconds=" + seconds);
-                return new Result(this, "COMPLETED", seconds, attempt, "Validated PSLGP-compatible CSV");
+                return new Result(this, "COMPLETED", seconds, attempt,
+                        "Validated PSLGP-compatible CSV; invalid preference rows=" + invalidRows);
             } catch (IOException | InterruptedException e) {
                 Map<String, String> status = new TreeMap<>();
                 status.put("status", "FAILED"); status.put("reason", e.toString());
@@ -307,15 +311,31 @@ public final class MPSLGPPaperTestMain {
             return Arrays.asList("test.properties", "selected-heuristic.properties", csvName, "preference-results.csv", "testing.log");
         }
 
-        private String verifyCompletion(Properties marker, Path attempt) throws IOException {
+        private String verifyCompletion(Properties marker, Path attempt, PrintStream out) throws IOException {
             if (!"COMPLETED".equals(marker.getProperty("status"))) { return "No successful test record"; }
             for (String artifact : artifacts()) {
                 Path file = attempt.resolve(artifact);
                 if (!Files.isRegularFile(file) || Files.size(file) == 0) { return "Missing artifact " + artifact; }
                 if (!fileHash(file).equals(marker.getProperty("sha256." + artifact))) { return "Changed artifact " + artifact; }
             }
-            validateOutputs(attempt, spec);
+            int invalidRows = validateOutputs(attempt, spec);
+            if (marker.containsKey("invalid.preference.rows")
+                    && !Integer.toString(invalidRows).equals(marker.getProperty("invalid.preference.rows"))) {
+                return "Invalid-preference count no longer matches outputs";
+            }
+            if (marker.containsKey("valid.preference.rows")
+                    && !Integer.toString(config.preferences - invalidRows).equals(marker.getProperty("valid.preference.rows"))) {
+                return "Valid-preference count no longer matches outputs";
+            }
+            reportInvalidRows(out, invalidRows, attempt);
             return null;
+        }
+
+        private void reportInvalidRows(PrintStream out, int invalidRows, Path attempt) {
+            if (invalidRows > 0) {
+                out.println("[TEST WARNING] " + identity() + " invalid preference rows=" + invalidRows
+                        + "; fitness=-1 retained; completion means all preferences recorded, not all outcomes valid; output=" + attempt);
+            }
         }
     }
 
@@ -351,7 +371,7 @@ public final class MPSLGPPaperTestMain {
         }
     }
 
-    static void validateOutputs(Path attempt, Map<String, String> spec) throws IOException {
+    static int validateOutputs(Path attempt, Map<String, String> spec) throws IOException {
         List<String> rows = Files.readAllLines(attempt.resolve(spec.get("output.csv")), StandardCharsets.UTF_8);
         List<String> details = Files.readAllLines(attempt.resolve("preference-results.csv"), StandardCharsets.UTF_8);
         int count = Integer.parseInt(spec.get("preferences"));
@@ -360,6 +380,7 @@ public final class MPSLGPPaperTestMain {
                 || !details.get(0).equals(MPSLGPTaskEvaluator.PREFERENCE_HEADER)) {
             throw new IOException("Incomplete or incompatible test CSVs in " + attempt);
         }
+        int invalidRows = 0;
         try {
             String structure = null;
             for (int i = 0; i < count; i++) {
@@ -382,17 +403,21 @@ public final class MPSLGPPaperTestMain {
                         || Math.abs(weight0 - first) > 1e-12 || Math.abs(weight1 - second) > 1e-12) {
                     throw new IOException("Wrong preference grid at row " + i);
                 }
+                boolean invalid = false;
                 for (int objective = 0; objective < 2; objective++) {
                     double train = Double.parseDouble(row[7 + 2 * objective]);
                     double test = Double.parseDouble(row[8 + 2 * objective]);
                     if (Double.compare(train, Double.parseDouble(spec.get("training.objective." + objective))) != 0
-                            || !Double.isFinite(test) || test < 0
+                            || !MPSLGPTaskEvaluator.isRecordedObjective(test)
                             || Double.compare(test, Double.parseDouble(detail[3 + objective])) != 0) {
                         throw new IOException("Invalid/inconsistent objective at preference " + i);
                     }
+                    invalid |= test == MPSLGPTaskEvaluator.INVALID_FITNESS;
                 }
+                if (invalid) { invalidRows++; }
             }
         } catch (NumberFormatException e) { throw new IOException("Invalid numeric field in test CSV.", e); }
+        return invalidRows;
     }
 
     private static String selectedProperties(Map<String, String> spec) {

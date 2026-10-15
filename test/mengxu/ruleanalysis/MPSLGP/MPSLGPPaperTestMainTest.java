@@ -1,11 +1,14 @@
 package mengxu.ruleanalysis.MPSLGP;
 
+import ec.EvolutionState;
+import ec.Fitness;
 import ec.multiobjective.MultiObjectiveFitness;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.PSLInitializer;
 import yimei.jss.jobshop.Objective;
 import yimei.jss.jobshop.SchedulingSet;
 import yimei.jss.rule.RuleType;
+import yimei.jss.rule.AbstractRule;
 import yimei.jss.rule.operation.evolved.GPRule;
 import yimei.jss.ruleanalysis.RuleTypeV2;
 
@@ -43,6 +46,8 @@ public final class MPSLGPPaperTestMainTest {
             testArguments();
             testPlan(training, temp.resolve("plan"));
             testResume(training, temp.resolve("resume"));
+            testInvalidFitness();
+            testSentinelCompletion(training, temp.resolve("sentinel"));
             testFailure(training, temp.resolve("failure"));
             testLock(training, temp.resolve("locked"));
             testCsvValidation(temp.resolve("csv-validation"));
@@ -107,6 +112,15 @@ public final class MPSLGPPaperTestMainTest {
         ByteArrayOutputStream log = new ByteArrayOutputStream();
         String[] args = arguments(training, output, "--skip-existing").toArray(new String[0]);
         check(MPSLGPPaperTestMain.execute(args, new PrintStream(log), fake) == 0 && calls.get() == 5, "first test executes all tasks");
+        Path legacyMarker = output.resolve("full/IGD/R1/run00/task00/completed.properties");
+        Properties marker = readProperties(legacyMarker);
+        Map<String, String> legacy = new TreeMap<>();
+        for (String key : marker.stringPropertyNames()) {
+            if (!key.equals("invalid.preference.rows") && !key.equals("valid.preference.rows")) {
+                legacy.put(key, marker.getProperty(key));
+            }
+        }
+        atomicWrite(legacyMarker, serialize(legacy));
         check(MPSLGPPaperTestMain.execute(args, new PrintStream(log), fake) == 0 && calls.get() == 5, "completed tests skipped");
         check(log.toString("UTF-8").contains("[TEST PREFERENCE] algorithm=full indicator=IGD scenario=H3")
                 && log.toString("UTF-8").contains("[TEST SKIP]"), "progress names task context");
@@ -124,6 +138,61 @@ public final class MPSLGPPaperTestMainTest {
         try (Stream<Path> paths = Files.walk(output.resolve("batches"))) {
             long aggregateCount = paths.filter(path -> path.getFileName().toString().endsWith("-ParetoFront.csv")).count();
             check(aggregateCount == 15, "three successful batches each aggregate five distinct target tasks");
+        }
+    }
+
+    private static void testInvalidFitness() throws IOException {
+        AtomicInteger calls = new AtomicInteger();
+        GPRule rule = new GPRule(RuleType.SEQUENCING, null) {
+            @Override
+            public void calcFitnessWithPreference(Fitness fitness, EvolutionState state, SchedulingSet set,
+                                                   AbstractRule other, List<Objective> objectives, int index) {
+                calls.incrementAndGet();
+                ((MultiObjectiveFitness)fitness).setObjectives(state,
+                        index == 1 ? new double[]{-1, -1} : new double[]{10 + index, 20 + index});
+            }
+        };
+        GPRuleEvolutionStatePSL state = MPSLGPTaskEvaluator.evaluationState(new double[][]{{0,1}, {.5,.5}, {1,0}});
+        for (int i = 0; i < 3; i++) {
+            double[] result = MPSLGPTaskEvaluator.evaluatePreference(rule, null, null, objectives(), state, i);
+            check(Arrays.equals(result, i == 1 ? new double[]{-1,-1} : new double[]{10+i,20+i}),
+                    "retain legacy fitness at preference " + i);
+        }
+        check(calls.get() == 3, "evaluation continues after an all-invalid preference");
+    }
+
+    private static void testSentinelCompletion(Path training, Path output) throws Exception {
+        List<String> arguments = arguments(training, output, "--tasks", "0", "--skip-existing");
+        arguments.set(arguments.indexOf("--scenarios") + 1, "R1");
+        AtomicInteger calls = new AtomicInteger();
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        MPSLGPPaperTestMain.ProcessRunner fake = (command, directory, progress) -> {
+            calls.incrementAndGet();
+            fakeOutputs(directory);
+            setTestFitness(directory, 1, -1, -1);
+            return 0;
+        };
+        String[] args = arguments.toArray(new String[0]);
+        check(MPSLGPPaperTestMain.execute(args, new PrintStream(log), fake) == 0,
+                "sentinel rows do not fail an otherwise complete task");
+        Path directory = output.resolve("full/IGD/R1/run00/task00");
+        Properties completion = readProperties(directory.resolve("completed.properties"));
+        check(completion.getProperty("invalid.preference.rows").equals("1")
+                && completion.getProperty("valid.preference.rows").equals("2"), "explicit valid and invalid row counts");
+        check(completion.getProperty("status").equals("COMPLETED"), "completed means all preferences recorded");
+        check(MPSLGPPaperTestMain.execute(args, new PrintStream(log), fake) == 0 && calls.get() == 1,
+                "completed sentinel-bearing task skipped without repeating simulations");
+        check(log.toString("UTF-8").contains("[TEST WARNING]")
+                && log.toString("UTF-8").contains("invalid preference rows=1"), "invalid outcomes explicitly reported");
+        try (Stream<Path> files = Files.walk(output.resolve("batches"))) {
+            Path[] aggregates = files.filter(path -> path.getFileName().toString().endsWith("-ParetoFront.csv"))
+                    .toArray(Path[]::new);
+            check(aggregates.length == 2, "initial and resumed batches aggregate recorded rows");
+            for (Path aggregate : aggregates) {
+                List<String> rows = Files.readAllLines(aggregate);
+                check(rows.size() == 4 && rows.get(2).contains(",-1.0,")
+                        && rows.get(3).contains(",10.0,"), "aggregation keeps sentinel and subsequent preference");
+            }
         }
     }
 
@@ -175,6 +244,18 @@ public final class MPSLGPPaperTestMainTest {
         catch (IOException e) { failed = true; }
         check(failed, "NaN preference rejected");
         Files.writeString(details, original);
+        setTestFitness(directory, 1, -1, 20);
+        check(MPSLGPPaperTestMain.validateOutputs(directory, spec) == 1, "single-objective sentinel row accepted and counted");
+        setTestFitness(directory, 1, -1, -1);
+        check(MPSLGPPaperTestMain.validateOutputs(directory, spec) == 1, "two sentinels count as one invalid preference");
+        for (double invalid : new double[]{-2, -.5, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}) {
+            setTestFitness(directory, 1, invalid, 20);
+            failed = false;
+            try { MPSLGPPaperTestMain.validateOutputs(directory, spec); }
+            catch (IOException e) { failed = true; }
+            check(failed, "reject non-sentinel invalid fitness " + invalid);
+        }
+        fakeOutputs(directory);
         List<String> rows = Files.readAllLines(directory.resolve("test.csv"));
         rows.remove(rows.size() - 1);
         Files.write(directory.resolve("test.csv"), rows);
@@ -306,6 +387,17 @@ public final class MPSLGPPaperTestMainTest {
         atomicWrite(output.resolve(spec.getProperty("output.csv")), rows.toString());
         atomicWrite(output.resolve("preference-results.csv"), weights.toString());
         atomicWrite(output.resolve("testing.log"), "Test worker completed.\n");
+    }
+
+    private static void setTestFitness(Path output, int index, double first, double second) throws IOException {
+        Properties spec = readProperties(output.resolve("test.properties"));
+        Path csv = output.resolve(spec.getProperty("output.csv")), detail = output.resolve("preference-results.csv");
+        List<String> rows = Files.readAllLines(csv), details = Files.readAllLines(detail);
+        String[] row = rows.get(index + 1).split(","), weights = details.get(index + 1).split(",");
+        row[8] = weights[3] = Double.toString(first);
+        row[10] = weights[4] = Double.toString(second);
+        rows.set(index + 1, String.join(",", row)); details.set(index + 1, String.join(",", weights));
+        Files.write(csv, rows); Files.write(detail, details);
     }
 
     private static Map<Path, String> hashes(Path root) throws IOException {

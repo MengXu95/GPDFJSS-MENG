@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 /** Reuses PSLGP's test-set and preference generators and its preference-aware evaluator. */
 public final class MPSLGPTaskEvaluator
         extends mengxu.ruleanalysis.ParetoSetLearning.ParetoSetLearningMultiTreeRuleTestMeng {
+    public static final double INVALID_FITNESS = -1.0;
     public static final String CSV_HEADER = "Run,ParetoFromGeneration,SeqRuleSize,SeqRuleUniqueTerminals,"
             + "RoutRuleSize,RoutRuleUniqueTerminals,Obj,TrainFitness0,TestFitness0,TrainFitness1,TestFitness1";
     public static final String PREFERENCE_HEADER = "PreferenceIndex,Weight0,Weight1,TestFitness0,TestFitness1";
@@ -78,11 +79,15 @@ public final class MPSLGPTaskEvaluator
         double[] result = fitness.getObjectives();
         if (result.length != 2) { throw new IOException("Expected two test objectives."); }
         for (double value : result) {
-            if (!Double.isFinite(value) || value < 0) {
+            if (!isRecordedObjective(value)) {
                 throw new IOException("Invalid test result at preference " + index + ": " + value);
             }
         }
         return result.clone();
+    }
+
+    static boolean isRecordedObjective(double value) {
+        return Double.isFinite(value) && (value >= 0 || value == INVALID_FITNESS);
     }
 
     public void evaluate(SelectedTaskHeuristic selected, int run, Path output, Consumer<String> progress)
@@ -109,6 +114,11 @@ public final class MPSLGPTaskEvaluator
                             + " weights=" + preferences[i][0] + "," + preferences[i][1]);
                 }
                 double[] result = evaluatePreference(sequencing, routing, set, objectives, state, i);
+                if (result[0] == INVALID_FITNESS || result[1] == INVALID_FITNESS) {
+                    progress.accept("[INVALID FITNESS] preferenceIndex=" + i + " weights="
+                            + preferences[i][0] + "," + preferences[i][1] + " objectives="
+                            + result[0] + "," + result[1] + "; retaining -1 and continuing");
+                }
                 legacy.write(run + "," + selected.getGeneration() + "," + seqSize + "," + seqTerminals
                         + "," + routSize + "," + routTerminals + ",2," + train[0] + "," + result[0]
                         + "," + train[1] + "," + result[1] + "\n");
