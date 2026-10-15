@@ -22,7 +22,7 @@ import static mengxu.algorithm.multiobjective.MPSLGP.PaperExperimentFiles.*;
 
 /** Descriptive summaries of a complete selected Full/IGD held-out experiment. */
 public final class MPSLGPTestSummaryMain {
-    private static final double REFERENCE = 1.1;
+    static final double REFERENCE = 1.1;
     private static final String[] METRICS = {"HVLocal", "IGDLocal", "GDLocal", "UniqueOutcomes",
             "NondominatedOutcomes", "Objective0Min", "Objective0Max", "Objective1Min", "Objective1Max",
             "SeqNodes", "RoutingNodes", "TrainingSeconds", "TestingSeconds"};
@@ -241,7 +241,7 @@ public final class MPSLGPTestSummaryMain {
         }
     }
 
-    private static Run read(MPSLGPPaperTestMain.Job job, boolean validOnly) throws IOException {
+    static Run read(MPSLGPPaperTestMain.Job job, boolean validOnly) throws IOException {
         Path directory = job.directory;
         Properties completion = readProperties(directory.resolve("completed.properties"));
         require(completion, "status", "COMPLETED");
@@ -313,7 +313,7 @@ public final class MPSLGPTestSummaryMain {
         if (!expected.equals(properties.getProperty(key))) { throw new IOException("Metadata mismatch: " + key); }
     }
 
-    private static final class Run {
+    static final class Run {
         final String group;
         final int task, seed, scenario;
         final Map<Path, String> inputs = new TreeMap<>();
@@ -342,7 +342,7 @@ public final class MPSLGPTestSummaryMain {
     private static double maximum(double[][] points, int dimension) {
         return Arrays.stream(points).mapToDouble(point -> point[dimension]).max().orElseThrow(IllegalArgumentException::new);
     }
-    private static double[][] normalize(double[][] points, double[] min, double[] max) {
+    static double[][] normalize(double[][] points, double[] min, double[] max) {
         double[][] result = new double[points.length][2];
         for (int i = 0; i < points.length; i++) {
             for (int j = 0; j < 2; j++) {
@@ -352,10 +352,10 @@ public final class MPSLGPTestSummaryMain {
         }
         return result;
     }
-    private static int uniqueCount(double[][] points) {
+    static int uniqueCount(double[][] points) {
         return (int)Arrays.stream(points).map(Arrays::toString).distinct().count();
     }
-    private static double[][] nondominated(double[][] points) {
+    static double[][] nondominated(double[][] points) {
         double[][] sorted = Arrays.stream(points).map(double[]::clone).toArray(double[][]::new);
         Arrays.sort(sorted, Comparator.comparingDouble((double[] point) -> point[0]).thenComparingDouble(point -> point[1]));
         List<double[]> result = new ArrayList<>();
@@ -365,14 +365,14 @@ public final class MPSLGPTestSummaryMain {
         }
         return result.toArray(new double[0][]);
     }
-    private static double meanDistance(double[][] from, double[][] to) {
+    static double meanDistance(double[][] from, double[][] to) {
         MetricsUtil utility = new MetricsUtil();
         double sum = 0;
         for (double[] point : from) { sum += utility.distanceToClosedPoint(point, to); }
         return sum / from.length;
     }
-    private static double mean(double[] values) { return Arrays.stream(values).average().orElseThrow(IllegalArgumentException::new); }
-    private static double sampleStd(double[] values) {
+    static double mean(double[] values) { return Arrays.stream(values).average().orElseThrow(IllegalArgumentException::new); }
+    static double sampleStd(double[] values) {
         double mean = mean(values), sum = 0;
         for (double value : values) { sum += (value - mean) * (value - mean); }
         return Math.sqrt(sum / (values.length - 1));

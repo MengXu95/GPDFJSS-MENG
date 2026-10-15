@@ -264,6 +264,96 @@ The local indicators pool objective bounds and a nondominated empirical referenc
 
 These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds`; the complete conditional 30-seed analysis is under `paper-draft/results/full-all-groups-thirty-seeds`. Published context covers all ten scenarios in `paper-draft/published-pslgp-context.csv`. The paper's complete Results section and directly updated protocol/conclusion text are highlighted in blue.
 
+## Joint-task preference analysis
+
+[`MPSLGPJointTaskAnalysisMain`](../../../ruleanalysis/MPSLGP/MPSLGPJointTaskAnalysisMain.java) analyzes the final task-specific heuristics from the **same joint training run**. It reads the completed Full/IGD test data and the existing descriptive paper summary; it performs no training or simulations. It uses the already bundled JFreeChart and iText libraries, so no Python installation or additional packages are needed.
+
+### Run directly in IntelliJ IDEA
+
+Select [MPSLGP Joint Task Preference Analysis](../../../../../.run/MPSLGP%20Joint%20Task%20Preference%20Analysis.run.xml) and click **Run**. It builds first, uses module **GPDFJSS-MENG**, runs **`mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMain`**, and defaults to:
+
+```text
+--groups R4,H3 --focus-panels all --hide-outliers H3:5
+```
+
+R4 and H3 each contain three tasks. Both figures use two group rows and three task columns: R4 above H3, with scenarios 1, 5 and 3/8 from left to right. Every panel uses the same selected seed. The paper configuration focuses all scatter panels independently and applies display-only outlier filtering to H3/scenario 5. Response curves, quality indicators and EAFs use the full data and are unaffected.
+
+To select a specific run:
+
+```text
+--groups R4,H3 --seed 15
+```
+
+Other examples:
+
+```text
+--groups R1,H1
+--groups R1,H1,H2 --seed 1
+--groups R4,H3 --runs 30 --start-run 0 --output "D:\results\joint-analysis-01"
+```
+
+The default summary directory is `paper-draft\results\full-all-groups-thirty-seeds`. With no `--output`, each invocation creates a new `analysis-*` directory under `<summary>\joint-task-analysis` and prints its full path. An explicit output path must be new; existing files are never overwritten.
+
+After compiling, the same entry point can run from PowerShell:
+
+```powershell
+$java = Join-Path $env:JAVA_HOME 'bin\java.exe'
+$cp = 'out\production\GPDFJSS-MENG;libraries\*'
+& $java '-Djava.awt.headless=true' --add-opens java.base/java.lang=ALL-UNNAMED -cp $cp mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMain --groups R4,H3
+```
+
+| Option | Default / meaning |
+| --- | --- |
+| `--groups LIST` | `R4,H3`; any distinct groups from R1--R5/H1--H3. |
+| `--runs N` | `30` consecutive seeds per group; at least two for sample standard deviation. |
+| `--start-run N` | `0`; first selected seed. |
+| `--seed N` | Optional explicit common seed within the selected range. |
+| `--focus-panels LIST` | `all`, or comma-separated `GROUP:SCENARIO` identifiers. Selected scatter panels use their own displayed-outcome bounds plus 8% padding instead of shared limits; constant coordinates receive 0.5% value padding. All specified panels must exist in the selected groups. |
+| `--hide-outliers LIST` | Optional comma-separated panel identifiers, e.g. `H3:5`. Display only: omit dominated valid vectors outside either coordinate's `Q1-1.5*IQR` / `Q3+1.5*IQR` fences, using linearly interpolated quartiles. All nondominated vectors are retained. These panels also receive independent focused axes. |
+| `--summary PATH` | Existing paper-summary directory, including `protocol.properties`, `per-run.csv`, reference CSVs and input manifest. |
+| `--output PATH` | Optional new exact output directory; otherwise create an isolated `analysis-*` directory. |
+| `--help` | Print usage without reading results or plotting. |
+
+### Representative seed and validation
+
+Without `--seed`, the code ranks IGD across seeds separately within each group/task, averages task ranks within a group and then averages groups with equal weight. Tied IGD values receive midranks. It selects the **lower median** score (15th of 30), breaking score ties by seed index. This is one common representative seed, not a separately selected best seed for each task. All selected seeds still contribute to the exported joint statistics.
+
+The shared paper-test reader verifies completion metadata, source/output hashes, the final selected heuristic and the complete 200-preference grid. The analysis checks these inputs against the summary snapshot and recomputes HV/IGD/GD to confirm the stored scores and reference data. Missing, changed or incompatible data fail before output creation. A `completed.properties` marker is written only after all data and figure exports succeed.
+
+### Figures and numerical outputs
+
+The preference figures and a separate empirical-attainment comparison are exported as high-resolution PNGs and vector PDFs; joint reliability is exported as a compact LaTeX table:
+
+The plotting style follows the paper's algorithm colors: blue `#2563EB`, orange `#F97316`, light blue/orange, purple, and slate gray. Typography uses the manuscript's **Latin Modern Roman** family, with the same outlines rendered to PNG and embedded in vector PDFs. Axis labels use 27 px, tick labels and legends 23 px, and panel labels 25 px. Legends are below the plots. Overall titles, seed/statistic subtitles and explanatory footers are omitted; the manuscript captions contain the explanations.
+
+Fonts are located through TeX Live/MiKTeX `kpsewhich` on PATH. The loader reads `lmr10.pfb`, `lmr10.afm`, `lmbx10.pfb` and `lmbx10.afm` without modifying or installing fonts. If TeX is unavailable, set the IDEA VM option `-Dmpslgp.fontDirectory="<directory containing those four files>"`. Missing fonts produce an explicit error rather than a substitute typeface. Font paths and hashes are retained in the output protocol.
+
+| Figure | Content |
+| --- | --- |
+| `joint-fronts` | Pure preference distribution in separate task panels, without reference fronts or group overlays. Continuous blue--purple--orange color indicates `w1`; circles show displayed outcomes and dark outlines mark nondominated outcomes. Explicit focus/outlier options control only the display; no sample coordinates are moved. |
+| `preference-response` | Compact objective curves against `w1`, with the legend close below the last row. Values use the paper's task-specific bounds. Invalid preferences create line gaps and gray strips. |
+| `empirical-attainment` | Separate performance comparison across all selected seeds, not only the plotted representative seed. Repeated target scenarios have their own panels; group colors identify exact 25/50/75% attainment staircases and a shaded 25--75% envelope. |
+| `group-summary-rows.tex` | A `\MPSLGPJointSummaryRows` macro containing joint-valid preference counts/rates and all-task responsive run counts/rates, replacing the former bar-chart figure. Responsiveness means more than one distinct valid outcome in every task. |
+
+The figure uses a continuous colorbar. The audit CSV additionally groups preference indices into five bands (0--39, 40--79, 80--119, 120--159 and 160--199), matching controller region `min(4,floor(5*w1))`. Nondominated membership is computed within each heuristic's valid outcomes; different tasks are never pooled into a Pareto front. A duplicate nondominated outcome can correspond to multiple preference indices, so the band CSV explicitly distinguishes nondominated **preferences** from unique outcome counts.
+
+The EAF is the fraction of training runs whose valid within-run front weakly dominates a queried raw objective pair. At probability `p`, the exact boundary uses the `ceil(p*n)`-th smallest per-run attainable second objective at each unique first-objective coordinate. With 30 seeds, the nominal 25/50/75% levels require 8/15/23 runs. Boundaries are right-continuous staircases, never diagonal interpolations. EAFs do not use the paper's normalization bounds or empirical reference front. Different scenarios remain separate; this is an R4/H3 grouping comparison, not an EAF reconstructed from the published PSLGP-I means.
+
+With multiple selected groups, the EAF figure includes scenarios appearing in at least two groups. A single selected group shows its own scenarios. If no repeated targets exist, the program reports that no EAF comparison figure is generated. Invalid preferences follow the explicitly recorded valid-only treatment, retaining every selected seed.
+
+The output also contains:
+
+- `task-run.csv`: per-task/per-seed validity, unique/nondominated outcomes and verified quality scores.
+- `group-run.csv` and `group-summary.csv`: aligned joint validity, all-task responsiveness, and mean/worst-task local IGD; standard deviations are across training runs.
+- `preference-outcomes.csv` and `preference-band-summary.csv`: all raw outcomes, validity flags, bands and nondominated membership.
+- `seed-selection.csv`: every candidate seed's rank score and the plotted choice.
+- `front-viewports.csv`: exact axis bounds and valid/visible/excluded preference counts for each task panel.
+- `plot-excluded-preferences.csv`: every display-only omitted vector, its original preference index/weights/objective values, and the filtering rule. In the default paper plot, H3/scenario 5 omits four of 200 vectors (indices 1--4); all other panels show 200/200.
+- `eaf-boundaries.csv` and `eaf-level-summary.csv`: exact raw staircase vertices, probability/rank thresholds, run denominators and boundary sizes.
+- `input-manifest.csv`, `protocol.properties`, and `completed.properties`: input hashes, selection/metric definitions and output hashes.
+
+The initial actual-data plots are saved under `paper-draft\results\joint-r4-h3`; the paper-styled versions used by the manuscript are under `paper-draft\results\joint-r4-h3-paper-style`. They use common seed **15**, selected by the rule above, and include all **180 task runs / 60 joint group runs / 36,000 preference outcomes** in the numerical exports. The numerical data and selected seed are unchanged by styling. Run `mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMainTest` after compiling the analysis and test sources for the dependency-free synthetic regression suite.
+
 ## Core implementation parameters
 
 The following is a standalone two-task example, not a replacement for the runner's paper profile:

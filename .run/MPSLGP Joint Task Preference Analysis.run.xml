@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MPSLGP Joint Task Preference Analysis" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMain" />
+    <module name="GPDFJSS-MENG" />
+    <option name="VM_PARAMETERS" value="-Djava.awt.headless=true --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <option name="PROGRAM_PARAMETERS" value="--groups R4,H3 --focus-panels all --hide-outliers H3:5" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

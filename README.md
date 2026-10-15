@@ -77,6 +77,10 @@ Key switches in `GPMain.java`:
 - `int maxTests = 29;`
   - controls the maximum number of seed-based runs.
 
+### MPSLGP joint-task preference analysis
+
+Select [MPSLGP Joint Task Preference Analysis](.run/MPSLGP%20Joint%20Task%20Preference%20Analysis.run.xml) in IntelliJ IDEA to plot R4/H3 preference distributions, response curves, and 30-seed empirical attainment boundaries. The native Java entry point uses the bundled chart/PDF libraries and existing completed tests; it starts no training or simulations. See the [analysis options and output descriptions](src/mengxu/algorithm/multiobjective/MPSLGP/README.md#joint-task-preference-analysis).
+
 ### EvoSpeak: Offline and Online
 
 | Version | Relationship to the paper | Workflow |
