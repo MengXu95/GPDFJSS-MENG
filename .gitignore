@@ -10,6 +10,8 @@ test/**
 !test/mengxu/ruleanalysis/MPSLGP/MPSLGPTestSummaryMainTest.java
 !test/mengxu/ruleanalysis/MPSLGP/MPSLGPJointTaskAnalysisMainTest.java
 !test/mengxu/ruleanalysis/MPSLGP/MPSLGPEmpiricalAttainmentTest.java
+!test/mengxu/ruleanalysis/MPSLGP/MPSLGPTransferAblationMainTest.java
+!test/mengxu/ruleanalysis/MPSLGP/MPSLGPPairedStatisticsTest.java
 !test/mengxu/algorithm/OnlineEvoSpeak/OnlineEvoSpeakRegressionTest.java
 src/mengxu/algorithm/OnlineEvoSpeak/runs/
 src/mengxu/algorithm/OnlineEvoSpeak/*.local.params

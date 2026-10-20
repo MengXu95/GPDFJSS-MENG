@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -43,6 +45,8 @@ public final class MPSLGPPaperTestMainTest {
             Path training = temp.resolve("training");
             fixture(training, "R1", new int[]{1, 2});
             fixture(training, "H3", new int[]{1, 5, 8});
+            fixture(training, "R2", new int[]{3, 4});
+            fixture(training, "R5", new int[]{8, 9});
             testArguments();
             testPlan(training, temp.resolve("plan"));
             testResume(training, temp.resolve("resume"));
@@ -50,6 +54,8 @@ public final class MPSLGPPaperTestMainTest {
             testSentinelCompletion(training, temp.resolve("sentinel"));
             testFailure(training, temp.resolve("failure"));
             testLock(training, temp.resolve("locked"));
+            testParallel(training, temp.resolve("parallel-five"), 5);
+            testParallel(training, temp.resolve("parallel-eight"), 8);
             testCsvValidation(temp.resolve("csv-validation"));
             testDatasetProtocol();
             if (Arrays.asList(args).contains("--simulation")) { testNumericalParity(); }
@@ -68,8 +74,13 @@ public final class MPSLGPPaperTestMainTest {
         check(c.parallel == 1 && c.indicators.equals(Arrays.asList("IGD")), "safe indicator and parallel defaults");
         c = MPSLGPPaperTestMain.Config.parse(new String[]{"--smoke", "--skip", "existing"});
         check(c.preferences == 3 && c.replications == 1 && c.output.endsWith("smoke") && c.skipExisting, "isolated smoke and skip alias");
+        for (int workers : new int[]{5, 8}) {
+            c = MPSLGPPaperTestMain.Config.parse(new String[]{"--parallel", Integer.toString(workers), "--heap", "2g"});
+            check(c.parallel == workers && c.heap.equals("2g"), "explicit parallel capacity and child heap " + workers);
+        }
         for (String[] invalid : Arrays.asList(new String[]{"--preferences", "1"}, new String[]{"--replications", "0"},
                 new String[]{"--tasks", "-1"}, new String[]{"--tasks", "0,0"},
+                new String[]{"--parallel", "0"}, new String[]{"--parallel", "-1"}, new String[]{"--parallel", "many"},
                 new String[]{"--runs"}, new String[]{"--scenarios", "R1,R1"},
                 new String[]{"--indicators", "BAD"}, new String[]{"--ensemble"},
                 new String[]{"--heap", "2g -cp bad"}, new String[]{"--start-run", "2147483647", "--runs", "1"},
@@ -78,6 +89,55 @@ public final class MPSLGPPaperTestMainTest {
             try { MPSLGPPaperTestMain.Config.parse(invalid); }
             catch (IllegalArgumentException e) { rejected = true; }
             check(rejected, "reject " + Arrays.toString(invalid));
+        }
+    }
+
+    private static void testParallel(Path training, Path output, int workers) throws Exception {
+        List<String> options = arguments(training, output, "--parallel", Integer.toString(workers), "--heap", "2g", "--skip-existing");
+        options.set(options.indexOf("--scenarios") + 1, "R1,H3,R2,R5");
+        AtomicInteger active = new AtomicInteger(), peak = new AtomicInteger(), calls = new AtomicInteger();
+        CountDownLatch started = new CountDownLatch(workers);
+        Map<Path, String> before = hashes(training);
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        int failures = MPSLGPPaperTestMain.execute(options.toArray(new String[0]), new PrintStream(log),
+                (command, directory, progress) -> {
+                    calls.incrementAndGet();
+                    int count = active.incrementAndGet();
+                    peak.accumulateAndGet(count, Math::max);
+                    try {
+                        if (!command.contains("-Xmx2g") || !command.contains("--worker")) {
+                            throw new IOException("Task must use a separate worker JVM with its own heap.");
+                        }
+                        started.countDown();
+                        if (!started.await(10, TimeUnit.SECONDS)) {
+                            throw new IOException("Expected " + workers + " concurrent task runners did not start.");
+                        }
+                        fakeOutputs(directory);
+                        return 0;
+                    } finally { active.decrementAndGet(); }
+                });
+        check(failures == 0 && calls.get() == 9, workers + " workers complete all nine task jobs");
+        check(peak.get() == workers && active.get() == 0, "exact concurrent cap " + workers);
+        check(hashes(training).equals(before), "parallel tests preserve every training input");
+        check(log.toString("UTF-8").contains("Workers: up to " + workers + "; heap per worker=2g"),
+                "parallel capacity reported");
+        Map<Path, String> completed = new TreeMap<>();
+        try (Stream<Path> paths = Files.walk(output)) {
+            for (Path file : paths.filter(path -> path.getFileName().toString().equals("completed.properties")).toArray(Path[]::new)) {
+                completed.put(file, fileHash(file));
+            }
+        }
+        check(completed.size() == 9, "independent completion record for every parallel task");
+        options.set(options.indexOf("--parallel") + 1, Integer.toString(workers == 5 ? 8 : 5));
+        check(MPSLGPPaperTestMain.execute(options.toArray(new String[0]), new PrintStream(log),
+                (command, directory, progress) -> { throw new AssertionError("Changing concurrency reran a verified task."); }) == 0,
+                "changing concurrency reuses all matching completions");
+        for (Map.Entry<Path, String> marker : completed.entrySet()) {
+            check(fileHash(marker.getKey()).equals(marker.getValue()), "resuming preserves completion hashes");
+        }
+        try (Stream<Path> paths = Files.walk(output.resolve("batches"))) {
+            check(paths.filter(path -> path.getFileName().toString().endsWith("-ParetoFront.csv")).count() == 18,
+                    "first and resumed batches aggregate all nine targets separately");
         }
     }
 

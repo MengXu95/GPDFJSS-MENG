@@ -69,6 +69,9 @@ public final class MPSLGPPaperTestMain {
         out.println("Same PSLGP simulator: dynamic-job-shop / missing-utilisation-1.5; 5000 measured + 1000 warm-up jobs.");
         out.println("Plan: " + batch.resolve("paper-test-plan.csv"));
         out.println("Output: " + config.output + "; parallel=" + config.parallel + "; smoke=" + config.smoke);
+        out.println("Workers: up to " + Math.min(config.parallel, jobs.size()) + "; heap per worker="
+                + config.heap + "; one selected task heuristic per separate JVM"
+                + (config.dryRun ? "; dry run, no worker JVMs will start." : "."));
         out.println("Compare only matching test protocols and acknowledge any training-budget or model-selection differences.");
 
         ExecutorService pool = Executors.newFixedThreadPool(config.parallel);
@@ -621,6 +624,7 @@ public final class MPSLGPPaperTestMain {
         out.println("  --algorithms LIST --indicators LIST --scenarios LIST --tasks LIST");
         out.println("  --runs N --start-run N --preferences N --replications N   Defaults: 5,0,200,30");
         out.println("  --parallel N --heap 2g --skip-existing (or --skip existing)");
+        out.println("    N independent task JVMs; --heap limits EACH child, not the launcher.");
         out.println("  --dry-run   Verify training and export test configurations without simulations");
         out.println("  --smoke     Three preferences, one replication, same simulator; isolated smoke output");
         out.println("Exactly one training-ranked final heuristic is tested. Ensemble/test-based selection is not supported.");

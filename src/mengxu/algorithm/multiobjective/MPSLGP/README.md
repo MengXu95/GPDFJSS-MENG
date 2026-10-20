@@ -198,8 +198,22 @@ The following shared IDEA configurations use module **GPDFJSS-MENG**, main class
 | [MPSLGP Full R1 H3 Test Dry Run](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Dry%20Run.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing --dry-run` | Inspect the same formal batch without simulations. |
 | [MPSLGP Full R1 H3 Test Smoke](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Smoke.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 1 --start-run 0 --smoke --parallel 1 --skip-existing` | Separate test-smoke namespace; defaults to three preferences and one replication. |
 | [MPSLGP Full All Groups 30 Seeds Test](../../../../../.run/MPSLGP%20Full%20All%20Groups%2030%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | All 240 Full training runs: 540 task tests and 3,240,000 replications before verified skips. |
+| [MPSLGP Paper Test Parallel 5](../../../../../.run/MPSLGP%20Paper%20Test%20Parallel%205.run.xml) | `--algorithms fixed-transfer --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 5 --heap 2g --skip-existing` | Up to five selected task heuristics tested concurrently; child heaps total at most 10 GB. |
+| [MPSLGP Paper Test Parallel 8](../../../../../.run/MPSLGP%20Paper%20Test%20Parallel%208.run.xml) | `--algorithms fixed-transfer --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 8 --heap 2g --skip-existing` | Up to eight selected task heuristics tested concurrently; child heaps total at most 16 GB. |
 
 The all-group configuration covers 18 group/task targets (six two-task groups and two three-task groups) over seeds 0--29. It reuses the formal test namespace and skips intact matching completed tests, including the initial 25 R1/H3 task tests. Training completion alone does not provide these held-out metrics. The configuration does not launch automatically; start it only when the additional computation is intended.
+
+### Parallel testing of five or more heuristics
+
+Select **MPSLGP Paper Test Parallel 5** in IDEA to test up to five task heuristics at once. The new parallel configurations default to `fixed-transfer`, matching the current test batch. Change only the `--algorithms` value to test another completed profile; the configurations do not retrain it.
+
+Each task job tests one final training-selected sequencing/routing pair in its **own child JVM**. Its 200 preferences and 30 replications per preference are unchanged. `--parallel 5` does not mean Top-5 candidates, five ensembles, or a reduced test set. The worker processes isolate the simulation and GP state. Completed jobs free a worker slot for the next queued task.
+
+The existing runner already accepts any positive `--parallel N`. Five and eight are ready-to-use configurations, not hard-coded limits. Start with five. With `--heap 2g`, five children can use 10 GB of heap and eight can use 16 GB; allow extra memory for JVM overhead, IDEA and any other training/testing processes. The launcher's own VM heap setting does not replace `--heap`.
+
+`--skip-existing` reuses verified results even if the concurrency changes. Stop an older test launcher before resuming the **same batch** with a parallel configuration, so two launchers do not compete for the same task locks. Existing failed attempts are preserved and matching unfinished tasks are retried. Do not manually copy or delete results to change the parallelism.
+
+Append `--dry-run` to either configuration to verify inputs and export a plan without starting worker JVMs. The startup log reports the maximum worker count and each worker's heap. The parallel regression tests use synchronized fake workers to prove five/eight tasks can overlap, never exceed the selected cap, keep task files separate, and reuse completed outputs after changing concurrency.
 
 ### Test outputs, aggregation, and resuming
 
@@ -263,6 +277,34 @@ The formatter validates all 18 target rows and all ten published scenarios, pres
 The local indicators pool objective bounds and a nondominated empirical reference separately for each target scenario across the selected groups (scenario 1 pools R1 and H3 in the original five-seed selection, and R1/R4/H1/H3 in the full selection). HV uses reference `(1.1,1.1)` after min--max normalization and is divided by `1.21`. IGD/GD use arithmetic mean Euclidean distances as written in the paper, not the alternative `sqrt(sum(squared distances))/n` convention in some legacy helpers. GD includes every valid preference outcome, not just the nondominated subset; under valid-only scoring its denominator can be less than 200. Standard deviations are across the selected training seeds, not across preferences or simulation replications. Changing the selected pool also changes the reference data, so newly computed full-batch scores must replace, not be appended to, the initial five-seed scores.
 
 These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds`; the complete conditional 30-seed analysis is under `paper-draft/results/full-all-groups-thirty-seeds`. Published context covers all ten scenarios in `paper-draft/published-pslgp-context.csv`. The paper's complete Results section and directly updated protocol/conclusion text are highlighted in blue.
+
+## Full versus no-transfer ablation
+
+Select [MPSLGP Full vs No Transfer Ablation](../../../../../.run/MPSLGP%20Full%20vs%20No%20Transfer%20Ablation.run.xml) in IntelliJ IDEA to run [`MPSLGPTransferAblationMain`](../../../ruleanalysis/MPSLGP/MPSLGPTransferAblationMain.java). It reads existing completed training/tests only and launches no simulations. The default comparison covers **full and no-transfer, all eight groups, seeds 0--29**, using the established `--invalid-outcomes valid-only` protocol.
+
+For every paired group/seed, the program verifies that effective training parameters match except the three transfer-control fields: adaptive transfer, fixed transfer probability and maximum transfer probability. It checks completed task markers, source/output hashes, selected final heuristics and all 200 preference rows. No-transfer must actually have adaptive transfer disabled and both transfer probabilities zero; Full must retain a positive donor-count-scaled transfer budget.
+
+**Both methods are recomputed jointly.** Each scenario has one set of coordinatewise min/max bounds and one unique nondominated empirical reference pooled over both methods, all selected groups and seeds. HV uses reference `(1.1,1.1)` and is divided by `1.21`; IGD/GD use arithmetic mean nearest-point Euclidean distances, with GD including all valid preference outcomes. A vector with either objective `-1` is excluded under valid-only scoring, but every seed remains in the summary. Plot-only outlier omissions never enter this analysis.
+
+The default output is a **new** `paper-draft\results\full-vs-no-transfer-thirty-seeds` directory. If it already exists, use another `--output` path to preserve its references and provenance:
+
+```text
+--invalid-outcomes valid-only --output "D:\results\full-vs-no-transfer-02"
+```
+
+Supported selectors are `--tests`, `--training-root`, `--output`, `--scenarios`, `--runs`, `--start-run`, and `--invalid-outcomes valid-only|reject`. At least two and at most 60 runs are supported for sample standard deviation and exact paired inference.
+
+Outputs include:
+
+- `per-run.csv`, `mean-std.csv`, `table-comparison.csv`, and `table-rows.tex`: all method/seed scores and a Table VII-style 18-target comparison, with five-decimal mean(sample std) and better means in bold.
+- `validity-summary.csv` and `invalid-preferences.csv`: failure counts/rates, affected runs and single-outcome response counts, retaining the original preference identities.
+- `paired-gains.csv`, `paired-tests.csv`, and `paired-test-summary.csv`: positive gains mean Full better (HV Full minus No-transfer; distances No-transfer minus Full). Exact two-sided signed-rank tests omit zero differences, use absolute midranks for ties and a doubled-rank dynamic program, avoiding exhaustive `2^30` enumeration.
+- Holm adjustment covers the entire family of **54** group/task/metric comparisons at level 0.05. The statistical unit is a paired training seed, not a preference or replication.
+- `scenario.*.reference.csv`, `protocol.properties`, `input-manifest.csv`, and `completed.properties`: joint reference fronts/bounds, method definitions, input/output hashes and analysis fingerprints.
+
+The Full scores in this table are **not** the earlier Full-only Table VII scores: including No-transfer changes the reference pool and normalization. The existing Full-only analysis, preference plots, EAF plots and published PSLGP-I table are preserved. New ablation manuscript text/table are highlighted red; earlier blue revisions remain blue.
+
+Dependency-free regression entry points are `MPSLGPTransferAblationMainTest` and `MPSLGPPairedStatisticsTest` under `test\mengxu\ruleanalysis\MPSLGP`.
 
 ## Joint-task preference analysis
 

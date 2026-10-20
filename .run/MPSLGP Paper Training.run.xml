@@ -2,7 +2,7 @@
   <configuration default="false" name="MPSLGP Paper Training" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPaperTrainingMain" />
     <module name="GPDFJSS-MENG" />
-    <option name="PROGRAM_PARAMETERS" value="--algorithms no-transfer --parallel 4 --skip-existing" />
+    <option name="PROGRAM_PARAMETERS" value="--algorithms fixed-transfer --parallel 4 --skip-existing" />
     <option name="VM_PARAMETERS" value="--add-opens java.base/java.lang=ALL-UNNAMED" />
     <method v="2">
       <option name="Make" enabled="true" />

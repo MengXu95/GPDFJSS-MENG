@@ -242,6 +242,9 @@ public final class MPSLGPTestSummaryMain {
     }
 
     static Run read(MPSLGPPaperTestMain.Job job, boolean validOnly) throws IOException {
+        if (!job.algorithm.equals("full") && !job.algorithm.equals("no-transfer")) {
+            throw new IOException("Unsupported summary profile: " + job.algorithm);
+        }
         Path directory = job.directory;
         Properties completion = readProperties(directory.resolve("completed.properties"));
         require(completion, "status", "COMPLETED");
@@ -284,8 +287,13 @@ public final class MPSLGPTestSummaryMain {
         Properties training = readProperties(Paths.get(spec.get("source.params")));
         for (String[] field : new String[][]{{"pop.subpop.0.size", "1000"}, {"generations", "50"},
                 {"seed.0", Integer.toString(job.run)}, {"compare-criteria", "IGD"},
-                {"mpslgp.adaptive-transfer", "true"}, {"mpslgp.use-no-transfer-gate", "true"}}) {
+                {"mpslgp.adaptive-transfer", Boolean.toString(job.algorithm.equals("full"))},
+                {"mpslgp.use-no-transfer-gate", "true"}}) {
             require(training, field[0], field[1]);
+        }
+        if (job.algorithm.equals("no-transfer")) {
+            require(training, "mpslgp.transfer-probability", "0.0");
+            require(training, "mpslgp.max-transfer-probability", "0.0");
         }
         Path trainingCompletion = Paths.get(spec.get("source.stats")).getParent().getParent().resolve("completed.properties");
         run.trainingSeconds = Long.parseLong(readProperties(trainingCompletion).getProperty("duration.seconds"));

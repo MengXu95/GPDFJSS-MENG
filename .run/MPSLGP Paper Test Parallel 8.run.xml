@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MPSLGP Paper Test Parallel 8" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain" />
+    <module name="GPDFJSS-MENG" />
+    <option name="VM_PARAMETERS" value="--add-opens java.base/java.lang=ALL-UNNAMED" />
+    <option name="PROGRAM_PARAMETERS" value="--algorithms fixed-transfer --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 8 --heap 2g --skip-existing" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
