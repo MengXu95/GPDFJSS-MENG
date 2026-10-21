@@ -49,6 +49,7 @@ public final class MPSLGPPaperTestMainTest {
             fixture(training, "R5", new int[]{8, 9});
             testArguments();
             testPlan(training, temp.resolve("plan"));
+            testLegacyTrainingReadOnly(temp.resolve("legacy-training"), temp.resolve("legacy-output"));
             testResume(training, temp.resolve("resume"));
             testInvalidFitness();
             testSentinelCompletion(training, temp.resolve("sentinel"));
@@ -72,6 +73,8 @@ public final class MPSLGPPaperTestMainTest {
         check(c.preferences == 200 && c.replications == 30 && c.runs == 5, "formal testing defaults");
         check(c.scenarios.equals(Arrays.asList("R1", "H3")) && c.algorithms.equals(Arrays.asList("full")), "requested selection");
         check(c.parallel == 1 && c.indicators.equals(Arrays.asList("IGD")), "safe indicator and parallel defaults");
+        check(c.training.endsWith("paper-runs-preference-v2") && c.output.endsWith("paper-tests-preference-v2"),
+                "corrected testing uses fresh default roots");
         c = MPSLGPPaperTestMain.Config.parse(new String[]{"--smoke", "--skip", "existing"});
         check(c.preferences == 3 && c.replications == 1 && c.output.endsWith("smoke") && c.skipExisting, "isolated smoke and skip alias");
         for (int workers : new int[]{5, 8}) {
@@ -199,6 +202,37 @@ public final class MPSLGPPaperTestMainTest {
             long aggregateCount = paths.filter(path -> path.getFileName().toString().endsWith("-ParetoFront.csv")).count();
             check(aggregateCount == 15, "three successful batches each aggregate five distinct target tasks");
         }
+    }
+
+    private static void testLegacyTrainingReadOnly(Path training, Path output) throws Exception {
+        fixture(training, "R1", new int[]{1, 2}, false);
+        fixture(training, "H3", new int[]{1, 5, 8}, false);
+        String[] args = arguments(training, output, "--dry-run", "--skip-existing").toArray(new String[0]);
+        List<MPSLGPPaperTestMain.Job> legacy = MPSLGPPaperTestMain.plan(MPSLGPPaperTestMain.Config.parse(args));
+        check(legacy.size() == 5, "legacy jobs remain readable for historical analysis");
+        check(!legacy.get(0).spec.containsKey("training.preference.runtime.version"),
+                "legacy test fingerprints are not silently relabelled");
+        Map<Path, String> before = hashes(training);
+        boolean rejected = false;
+        try {
+            MPSLGPPaperTestMain.execute(args, new PrintStream(new ByteArrayOutputStream()),
+                    (command, directory, progress) -> { throw new AssertionError("Legacy training started a v2 test worker."); });
+        } catch (IOException e) {
+            rejected = e.getMessage().contains("preference runtime v2");
+        }
+        check(rejected, "test execution explicitly rejects old preference training");
+        check(hashes(training).equals(before) && !Files.exists(output), "legacy rejection writes no training or test data");
+        Map<String, String> workerSpec = new TreeMap<>(legacy.get(0).spec);
+        workerSpec.put("source.stats.sha256", "invalid-hash-to-prevent-simulation-if-the-runtime-guard-is-missing");
+        Path workerConfig = output.resolveSibling("legacy-worker.properties");
+        atomicWrite(workerConfig, serialize(workerSpec));
+        rejected = false;
+        try {
+            MPSLGPPaperTestMain.main(new String[]{"--worker", workerConfig.toString()});
+        } catch (IOException e) {
+            rejected = e.getMessage().contains("preference runtime v2");
+        }
+        check(rejected, "direct worker rejects legacy training before source loading or simulation");
     }
 
     private static void testInvalidFitness() throws IOException {
@@ -396,6 +430,10 @@ public final class MPSLGPPaperTestMainTest {
     }
 
     private static void fixture(Path root, String scenario, int[] benchmarks) throws IOException {
+        fixture(root, scenario, benchmarks, true);
+    }
+
+    private static void fixture(Path root, String scenario, int[] benchmarks, boolean correctedRuntime) throws IOException {
         Path run = root.resolve("full").resolve("IGD").resolve(scenario).resolve("run00");
         Path attempt = run.resolve("attempt-0001");
         Files.createDirectories(attempt);
@@ -403,6 +441,7 @@ public final class MPSLGPPaperTestMainTest {
         p.put("seed.0", "0"); p.put("compare-criteria", "IGD"); p.put("terminal-normalisation", "2");
         p.put("num-trees", "2"); p.put("generations", "3"); p.put("pop.subpop.0.size", "24");
         p.put("mpslgp.num-tasks", Integer.toString(benchmarks.length));
+        if (correctedRuntime) { p.put("mpslgp.preference-runtime-version", "2"); }
         StringBuilder stats = new StringBuilder("Generation: 2\nTop N individuals by MPSLGP Task:\n\n");
         for (int task = 0; task < benchmarks.length; task++) {
             int benchmark = benchmarks[task];

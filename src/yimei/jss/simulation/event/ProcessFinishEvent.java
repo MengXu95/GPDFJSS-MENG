@@ -1,6 +1,6 @@
 package yimei.jss.simulation.event;
 
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
+import yimei.jss.gp.PreferenceStateAccess;
 import mengxu.complexsimulation.HeterogeneousSimulation;
 import yimei.jss.jobshop.Process;
 import yimei.jss.jobshop.*;
@@ -43,11 +43,7 @@ public class ProcessFinishEvent extends AbstractEvent {
                             simulation.getSystemState());
 
             //for normalising the terminals
-            if(simulation.state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(sequencingDecisionSituation);
-                }
-            }
+            PreferenceStateAccess.updateNormalisationBounds(simulation.state, sequencingDecisionSituation);
 
 //            //to check the size of waiting queue:
             if(workCenter.getQueue().size() > 1){
@@ -231,11 +227,7 @@ public class ProcessFinishEvent extends AbstractEvent {
                             simulation.getSystemState());
 
             //for normalising the terminals
-            if(simulation.state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(sequencingDecisionSituation);
-                }
-            }
+            PreferenceStateAccess.updateNormalisationBounds(simulation.state, sequencingDecisionSituation);
 
 //            //to check the size of waiting queue:
             if(workCenter.getQueue().size() > 1){
@@ -436,11 +428,7 @@ public class ProcessFinishEvent extends AbstractEvent {
                             simulation.getSystemState());
 
             //for normalising the terminals
-            if(simulation.state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(sequencingDecisionSituation);
-                }
-            }
+            PreferenceStateAccess.updateNormalisationBounds(simulation.state, sequencingDecisionSituation);
 
 //            //to check the size of waiting queue:
             if(workCenter.getQueue().size() > 1){
@@ -623,11 +611,7 @@ public class ProcessFinishEvent extends AbstractEvent {
                             simulation.getSystemState());
 
             //for normalising the terminals
-            if(simulation.state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(sequencingDecisionSituation);
-                }
-            }
+            PreferenceStateAccess.updateNormalisationBounds(simulation.state, sequencingDecisionSituation);
 
           /*  if (workCenter.getQueue().size() >= minQueueLength) { //when set operation with different processing time, the queue is hard to >= minQueueLength, an error happen here
                 situations.add(sequencingDecisionSituation.clone());
@@ -811,11 +795,7 @@ public class ProcessFinishEvent extends AbstractEvent {
                             simulation.getSystemState());
 
             //for normalising the terminals
-            if(simulation.state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(sequencingDecisionSituation);
-                }
-            }
+            PreferenceStateAccess.updateNormalisationBounds(simulation.state, sequencingDecisionSituation);
 
             //fzhang 2019.9.4 change all the decison size as minQueueLength, in order to keep the matrix has the same length
 //            System.out.println("workCenter.getQueue().size(): " + workCenter.getQueue().size());

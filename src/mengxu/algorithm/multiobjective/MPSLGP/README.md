@@ -12,6 +12,32 @@ Main entry points:
 - `MPSLGPPaperTrainingMain`: isolated training batches for the paper profiles, with per-run configuration snapshots and resumable attempts.
 - [`MPSLGPPaperTestMain`](../../../ruleanalysis/MPSLGP/MPSLGPPaperTestMain.java): held-out testing of one final training-selected dual-tree heuristic per task from completed MPSLGP runs.
 
+## Preference runtime v2
+
+The old training path did not recognise the MPSLGP state when evaluating GP terminals. A direct call with that state returned `Pone = 100` for both `w1 = 0.2` and `w1 = 0.8`. The training evaluator also missed the MPSLGP simulation-state binding. Meanwhile, temporary phenotype contexts did not copy its terminal-normalisation mode. Formal held-out tests used the original PSLGP state and did receive the preference.
+
+Shared terminal evaluation, simulation-state binding, decision-time normalisation bounds, phenotype contexts and preference-biased terminal sampling now recognise both state types. Paper mode remains `terminal-normalisation = 2`: `Pone = 100*w1` and `Ptwo = 100*w2`, in training and testing. Modes 0 and 1 retain their original unit-scale preference values. The test protocol and the meaning of its preference inputs have not changed.
+
+**All MPSLGP profiles need fresh training and held-out testing.** Testing the old trees again cannot repair how they were trained. Keep the old runs and their analyses as legacy records; they are not evidence for the corrected learner. No old experiment or paper result is automatically overwritten or regenerated.
+
+New training snapshots contain `mpslgp.preference-runtime-version = 2`, which changes their configuration fingerprints. The v1 file-format labels are unchanged; use the runtime marker to identify corrected runs. The default roots are now:
+
+- Training: `src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2`.
+- Held-out tests: `src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2`.
+
+Pointing corrected training at a legacy run is a configuration error, including with `--skip-existing`. The test launcher rejects training without the v2 marker before writing test outputs or starting workers. The low-level worker checks it too. Historical analysis remains read-only and can still load the old files without relabelling them as v2. For corrected summaries, pass both new roots explicitly; existing paper-analysis configurations still point to the legacy records.
+
+Two new IDEA configurations make the three-method rerun explicit:
+
+| Configuration | Work |
+| --- | --- |
+| [MPSLGP Preference V2 Ablation Training](../../../../../.run/MPSLGP%20Preference%20V2%20Ablation%20Training.run.xml) | Full, no-transfer and fixed-transfer; all eight groups, 30 seeds, IGD; 720 training jobs, up to four child JVMs. |
+| [MPSLGP Preference V2 Ablation Test Parallel 5](../../../../../.run/MPSLGP%20Preference%20V2%20Ablation%20Test%20Parallel%205.run.xml) | The matching 1,620 task tests, each with 200 preferences and 30 replications; five child JVMs with 2 GB heap each. Run only after training finishes. |
+
+Both use the new roots explicitly and build before launch. The older training/testing configurations also use the corrected defaults unless an explicit path overrides them. To run just one method, change `--algorithms` to `full`, `no-transfer` or `fixed-transfer`; do not change the roots back to the legacy directories.
+
+Start with a dry run and a small smoke run, not the full batch. The regression checks below cover actual GP-node values, both evaluation-model overloads, replication loops, routing/sequencing phenotype contexts, original-test numerical parity, and rejection of legacy completion records.
+
 ## Paper training batches
 
 The runner performs **training only**. It does not launch held-out testing or run PSLGP. Reuse existing PSLGP results only when their training budget, task/objective definitions, workloads, seed protocol, normalization, and eventual held-out test protocol are compatible with the MPSLGP comparison. `--algorithms PSLGP` is rejected rather than silently starting a different baseline.
@@ -53,7 +79,7 @@ Run indices are zero-based: `--start-run 0 --runs 30` schedules indices/seeds `0
 | `--start-run N` | First zero-based run index/seed; default `0`. |
 | `--parallel N` | Concurrent child JVMs; default `1`. |
 | `--heap SIZE` | Heap limit per child JVM; default `2g`. Account for all children and JVM overhead before increasing parallelism. |
-| `--results PATH` | Result root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-runs`. Smoke runs use a separate namespace. |
+| `--results PATH` | Result root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2`. Smoke runs use a separate namespace. |
 | `--param PATH` | Optional base parameter file. Profile, scenario, and command-line settings are materialized into each run's full `effective.params`; no source parameter file needs editing. |
 | `--skip-existing` | Skip only a matching, verified successful run. The spelling `--skip existing` is also accepted. |
 | `--dry-run` | Write per-run `effective.params`, `run.properties`, and `command.txt` without starting training. |
@@ -109,7 +135,7 @@ The shared configurations in `.run` use module **GPDFJSS-MENG**, main class **`m
 | Configuration | Program arguments | Intended use |
 | --- | --- | --- |
 | `MPSLGP Paper Dry Run` | `--dry-run --runs 1 --skip-existing` | Inspect all profiles/scenarios without training. |
-| `MPSLGP Paper Training` | `--skip-existing` | Default 1,680-job IGD paper batch. |
+| `MPSLGP Paper Training` | `--algorithms fixed-transfer --parallel 4 --skip-existing` | Current saved selection: 240 fixed-transfer jobs. With no algorithm selector, the CLI default is all seven profiles. |
 | [MPSLGP Paper No Transfer](../../../../../.run/MPSLGP%20Paper%20No%20Transfer.run.xml) | `--algorithms no-transfer --parallel 4 --skip-existing` | No-transfer only: 240 paper training jobs, four concurrent child JVMs with the default 2 GB heap each. |
 | [MPSLGP Full R1 H3 - 5 Seeds](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --parallel 1 --skip-existing` | Full MPSLGP only: five seeds (0--4) for each of R1 and H3, ten jobs in total. |
 | `MPSLGP Paper Smoke` | `--smoke --scenarios R1,H3 --runs 1 --skip-existing` | Isolated 14-job training smoke batch. |
@@ -119,7 +145,7 @@ The five-seed configuration uses the formal paper budget (total population 1,000
 
 The child heap is controlled by the runner's `--heap`, not by increasing only the launcher's IntelliJ heap. These configurations do not start final held-out testing.
 
-Select **MPSLGP Paper No Transfer** from IntelliJ's Run configuration list to train the no-transfer profile without changing the existing Full launcher. It uses the standard paper budget and seeds 0--29, writes to `paper-runs\no-transfer\IGD`, and skips matching verified completions. Four child JVMs can use 8 GB of heap in total, plus JVM and IDE overhead.
+Select **MPSLGP Paper No Transfer** from IntelliJ's Run configuration list to train the no-transfer profile without changing the other launcher settings. It uses the standard paper budget and seeds 0--29, writes to `paper-runs-preference-v2\no-transfer\IGD`, and skips matching verified completions. Four child JVMs can use 8 GB of heap in total, plus JVM and IDE overhead.
 
 ### Results, completion checks, and resuming
 
@@ -163,8 +189,8 @@ These defaults belong to the **test runner**, not the larger training matrix abo
 | `--replications N` | Simulation replications per preference; default `30`, or `1` in smoke mode. |
 | `--parallel N` | Concurrent child JVMs, one task job per child; default `1`. |
 | `--heap SIZE` | Heap limit per child JVM; default `2g`. |
-| `--training-root PATH` | Completed training root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-runs`. Alias: `--results PATH`. |
-| `--output PATH` | Test output root; default sibling `paper-tests` beside the training root. |
+| `--training-root PATH` | Completed v2 training root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2`. Alias: `--results PATH`. |
+| `--output PATH` | Test output root; default repo-relative `src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2`. Set it explicitly for other experiment roots. |
 | `--skip-existing` | Skip only matching, verified completed test jobs. Alias: `--skip existing`. |
 | `--dry-run` | Inspect the planned test batch without launching evaluation children. |
 | `--smoke` | Isolate outputs under `<output>\smoke` and default to three preferences and one replication. The simulator remains exactly 5,000 recorded + 1,000 warmup jobs. |
@@ -278,31 +304,37 @@ The local indicators pool objective bounds and a nondominated empirical referenc
 
 These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the published PSLGP tables. The empirical reference includes the evaluated runs and can be optimistic or sensitive to extreme outcomes. Use raw PSLGP fronts and shared reference settings before drawing cross-method rankings or significance conclusions. The initial paper summaries are saved under `paper-draft/results/full-r1-h3-five-seeds`; the complete conditional 30-seed analysis is under `paper-draft/results/full-all-groups-thirty-seeds`. Published context covers all ten scenarios in `paper-draft/published-pslgp-context.csv`. The paper's complete Results section and directly updated protocol/conclusion text are highlighted in blue.
 
-## Full versus no-transfer ablation
+## Transfer ablation
 
-Select [MPSLGP Full vs No Transfer Ablation](../../../../../.run/MPSLGP%20Full%20vs%20No%20Transfer%20Ablation.run.xml) in IntelliJ IDEA to run [`MPSLGPTransferAblationMain`](../../../ruleanalysis/MPSLGP/MPSLGPTransferAblationMain.java). It reads existing completed training/tests only and launches no simulations. The default comparison covers **full and no-transfer, all eight groups, seeds 0--29**, using the established `--invalid-outcomes valid-only` protocol.
-
-For every paired group/seed, the program verifies that effective training parameters match except the three transfer-control fields: adaptive transfer, fixed transfer probability and maximum transfer probability. It checks completed task markers, source/output hashes, selected final heuristics and all 200 preference rows. No-transfer must actually have adaptive transfer disabled and both transfer probabilities zero; Full must retain a positive donor-count-scaled transfer budget.
-
-**Both methods are recomputed jointly.** Each scenario has one set of coordinatewise min/max bounds and one unique nondominated empirical reference pooled over both methods, all selected groups and seeds. HV uses reference `(1.1,1.1)` and is divided by `1.21`; IGD/GD use arithmetic mean nearest-point Euclidean distances, with GD including all valid preference outcomes. A vector with either objective `-1` is excluded under valid-only scoring, but every seed remains in the summary. Plot-only outlier omissions never enter this analysis.
-
-The default output is a **new** `paper-draft\results\full-vs-no-transfer-thirty-seeds` directory. If it already exists, use another `--output` path to preserve its references and provenance:
+Select [MPSLGP Three Method Transfer Ablation](../../../../../.run/MPSLGP%20Three%20Method%20Transfer%20Ablation.run.xml) in IntelliJ IDEA to run [`MPSLGPTransferAblationMain`](../../../ruleanalysis/MPSLGP/MPSLGPTransferAblationMain.java) for **full, no-transfer and fixed-transfer**. It reads completed training/tests only and launches no simulations. The configuration covers all eight groups and seeds 0--29, using the established conditional valid-only protocol:
 
 ```text
---invalid-outcomes valid-only --output "D:\results\full-vs-no-transfer-02"
+--algorithms full,no-transfer,fixed-transfer --invalid-outcomes valid-only
 ```
 
-Supported selectors are `--tests`, `--training-root`, `--output`, `--scenarios`, `--runs`, `--start-run`, and `--invalid-outcomes valid-only|reject`. At least two and at most 60 runs are supported for sample standard deviation and exact paired inference.
+The original [MPSLGP Full vs No Transfer Ablation](../../../../../.run/MPSLGP%20Full%20vs%20No%20Transfer%20Ablation.run.xml) still runs the two-method comparison. Without `--algorithms`, the program keeps that original default; `--algorithms full,fixed-transfer` also supports a separate two-method comparison.
+
+For every matched group/seed, the program verifies that No-transfer differs from Full only in its three transfer-control fields. Fixed-transfer may differ only in `mpslgp.adaptive-transfer`; its fixed transfer probability and budget must match Full's configured values. Source/output hashes, completion markers, final selected heuristics and all 200 preference rows are checked before analysis.
+
+**All selected methods are recomputed jointly.** Each scenario has one set of coordinatewise min/max bounds and one unique nondominated empirical reference pooled over all methods, groups and seeds. HV uses reference `(1.1,1.1)` and is divided by `1.21`; IGD/GD use arithmetic mean nearest-point Euclidean distances, with GD including all valid preference outcomes. Vectors with either objective `-1` are excluded under valid-only scoring, but every seed remains in the summary. Plot-only omissions never enter the analysis.
+
+Three-method output goes to a **new** `paper-draft\results\full-vs-no-vs-fixed-transfer-thirty-seeds` directory; the old two-method output is preserved. If the selected output already exists, choose another path:
+
+```text
+--algorithms full,no-transfer,fixed-transfer --output "D:\results\transfer-ablation-02"
+```
+
+Supported selectors are `--algorithms`, `--tests`, `--training-root`, `--output`, `--scenarios`, `--runs`, `--start-run`, and `--invalid-outcomes valid-only|reject`. Select Full and one or both supported controls. At least two and at most 60 runs are supported.
 
 Outputs include:
 
-- `per-run.csv`, `mean-std.csv`, `table-comparison.csv`, and `table-rows.tex`: all method/seed scores and a Table VII-style 18-target comparison, with five-decimal mean(sample std) and better means in bold.
+- `per-run.csv`, `mean-std.csv`, `table-comparison.csv`, and `table-rows.tex`: all method/seed scores and the same metric-grouped 18-target table style. CSV values use five decimals; the expanded three-method LaTeX table uses four decimals and omits leading zeros to keep the table readable. Bold marks the best unrounded mean among the selected methods.
 - `validity-summary.csv` and `invalid-preferences.csv`: failure counts/rates, affected runs and single-outcome response counts, retaining the original preference identities.
-- `paired-gains.csv`, `paired-tests.csv`, and `paired-test-summary.csv`: positive gains mean Full better (HV Full minus No-transfer; distances No-transfer minus Full). Exact two-sided signed-rank tests omit zero differences, use absolute midranks for ties and a doubled-rank dynamic program, avoiding exhaustive `2^30` enumeration.
-- Holm adjustment covers the entire family of **54** group/task/metric comparisons at level 0.05. The statistical unit is a paired training seed, not a preference or replication.
+- `paired-gains.csv`, `paired-tests.csv`, and `paired-test-summary.csv`: `Comparator` identifies the control. Positive gains mean Full better (HV Full minus control; distances control minus Full). Exact two-sided signed-rank tests omit zero differences, use midranks for ties and a doubled-rank dynamic program.
+- Holm adjustment covers the whole family at level 0.05: **108** tests for Full against both controls, or **54** for one control. No-transfer versus Fixed-transfer is not part of the paired test family. The unit is a matched training seed, not a preference or replication.
 - `scenario.*.reference.csv`, `protocol.properties`, `input-manifest.csv`, and `completed.properties`: joint reference fronts/bounds, method definitions, input/output hashes and analysis fingerprints.
 
-The Full scores in this table are **not** the earlier Full-only Table VII scores: including No-transfer changes the reference pool and normalization. The existing Full-only analysis, preference plots, EAF plots and published PSLGP-I table are preserved. New ablation manuscript text/table are highlighted red; earlier blue revisions remain blue.
+Adding Fixed-transfer changes the shared reference pool, so the three-method scores replace rather than extend the old two-method table. The Full-only analysis, older two-method files, preference/EAF plots and published PSLGP-I table remain unchanged. The revised ablation section and table stay red; earlier blue edits remain blue.
 
 Dependency-free regression entry points are `MPSLGPTransferAblationMainTest` and `MPSLGPPairedStatisticsTest` under `test\mengxu\ruleanalysis\MPSLGP`.
 
@@ -396,6 +428,19 @@ The output also contains:
 
 The initial actual-data plots are saved under `paper-draft\results\joint-r4-h3`; the paper-styled versions used by the manuscript are under `paper-draft\results\joint-r4-h3-paper-style`. They use common seed **15**, selected by the rule above, and include all **180 task runs / 60 joint group runs / 36,000 preference outcomes** in the numerical exports. The numerical data and selected seed are unchanged by styling. Run `mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMainTest` after compiling the analysis and test sources for the dependency-free synthetic regression suite.
 
+## Manuscript references
+
+The paper keeps its references in `paper-draft\reference.bib`. Add or edit BibTeX entries there and use their keys in `\cite{...}` in `mpslgp-method.tex`. Journal papers use `@article`; conference papers use `@inproceedings`. The manuscript uses the `IEEEtran` bibliography style.
+
+Build from the paper directory with `latexmk`, which runs BibTeX when needed:
+
+```powershell
+Set-Location 'src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft'
+latexmk -pdf -interaction=nonstopmode -halt-on-error mpslgp-method.tex
+```
+
+The standard `IEEEtran.bst` does not print `doi` fields, so each entry also keeps its printed DOI in `note`. Keep both fields consistent when updating a DOI.
+
 ## Core implementation parameters
 
 The following is a standalone two-task example, not a replacement for the runner's paper profile:
@@ -452,6 +497,9 @@ Surrogate caches contain independent, aligned snapshots of phenotypes, fitnesses
 `test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPRegressionTest.java` is a dependency-free Java regression runner. After compiling the project classes and this test with `libraries/*` on the classpath, run:
 
 ```powershell
+& $java -cp '<compiled-classes>;libraries\*' mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPreferenceRuntimeTest
+& $java -cp '<compiled-classes>;libraries\*' mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPaperTrainingMainTest
+& $java -cp '<compiled-classes>;libraries\*' mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMainTest --simulation
 & $java -cp '<compiled-classes>;libraries\*' mengxu.algorithm.multiobjective.MPSLGP.MPSLGPRegressionTest --core-only
 & $java -cp '<compiled-classes>;libraries\*' mengxu.algorithm.multiobjective.MPSLGP.MPSLGPRegressionTest
 & $java -cp '<compiled-classes>;libraries\*' mengxu.algorithm.multiobjective.MPSLGP.MPSLGPRegressionTest --smoke

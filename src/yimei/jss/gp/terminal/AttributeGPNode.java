@@ -7,13 +7,13 @@ import ec.gp.GPData;
 import ec.gp.GPIndividual;
 import ec.gp.GPNode;
 import ec.util.Parameter;
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.multitaskHeuristicLearning.GPRuleEvolutionStateMultiTaskLearningSurrogate;
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodel.GPRuleEvolutionStateMultiTaskLearningSurrogateSVR;
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodelOneSubpop.GPRuleEvolutionStateMultiTaskLearningSurrogateSVROneSubpop;
 import mengxu.algorithm.multitaskHeuristicLearning.onlysurrogate.GPRuleEvolutionStateMultiTaskLearningOnlySurrogate;
 import mengxu.complexsimulation.HeterogeneousSimulation;
 import yimei.jss.gp.CalcPriorityProblem;
+import yimei.jss.gp.PreferenceStateAccess;
 import yimei.jss.gp.data.DoubleData;
 import yimei.jss.ruleevaluation.MultipleRuleEvaluationModel;
 import yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem;
@@ -65,15 +65,15 @@ public class AttributeGPNode extends GPNode {
         }
 
         //mengxu 2024.3.11 for Pareto set learning
-        if(state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) state).terminalNormalisation == 0){
+        if(PreferenceStateAccess.supports(state)){
+            if(PreferenceStateAccess.terminalNormalisation(state) == 0){
                 data.value = attribute.value_Pareto_set_learning_normalisation(
                         calcPrioProb.getOperation(),
                         calcPrioProb.getWorkCenter(),
                         calcPrioProb.getSystemState(),
                         state);
             }
-            else if(((GPRuleEvolutionStatePSL) state).terminalNormalisation == 1){
+            else if(PreferenceStateAccess.terminalNormalisation(state) == 1){
                 data.value = attribute.value_Pareto_set_learning_sigmoid_normalisation(
                         calcPrioProb.getOperation(),
                         calcPrioProb.getWorkCenter(),

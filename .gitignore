@@ -4,6 +4,7 @@ out/
 test/**
 !test/**/
 !test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPRegressionTest.java
+!test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPPreferenceRuntimeTest.java
 !test/mengxu/algorithm/multiobjective/MPSLGP/MPSLGPPaperTrainingMainTest.java
 !test/mengxu/ruleanalysis/MPSLGP/MPSLGPSelectedHeuristicReaderTest.java
 !test/mengxu/ruleanalysis/MPSLGP/MPSLGPPaperTestMainTest.java
@@ -17,6 +18,8 @@ src/mengxu/algorithm/OnlineEvoSpeak/runs/
 src/mengxu/algorithm/OnlineEvoSpeak/*.local.params
 src/mengxu/ruleanalysis/MPSLGP/paper-runs/
 src/mengxu/ruleanalysis/MPSLGP/paper-tests/
+src/mengxu/ruleanalysis/MPSLGP/paper-runs-preference-v2/
+src/mengxu/ruleanalysis/MPSLGP/paper-tests-preference-v2/
 *.csv
 *.stat
 *.pdf

@@ -4,8 +4,8 @@ import ec.EvolutionState;
 import ec.gp.*;
 import ec.util.DecodeReturn;
 import ec.util.Parameter;
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import yimei.jss.gp.GPRuleEvolutionState;
+import yimei.jss.gp.PreferenceStateAccess;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -31,8 +31,8 @@ public class TerminalERCUniform extends TerminalERC {
         }
 
         //modified by mengxu 2024.6.18
-        if(state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) state).preferenceTerminalHighPro){
+        if(PreferenceStateAccess.supports(state)){
+            if(PreferenceStateAccess.preferenceTerminalHighPro(state)){
                 terminal = ((GPRuleEvolutionState)state).pickTerminalRandomWithPreferenceTerminalHighPro(subPopNum);
             }
             else{
@@ -54,8 +54,8 @@ public class TerminalERCUniform extends TerminalERC {
 //        subPopNum = 1; //add by mengxu for checking 2022.07.26
         //todo: need modify when want to use more than one subpopulation 2022.07.26
         //modified by mengxu 2024.6.18
-        if(state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) state).preferenceTerminalHighPro){
+        if(PreferenceStateAccess.supports(state)){
+            if(PreferenceStateAccess.preferenceTerminalHighPro(state)){
                 terminal = ((GPRuleEvolutionState)state).pickTerminalRandomWithPreferenceTerminalHighPro(subPopNum);
             }
             else{
@@ -90,8 +90,8 @@ public class TerminalERCUniform extends TerminalERC {
 
         //fzhang random pick a terminal---original
         //modified by mengxu 2024.6.18
-        if(state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) state).preferenceTerminalHighPro){
+        if(PreferenceStateAccess.supports(state)){
+            if(PreferenceStateAccess.preferenceTerminalHighPro(state)){
                 terminal = ((GPRuleEvolutionState)state).pickTerminalRandomWithPreferenceTerminalHighPro(subPopNum);
             }
             else{

@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 public final class MPSLGPPaperTrainingMain {
     static final Path DEFAULT_PARAM = Paths.get("src", "mengxu", "algorithm", "multiobjective",
             "MPSLGP", "multipletreegp-dynamic-MPSLGP-3tasks.params");
-    static final Path DEFAULT_RESULTS = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs");
+    static final Path DEFAULT_RESULTS = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs-preference-v2");
     private static final String PACKAGE = "mengxu.algorithm.multiobjective.MPSLGP.";
     private static final String FORMAT = "mpslgp-paper-training-v1";
     private static final Set<Process> ACTIVE_PROCESSES = ConcurrentHashMap.newKeySet();
@@ -237,25 +237,6 @@ public final class MPSLGPPaperTrainingMain {
                 }
                 atomicWrite(effective, snapshot);
             }
-            Map<String, String> metadata = new TreeMap<>();
-            metadata.put("format", FORMAT);
-            metadata.put("configuration.sha256", fingerprint);
-            metadata.put("algorithm", algorithm);
-            metadata.put("description", ALGORITHMS.get(algorithm));
-            metadata.put("indicator", indicator);
-            metadata.put("scenario", scenario.name);
-            metadata.put("benchmark.tasks", Arrays.toString(scenario.tasks));
-            metadata.put("run", Integer.toString(run));
-            metadata.put("seed", Integer.toString(run));
-            metadata.put("smoke", Boolean.toString(config.smoke));
-            metadata.put("source.params", config.param.toString());
-            metadata.put("java.version", System.getProperty("java.version"));
-            metadata.put("population.total", Integer.toString(config.population));
-            metadata.put("task.population.quotas", quotas());
-            atomicWrite(directory.resolve("run.properties"), serialize(metadata));
-            atomicWrite(directory.resolve("command.txt"), "Working directory: " + directory
-                    + "\n" + commandText(command(directory)) + "\n");
-
             Path completion = directory.resolve("completed.properties");
             if (Files.exists(completion)) {
                 Properties marker = readProperties(completion);
@@ -273,6 +254,26 @@ public final class MPSLGPPaperTrainingMain {
                 }
                 out.println("[RETRY] " + identity() + " " + invalid + "; preserving the previous attempt");
             }
+            Map<String, String> metadata = new TreeMap<>();
+            metadata.put("format", FORMAT);
+            metadata.put("preference.runtime.version", yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION);
+            metadata.put("configuration.sha256", fingerprint);
+            metadata.put("algorithm", algorithm);
+            metadata.put("description", ALGORITHMS.get(algorithm));
+            metadata.put("indicator", indicator);
+            metadata.put("scenario", scenario.name);
+            metadata.put("benchmark.tasks", Arrays.toString(scenario.tasks));
+            metadata.put("run", Integer.toString(run));
+            metadata.put("seed", Integer.toString(run));
+            metadata.put("smoke", Boolean.toString(config.smoke));
+            metadata.put("source.params", config.param.toString());
+            metadata.put("java.version", System.getProperty("java.version"));
+            metadata.put("population.total", Integer.toString(config.population));
+            metadata.put("task.population.quotas", quotas());
+            atomicWrite(directory.resolve("run.properties"), serialize(metadata));
+            atomicWrite(directory.resolve("command.txt"), "Working directory: " + directory
+                    + "\n" + commandText(command(directory)) + "\n");
+
             if (config.dryRun) {
                 out.println("[DRY-RUN] " + identity() + " configuration=" + effective);
                 return new Result(this, "PLANNED", 0, 0, directory, "No training process started");
@@ -397,6 +398,7 @@ public final class MPSLGPPaperTrainingMain {
             throw new IllegalArgumentException("Static filePath evaluation is incompatible with the paper's dynamic scenarios.");
         }
         put(p, "jobs", 1, "evalthreads", 1, "breedthreads", 1, "seed.0", job.run,
+                yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER, yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION,
                 "checkpoint", false, "quit-on-run-complete", false,
                 "state", PACKAGE + "GPRuleEvolutionStatePSL", "init", PACKAGE + "PSLInitializer",
                 "breed", PACKAGE + "PSLBreederKeepParetoFront",

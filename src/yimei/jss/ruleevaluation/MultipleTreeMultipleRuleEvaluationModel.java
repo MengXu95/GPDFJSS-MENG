@@ -14,7 +14,6 @@ import ec.gp.GPIndividual;
 import ec.multiobjective.MultiObjectiveFitness;
 import ec.util.Parameter;
 import mengxu.algorithm.ensemble.EnsembleRule;
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.PSLMultiObjectiveFitness;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.PreferenceOpposite.ClearingPSLMultiObjectiveFitnessPreOpppsite;
 import mengxu.algorithm.multitaskHeuristicLearning.GPRuleEvolutionStateMultiTaskLearningSurrogate;
@@ -22,6 +21,7 @@ import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodel.GPRuleEvolut
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodelOneSubpop.GPRuleEvolutionStateMultiTaskLearningSurrogateSVROneSubpop;
 import mengxu.algorithm.multitaskHeuristicLearning.onlysurrogate.GPRuleEvolutionStateMultiTaskLearningOnlySurrogate;
 import yimei.jss.jobshop.WorkCenter;
+import yimei.jss.gp.PreferenceStateAccess;
 import yimei.jss.rule.AbstractRule;
 import yimei.jss.rule.operation.evolved.GPRule;
 import yimei.jss.simulation.DynamicSimulation;
@@ -65,6 +65,9 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
             //========================change here======================================
             simulation.setSequencingRule(sequencingRule); //indicate different individuals
             simulation.setRoutingRule(routingRule);
+            if (PreferenceStateAccess.supports(state)) {
+                simulation.state = state;
+            }
             //System.out.println(simulation);
             simulation.run();
 //            System.out.println("gen: " + state.generation + "simulation seed: " + ((DynamicSimulation)simulation).getSeed());
@@ -184,7 +187,7 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
             //========================change here======================================
             simulation.setSequencingRule(sequencingRule); //indicate different individuals
             simulation.setRoutingRule(routingRule);
-            if(state instanceof GPRuleEvolutionStatePSL){
+            if(PreferenceStateAccess.supports(state)){
                 simulation.state = state; //add by mengxu 2024.3.11
             }
             else if(state instanceof GPRuleEvolutionStateMultiTaskLearningSurrogate){
@@ -325,7 +328,7 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
             //========================change here======================================
             simulation.setSequencingRule(sequencingRule); //indicate different individuals
             simulation.setRoutingRule(routingRule);
-            if(state instanceof GPRuleEvolutionStatePSL){
+            if(PreferenceStateAccess.supports(state)){
                 simulation.state = state; //add by mengxu 2024.3.11
             }
             //System.out.println(simulation);
@@ -404,7 +407,7 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
             simulation.setSequencingRule(null);
             simulation.setRoutingRule(null);
 
-            if(state instanceof GPRuleEvolutionStatePSL){
+            if(PreferenceStateAccess.supports(state)){
                 simulation.state = state; //add by mengxu 2024.3.11
             }
             //System.out.println(simulation);

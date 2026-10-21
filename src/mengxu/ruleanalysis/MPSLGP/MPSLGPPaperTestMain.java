@@ -60,6 +60,7 @@ public final class MPSLGPPaperTestMain {
         Config config = Config.parse(args);
         if (config.help) { usage(out); return 0; }
         List<Job> jobs = plan(config);
+        for (Job job : jobs) { requireCurrentPreferenceRuntime(job.spec); }
         Files.createDirectories(config.output.resolve("batches"));
         Path batch = Files.createTempDirectory(config.output.resolve("batches"), "batch-");
         writePlan(batch, jobs);
@@ -212,6 +213,10 @@ public final class MPSLGPPaperTestMain {
             spec.put("source.configuration.sha256", required(metadata, "configuration.sha256"));
             spec.put("training.population.total", required(parameters, "pop.subpop.0.size"));
             spec.put("training.generations", required(parameters, "generations"));
+            String runtimeVersion = parameters.getProperty(yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER);
+            if (runtimeVersion != null) {
+                spec.put("training.preference.runtime.version", runtimeVersion);
+            }
             spec.put("sequencing.expression", selected.getSequencingRule().getLispString());
             spec.put("routing.expression", selected.getRoutingRule().getLispString());
             spec.put("training.objective.0", Double.toString(selected.getTrainingObjectives()[0]));
@@ -227,6 +232,7 @@ public final class MPSLGPPaperTestMain {
         }
 
         Result execute(PrintStream out, ProcessRunner runner) throws IOException, InterruptedException {
+            requireCurrentPreferenceRuntime(spec);
             Files.createDirectories(directory);
             try (FileChannel channel = FileChannel.open(directory.resolve("test.lock"),
                     StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
@@ -350,6 +356,7 @@ public final class MPSLGPPaperTestMain {
         Map<String, String> spec = new TreeMap<>();
         for (String key : input.stringPropertyNames()) { spec.put(key, input.getProperty(key)); }
         if (!FORMAT.equals(spec.get("format"))) { throw new IOException("Unsupported test configuration format."); }
+        requireCurrentPreferenceRuntime(spec);
         verifySource(spec);
         int task = Integer.parseInt(spec.get("task"));
         int generation = Integer.parseInt(spec.get("generation"));
@@ -364,6 +371,14 @@ public final class MPSLGPPaperTestMain {
                 Integer.parseInt(spec.get("preferences")), Integer.parseInt(spec.get("replications")));
         evaluator.evaluate(selected, Integer.parseInt(spec.get("run")), configFile.toAbsolutePath().getParent(), System.out::println);
         verifySource(spec);
+    }
+
+    private static void requireCurrentPreferenceRuntime(Map<String, String> spec) throws IOException {
+        if (!yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION.equals(spec.get("training.preference.runtime.version"))) {
+            throw new IOException("Training did not use preference runtime v2: " + spec.get("source.params")
+                    + ". Keep legacy results for read-only analysis; retrain in a new --results root before testing."
+                    + " Default corrected roots are paper-runs-preference-v2 and paper-tests-preference-v2.");
+        }
     }
 
     private static void verifySource(Map<String, String> spec) throws IOException {
@@ -449,8 +464,8 @@ public final class MPSLGPPaperTestMain {
     }
 
     static final class Config {
-        Path training = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs");
-        Path output = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-tests");
+        Path training = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs-preference-v2");
+        Path output = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-tests-preference-v2");
         List<String> algorithms = Arrays.asList("full"), indicators = Arrays.asList("IGD"), scenarios = Arrays.asList("R1", "H3");
         Set<Integer> tasks = new LinkedHashSet<>();
         int runs = 5, startRun = 0, preferences = 200, replications = 30, parallel = 1;

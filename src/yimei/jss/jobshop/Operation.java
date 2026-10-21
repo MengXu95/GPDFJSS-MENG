@@ -1,7 +1,7 @@
 package yimei.jss.jobshop;
 
 import mengxu.algorithm.ensemble.EnsembleRule;
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
+import yimei.jss.gp.PreferenceStateAccess;
 import yimei.jss.rule.AbstractRule;
 import yimei.jss.rule.RuleType;
 import yimei.jss.rule.workcenter.basic.WIQ;
@@ -262,11 +262,7 @@ public class Operation {
     	RoutingDecisionSituation decisionSituation = routingDecisionSituation(systemState);
 
         //for normalising the terminals
-        if(systemState.getSimulation().state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) systemState.getSimulation().state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) systemState.getSimulation().state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(systemState.getSimulation().state, decisionSituation);
 
         if (routingRule == null) {
             routingRule = new WIQ(RuleType.ROUTING);
@@ -287,11 +283,7 @@ public class Operation {
         RoutingDecisionSituation decisionSituation = routingDecisionSituation(systemState);
 
         //for normalising the terminals
-        if(systemState.getSimulation().state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) systemState.getSimulation().state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) systemState.getSimulation().state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(systemState.getSimulation().state, decisionSituation);
 
         return ensembleRule.nextOperationOptionVotingRecordSpread(decisionSituation, ensembleContribution, ensembleSpread);
     }
@@ -302,11 +294,7 @@ public class Operation {
         RoutingDecisionSituation decisionSituation = routingDecisionSituation(systemState);
 
         //for normalising the terminals
-        if(systemState.getSimulation().state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) systemState.getSimulation().state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) systemState.getSimulation().state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(systemState.getSimulation().state, decisionSituation);
 
         return ensembleRule.nextOperationOptionVoting(decisionSituation, ensembleContribution);
     }
@@ -316,11 +304,7 @@ public class Operation {
         RoutingDecisionSituation decisionSituation = routingDecisionSituation(systemState);
 
         //for normalising the terminals
-        if(systemState.getSimulation().state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) systemState.getSimulation().state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) systemState.getSimulation().state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(systemState.getSimulation().state, decisionSituation);
 
         return ensembleRule.nextOperationOptionMeanRank(decisionSituation, ensembleContribution);
     }
@@ -330,11 +314,7 @@ public class Operation {
         RoutingDecisionSituation decisionSituation = routingDecisionSituation(systemState);
 
         //for normalising the terminals
-        if(systemState.getSimulation().state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) systemState.getSimulation().state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) systemState.getSimulation().state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(systemState.getSimulation().state, decisionSituation);
 
         return ensembleRule.nextOperationOptionLinear(decisionSituation, ensembleContribution);
     }

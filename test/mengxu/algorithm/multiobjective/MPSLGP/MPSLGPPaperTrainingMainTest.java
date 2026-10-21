@@ -31,6 +31,7 @@ public final class MPSLGPPaperTrainingMainTest {
             testSerialization();
             testDryRun(temp.resolve("dry"));
             testCompletionAndRetry(temp.resolve("resume"));
+            testLegacyRuntimeCannotResume(temp.resolve("legacy"));
             testFailures(temp.resolve("fail"));
             testLock(temp.resolve("lock"));
             testParallel(temp.resolve("parallel"));
@@ -49,6 +50,7 @@ public final class MPSLGPPaperTrainingMainTest {
         check(c.algorithms.size() == 7 && c.scenarios.size() == 8 && c.runs == 30, "paper matrix");
         check(c.generations == 50 && c.population == 1000 && c.preferences == 101, "paper budget");
         check(c.indicators.equals(Arrays.asList("IGD")) && c.parallel == 1, "safe defaults");
+        check(c.results.endsWith("paper-runs-preference-v2"), "corrected training uses a fresh default root");
         Map<String, String> base = MPSLGPPaperTrainingMain.loadParameters(c.param);
         for (String algorithm : c.algorithms) {
             for (String scenario : Arrays.asList("R1", "H3")) {
@@ -56,6 +58,7 @@ public final class MPSLGPPaperTrainingMainTest {
                         c, algorithm, "IGD", MPSLGPPaperTrainingMain.SCENARIOS.get(scenario), 2, base);
                 Map<String, String> p = job.settings;
                 check(p.get("compare-criteria").equals("IGD"), "indicator override");
+                check(p.get("mpslgp.preference-runtime-version").equals("2"), "all profiles fingerprint the corrected preference runtime");
                 check(p.get("generations").equals("50") && p.get("pop.subpop.0.size").equals("1000"), "fixed shared budget");
                 check(p.get("eval.problem.0.eval-model.sim-models.0.min-num-operations").equals("2"), "paper minimum operations");
                 check(p.get("mpslgp.transfer-start-generation").equals("15"), "aligned transfer start");
@@ -150,10 +153,14 @@ public final class MPSLGPPaperTrainingMainTest {
         check(run(root, output, fake, "--skip-existing") == 0 && calls.get() == 1, "first successful attempt");
         Path directory = root.resolve("full/IGD/R1/run00");
         check(Files.exists(directory.resolve("completed.properties")), "success marker");
+        Files.writeString(directory.resolve("run.properties"), Files.readString(directory.resolve("run.properties"))
+                + "original.provenance=preserve-on-skip\n");
+        String metadataBefore = Files.readString(directory.resolve("run.properties"));
         String progress = output.toString("UTF-8");
         check(progress.contains("[START] algorithm=full indicator=IGD scenario=R1 run=0 seed=0")
                 && progress.contains("[GEN]") && progress.contains("[DONE]"), "live identified progress");
         check(run(root, output, fake, "--skip", "existing") == 0 && calls.get() == 1, "verified success skipped");
+        check(Files.readString(directory.resolve("run.properties")).equals(metadataBefore), "skipping does not rewrite training provenance");
         check(run(root, output, fake) == 1 && calls.get() == 1, "explicit skip required for completed work");
         Path oldStats = directory.resolve("attempt-0001/job.0.out.stat");
         Files.writeString(oldStats, "truncated");
@@ -177,6 +184,50 @@ public final class MPSLGPPaperTrainingMainTest {
                 && Files.exists(directory.resolve("attempt-0002/status.properties")), "failure and success both retained");
         Path incomplete = root.resolve("empty");
         check(run(incomplete, output, (command, attempt, progress) -> 0) == 1, "zero exit without artifacts fails");
+    }
+
+    private static void testLegacyRuntimeCannotResume(Path root) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        check(run(root, output, (command, attempt, progress) -> {
+            success(attempt);
+            return 0;
+        }) == 0, "prepare a completed fixture");
+        Path directory = root.resolve("full/IGD/R1/run00");
+        Path effective = directory.resolve("effective.params");
+        String legacySnapshot = Files.readString(effective).replace("mpslgp.preference-runtime-version=2\n", "");
+        check(!legacySnapshot.contains("preference-runtime-version"), "fixture has the old effective parameters");
+        Files.writeString(effective, legacySnapshot);
+        Files.writeString(directory.resolve("attempt-0001/effective.params"), legacySnapshot);
+        String fingerprint = MPSLGPPaperTrainingMain.sha256(
+                ("mpslgp-paper-training-v1\n" + legacySnapshot).getBytes(StandardCharsets.UTF_8));
+        Properties metadata = properties(directory.resolve("run.properties"));
+        metadata.remove("preference.runtime.version");
+        metadata.setProperty("configuration.sha256", fingerprint);
+        metadata.setProperty("original.provenance", "must-not-be-rewritten");
+        Map<String, String> legacyMetadata = new TreeMap<>();
+        for (String key : metadata.stringPropertyNames()) { legacyMetadata.put(key, metadata.getProperty(key)); }
+        Files.writeString(directory.resolve("run.properties"), MPSLGPPaperTrainingMain.serialize(legacyMetadata));
+        Properties marker = properties(directory.resolve("completed.properties"));
+        marker.setProperty("configuration.sha256", fingerprint);
+        marker.setProperty("sha256.effective.params", PaperExperimentFiles.fileHash(effective));
+        Map<String, String> legacyMarker = new TreeMap<>();
+        for (String key : marker.stringPropertyNames()) { legacyMarker.put(key, marker.getProperty(key)); }
+        Files.writeString(directory.resolve("completed.properties"), MPSLGPPaperTrainingMain.serialize(legacyMarker));
+        Files.writeString(directory.resolve("attempt-0001/status.properties"), MPSLGPPaperTrainingMain.serialize(legacyMarker));
+        Map<Path, String> before = new TreeMap<>();
+        for (String name : Arrays.asList("effective.params", "run.properties", "completed.properties", "command.txt",
+                "attempt-0001/effective.params", "attempt-0001/job.0.out.stat")) {
+            Path file = directory.resolve(name);
+            before.put(file, PaperExperimentFiles.fileHash(file));
+        }
+        check(run(root, output, (command, attempt, progress) -> {
+            throw new AssertionError("Legacy completion must neither run nor be skipped as corrected.");
+        }, "--skip-existing") == 1, "legacy runtime cannot resume as v2");
+        check(output.toString("UTF-8").contains("Configuration mismatch"), "legacy mismatch has an explicit error");
+        for (Map.Entry<Path, String> entry : before.entrySet()) {
+            check(PaperExperimentFiles.fileHash(entry.getKey()).equals(entry.getValue()), "legacy input and provenance stay unchanged");
+        }
+        check(!Files.exists(directory.resolve("attempt-0002")), "rejected legacy reuse creates no attempt");
     }
 
     private static void testLock(Path root) throws Exception {

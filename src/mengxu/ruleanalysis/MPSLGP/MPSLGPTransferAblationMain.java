@@ -22,9 +22,9 @@ import java.util.TreeMap;
 import static mengxu.algorithm.multiobjective.MPSLGP.PaperExperimentFiles.*;
 import static mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain.*;
 
-/** Matched Full/no-transfer comparison with joint target-specific references and paired seed tests. */
+/** Matched transfer-control comparisons with joint target-specific references and paired seed tests. */
 public final class MPSLGPTransferAblationMain {
-    private static final List<String> METHODS = Arrays.asList("full", "no-transfer");
+    private static final List<String> SUPPORTED = Arrays.asList("full", "no-transfer", "fixed-transfer");
     private static final String[] METRICS = {"HVJoint", "IGDJoint", "GDJoint"};
     private static final Set<String> PROFILE_FIELDS = new HashSet<>(Arrays.asList(
             "mpslgp.adaptive-transfer", "mpslgp.transfer-probability", "mpslgp.max-transfer-probability"));
@@ -36,6 +36,7 @@ public final class MPSLGPTransferAblationMain {
         if (config.help) {
             System.out.println("MPSLGPTransferAblationMain [--output NEW_DIRECTORY] [--tests PATH] [--training-root PATH]");
             System.out.println("  [--scenarios R1,R2,R3,R4,R5,H1,H2,H3] [--runs 30] [--start-run 0]");
+            System.out.println("  [--algorithms full,no-transfer,fixed-transfer]; default full,no-transfer");
             System.out.println("  [--invalid-outcomes valid-only|reject]; no training or simulations.");
             return;
         }
@@ -63,14 +64,18 @@ public final class MPSLGPTransferAblationMain {
             inputHashes.putAll(run.inputs);
         }
         for (Map.Entry<String, Map<String, Sample>> entry : pairs.entrySet()) {
-            if (entry.getValue().size() != 2) { throw new IOException("Unpaired training seed: " + entry.getKey()); }
-            Sample full = entry.getValue().get("full"), none = entry.getValue().get("no-transfer");
-            if (full.run.scenario != none.run.scenario) { throw new IOException("Paired target mismatch."); }
-            requireMatchedTraining(full.training, none.training);
+            if (entry.getValue().size() != config.methods.size()) { throw new IOException("Unpaired training seed: " + entry.getKey()); }
+            Sample full = entry.getValue().get("full");
+            for (String method : config.methods) {
+                if (method.equals("full")) { continue; }
+                Sample control = entry.getValue().get(method);
+                if (full.run.scenario != control.run.scenario) { throw new IOException("Paired target mismatch."); }
+                requireMatchedTraining(full.training, control.training, method);
+            }
         }
         samples.sort(Comparator.comparingInt((Sample sample) -> scope.scenarios.indexOf(sample.run.group))
                 .thenComparingInt(sample -> sample.run.task).thenComparingInt(sample -> sample.run.seed)
-                .thenComparingInt(sample -> METHODS.indexOf(sample.algorithm)));
+                .thenComparingInt(sample -> config.methods.indexOf(sample.algorithm)));
         Map<Integer, List<double[]>> pools = new TreeMap<>();
         for (Sample sample : samples) {
             pools.computeIfAbsent(sample.run.scenario, ignored -> new ArrayList<>()).addAll(Arrays.asList(sample.run.points));
@@ -94,7 +99,7 @@ public final class MPSLGPTransferAblationMain {
         Map<String, Target> targets = new LinkedHashMap<>();
         for (Sample sample : samples) {
             targets.computeIfAbsent(sample.run.group + "/" + sample.run.task,
-                    ignored -> new Target(sample.run)).byMethod.get(sample.algorithm).add(sample);
+                    ignored -> new Target(sample.run, config.methods)).byMethod.get(sample.algorithm).add(sample);
         }
         List<Comparison> comparisons = new ArrayList<>();
         for (Target target : targets.values()) {
@@ -102,20 +107,23 @@ public final class MPSLGPTransferAblationMain {
                 method.sort(Comparator.comparingInt(sample -> sample.run.seed));
                 if (method.size() != scope.runs) { throw new IOException("Incomplete target/method run set."); }
             }
-            for (int metric = 0; metric < METRICS.length; metric++) { comparisons.add(new Comparison(target, metric)); }
+            for (String method : config.methods) {
+                if (method.equals("full")) { continue; }
+                for (int metric = 0; metric < METRICS.length; metric++) { comparisons.add(new Comparison(target, metric, method)); }
+            }
         }
         double[] adjusted = MPSLGPPairedStatistics.holm(comparisons.stream().mapToDouble(test -> test.test.pValue).toArray());
         for (int i = 0; i < comparisons.size(); i++) { comparisons.get(i).adjusted = adjusted[i]; }
         Files.createDirectories(config.output);
         writeSamples(config.output, samples);
-        writeTables(config.output, targets);
+        writeTables(config.output, targets, config.methods);
         writeComparisons(config.output, comparisons);
         Map<String, String> protocol = new TreeMap<>();
-        protocol.put("format", "mpslgp-full-no-transfer-ablation-v1");
-        protocol.put("scope", "Full versus no-transfer; IGD training; groups " + String.join(",", scope.scenarios)
+        protocol.put("format", "mpslgp-transfer-ablation-v2");
+        protocol.put("scope", String.join(" versus ", config.methods) + "; IGD training; groups " + String.join(",", scope.scenarios)
                 + "; seeds " + scope.startRun + "-" + (scope.startRun + scope.runs - 1));
-        protocol.put("normalisation", "Per-target min/max over BOTH methods, every selected group and seed, valid preference vectors only");
-        protocol.put("reference.front", "Unique nondominated union of BOTH methods' normalized valid outcomes for each target");
+        protocol.put("normalisation", "Per-target min/max over ALL selected methods, every selected group and seed, valid preference vectors only");
+        protocol.put("reference.front", "Unique nondominated union of ALL selected methods' normalized valid outcomes for each target");
         protocol.put("HV", "Minimization HV of each run's unique nondominated outcomes; reference(1.1,1.1), divided by1.21");
         protocol.put("IGD", "Arithmetic mean nearest-outcome Euclidean distance from joint reference to a run's valid normalized outcomes");
         protocol.put("GD", "Arithmetic mean nearest-reference Euclidean distance over every valid normalized preference outcome");
@@ -126,12 +134,14 @@ public final class MPSLGPTransferAblationMain {
         protocol.put("standard.deviation", "Sample standard deviation, denominator n-1; n=" + scope.runs);
         protocol.put("paired.test", "Exact two-sided conditional signed-rank test; zero gains omitted; absolute ties midranked; sign-permutation DP");
         protocol.put("multiple.testing", "Holm correction across ALL " + comparisons.size() + " group/task/metric comparisons; family-wise alpha0.05");
-        protocol.put("gain.direction", "Positive means Full better: HVFull-HVNoTransfer; distancesNoTransfer-distancesFull");
-        protocol.put("training.control", "Each paired effective.params must match except adaptive-transfer, transfer-probability and max-transfer-probability");
-        protocol.put("table.references", "Full columns recomputed jointly; not interchangeable with earlier Full-only TableVII scores");
-        protocol.put("table.precision", "Five decimal places for means/sample standard deviations; bold uses unrounded means");
+        protocol.put("gain.direction", "Positive means Full better: HVFull-HVControl; distancesControl-distancesFull");
+        protocol.put("training.control", "No-transfer differs only in three transfer-control fields; fixed-transfer differs only in adaptive-transfer");
+        protocol.put("table.references", "All selected methods recomputed jointly; not interchangeable with earlier Full-only or two-method scores");
+        protocol.put("table.precision", "CSV five decimals; LaTeX " + (config.methods.size() > 2 ? 4 : 5)
+                + " decimals" + (config.methods.size() > 2 ? ", leading zeros omitted" : "")
+                + "; bold uses best unrounded means among all selected methods");
         protocol.put("task.runs", Integer.toString(samples.size()));
-        for (String method : METHODS) {
+        for (String method : config.methods) {
             int invalid = samples.stream().filter(sample -> sample.algorithm.equals(method))
                     .mapToInt(sample -> sample.run.invalidPoints.size()).sum();
             int count = (int)samples.stream().filter(sample -> sample.algorithm.equals(method)).count();
@@ -173,17 +183,24 @@ public final class MPSLGPTransferAblationMain {
             }
         }
         atomicWrite(config.output.resolve("completed.properties"), serialize(completed));
-        System.out.println("Validated " + samples.size() + " task runs / " + pairs.size() + " paired task seeds.");
+        System.out.println("Validated " + samples.size() + " task runs / " + pairs.size() + " matched group/task/seed sets.");
         System.out.println("Saved " + targets.size() + " target comparisons and " + comparisons.size()
                 + " Holm-corrected paired tests: " + config.output);
     }
 
     static void requireMatchedTraining(Properties full, Properties none) throws IOException {
+        requireMatchedTraining(full, none, "no-transfer");
+    }
+
+    static void requireMatchedTraining(Properties full, Properties control, String method) throws IOException {
+        if (!Arrays.asList("no-transfer", "fixed-transfer").contains(method)) {
+            throw new IOException("Unsupported ablation control: " + method);
+        }
         if (!"true".equals(full.getProperty("mpslgp.adaptive-transfer"))
-                || !"false".equals(none.getProperty("mpslgp.adaptive-transfer"))
-                || !"0.0".equals(none.getProperty("mpslgp.transfer-probability"))
-                || !"0.0".equals(none.getProperty("mpslgp.max-transfer-probability"))) {
-            throw new IOException("Incorrect Full/no-transfer profile controls.");
+                || !"false".equals(control.getProperty("mpslgp.adaptive-transfer"))
+                || (method.equals("no-transfer") && (!"0.0".equals(control.getProperty("mpslgp.transfer-probability"))
+                || !"0.0".equals(control.getProperty("mpslgp.max-transfer-probability"))))) {
+            throw new IOException("Incorrect Full/" + method + " profile controls.");
         }
         try {
             int tasks = Integer.parseInt(full.getProperty("mpslgp.num-tasks", ""));
@@ -195,9 +212,10 @@ public final class MPSLGPTransferAblationMain {
             }
         } catch (NumberFormatException e) { throw new IOException("Invalid Full transfer controls.", e); }
         Set<String> keys = new HashSet<>(full.stringPropertyNames());
-        keys.addAll(none.stringPropertyNames()); keys.removeAll(PROFILE_FIELDS);
+        keys.addAll(control.stringPropertyNames());
+        keys.removeAll(method.equals("no-transfer") ? PROFILE_FIELDS : java.util.Collections.singleton("mpslgp.adaptive-transfer"));
         for (String key : keys) {
-            if (!java.util.Objects.equals(full.getProperty(key), none.getProperty(key))) {
+            if (!java.util.Objects.equals(full.getProperty(key), control.getProperty(key))) {
                 throw new IOException("Non-ablation training parameter differs: " + key);
             }
         }
@@ -221,10 +239,14 @@ public final class MPSLGPTransferAblationMain {
         atomicWrite(output.resolve("invalid-preferences.csv"), invalid.toString());
     }
 
-    private static void writeTables(Path output, Map<String, Target> targets) throws IOException {
+    private static void writeTables(Path output, Map<String, Target> targets, List<String> methods) throws IOException {
         StringBuilder means = new StringBuilder("Algorithm,Group,Task,Scenario,Runs,HVJointMean,HVJointStd,IGDJointMean,IGDJointStd,GDJointMean,GDJointStd\n");
         StringBuilder validity = new StringBuilder("Algorithm,Group,Task,Scenario,Runs,PreferenceRows,ValidPreferences,InvalidPreferences,InvalidFraction,RunsWithInvalid,SingleValidOutcomeRuns,MinimumValidPreferences\n");
-        StringBuilder table = new StringBuilder("Group,Scenario,Runs,FullHV,NoTransferHV,FullIGD,NoTransferIGD,FullGD,NoTransferGD\n");
+        StringBuilder table = new StringBuilder("Group,Scenario,Runs");
+        for (String metric : METRICS) {
+            for (String method : methods) { table.append(',').append(columnName(method)).append(metric.replace("Joint", "")); }
+        }
+        table.append('\n');
         StringBuilder tex = new StringBuilder("\\newcommand{\\MPSLGPTransferAblationRows}{%\n");
         String previous = "";
         for (Target target : targets.values()) {
@@ -232,7 +254,7 @@ public final class MPSLGPTransferAblationMain {
             previous = target.group;
             table.append(target.group).append(',').append(target.scenario).append(',').append(target.byMethod.get("full").size());
             tex.append(target.group).append(" & ").append(target.scenario);
-            for (String algorithm : METHODS) {
+            for (String algorithm : methods) {
                 List<Sample> method = target.byMethod.get(algorithm);
                 means.append(csv(algorithm, target.group, target.task, target.scenario, method.size()));
                 for (int m = 0; m < 3; m++) {
@@ -248,13 +270,19 @@ public final class MPSLGPTransferAblationMain {
                         method.stream().mapToInt(sample -> sample.run.points.length).min().orElseThrow(IllegalStateException::new))).append('\n');
             }
             for (int metric = 0; metric < 3; metric++) {
-                double[] full = values(target.byMethod.get("full"), metric), none = values(target.byMethod.get("no-transfer"), metric);
-                double f = mean(full), n = mean(none);
-                String fullText = display(f, sampleStd(full)), noneText = display(n, sampleStd(none));
-                table.append(',').append(fullText).append(',').append(noneText);
-                boolean fullBetter = metric == 0 ? f > n : f < n, noneBetter = metric == 0 ? n > f : n < f;
-                tex.append(" & ").append(fullBetter ? "\\textbf{" + fullText + "}" : fullText)
-                        .append(" & ").append(noneBetter ? "\\textbf{" + noneText + "}" : noneText);
+                double best = metric == 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+                for (String method : methods) {
+                    double average = mean(values(target.byMethod.get(method), metric));
+                    best = metric == 0 ? Math.max(best, average) : Math.min(best, average);
+                }
+                for (String method : methods) {
+                    double[] points = values(target.byMethod.get(method), metric);
+                    double average = mean(points), std = sampleStd(points);
+                    table.append(',').append(display(average, std));
+                    String text = display(average, std, methods.size() > 2 ? 4 : 5);
+                    if (methods.size() > 2) { text = text.replaceAll("(^|\\()0\\.", "$1."); }
+                    tex.append(" & ").append(Double.compare(average, best) == 0 ? "\\textbf{" + text + "}" : text);
+                }
             }
             table.append('\n'); tex.append(" \\\\\n");
         }
@@ -266,40 +294,51 @@ public final class MPSLGPTransferAblationMain {
     }
 
     private static void writeComparisons(Path output, List<Comparison> comparisons) throws IOException {
-        StringBuilder tests = new StringBuilder("Group,Task,Scenario,Metric,Runs,NonzeroPairs,FullMean,NoTransferMean,MeanGain,PositiveRankSum,NegativeRankSum,PValue,HolmPValue,Decision\n");
-        StringBuilder gains = new StringBuilder("Group,Task,Scenario,Seed,Metric,Full,NoTransfer,Gain\n");
-        int[][] counts = new int[3][6];
+        StringBuilder tests = new StringBuilder("Group,Task,Scenario,Comparator,Metric,Runs,NonzeroPairs,FullMean,ControlMean,MeanGain,PositiveRankSum,NegativeRankSum,PValue,HolmPValue,Decision\n");
+        StringBuilder gains = new StringBuilder("Group,Task,Scenario,Seed,Comparator,Metric,Full,Control,Gain\n");
+        Map<String, int[][]> counts = new LinkedHashMap<>();
         for (Comparison comparison : comparisons) {
             Target target = comparison.target;
-            List<Sample> full = target.byMethod.get("full"), none = target.byMethod.get("no-transfer");
-            double f = mean(values(full, comparison.metric)), n = mean(values(none, comparison.metric));
+            List<Sample> full = target.byMethod.get("full"), control = target.byMethod.get(comparison.control);
+            double f = mean(values(full, comparison.metric)), n = mean(values(control, comparison.metric));
             double averageGain = mean(comparison.gains);
             int direction = comparison.test.positiveRankSum > comparison.test.negativeRankSum ? 1 : -1;
             boolean significant = comparison.adjusted <= .05;
-            String decision = significant ? (direction > 0 ? "Full better" : "No-transfer better") : "Not significant";
-            tests.append(csv(target.group, target.task, target.scenario, METRICS[comparison.metric], full.size(),
+            String decision = significant ? (direction > 0 ? "Full better" : comparison.control + " better") : "Not significant";
+            tests.append(csv(target.group, target.task, target.scenario, comparison.control, METRICS[comparison.metric], full.size(),
                     comparison.test.nonzeroPairs, f, n, averageGain, comparison.test.positiveRankSum,
                     comparison.test.negativeRankSum, comparison.test.pValue, comparison.adjusted, decision)).append('\n');
-            counts[comparison.metric][averageGain > 0 ? 0 : averageGain < 0 ? 2 : 1]++;
-            counts[comparison.metric][significant ? (direction > 0 ? 3 : 5) : 4]++;
+            int[][] count = counts.computeIfAbsent(comparison.control, ignored -> new int[3][6]);
+            count[comparison.metric][averageGain > 0 ? 0 : averageGain < 0 ? 2 : 1]++;
+            count[comparison.metric][significant ? (direction > 0 ? 3 : 5) : 4]++;
             for (int i = 0; i < full.size(); i++) {
                 gains.append(csv(target.group, target.task, target.scenario, full.get(i).run.seed,
-                        METRICS[comparison.metric], full.get(i).metrics[comparison.metric],
-                        none.get(i).metrics[comparison.metric], comparison.gains[i])).append('\n');
+                        comparison.control, METRICS[comparison.metric], full.get(i).metrics[comparison.metric],
+                        control.get(i).metrics[comparison.metric], comparison.gains[i])).append('\n');
             }
         }
-        StringBuilder summary = new StringBuilder("Metric,Comparisons,MeanBetter,MeanEqual,MeanWorse,SignificantlyBetter,NotSignificant,SignificantlyWorse\n");
-        for (int metric = 0; metric < 3; metric++) {
-            summary.append(METRICS[metric]).append(',').append(comparisons.size() / 3);
-            for (int count : counts[metric]) { summary.append(',').append(count); }
-            summary.append('\n');
+        StringBuilder summary = new StringBuilder("Comparator,Metric,Comparisons,MeanBetter,MeanEqual,MeanWorse,SignificantlyBetter,NotSignificant,SignificantlyWorse\n");
+        for (Map.Entry<String, int[][]> entry : counts.entrySet()) {
+            for (int metric = 0; metric < 3; metric++) {
+                int total = entry.getValue()[metric][0] + entry.getValue()[metric][1] + entry.getValue()[metric][2];
+                summary.append(entry.getKey()).append(',').append(METRICS[metric]).append(',').append(total);
+                for (int count : entry.getValue()[metric]) { summary.append(',').append(count); }
+                summary.append('\n');
+            }
         }
         atomicWrite(output.resolve("paired-tests.csv"), tests.toString());
         atomicWrite(output.resolve("paired-gains.csv"), gains.toString());
         atomicWrite(output.resolve("paired-test-summary.csv"), summary.toString());
     }
 
-    private static String display(double mean, double std) { return String.format(Locale.ROOT, "%.5f(%.5f)", mean, std); }
+    private static String display(double mean, double std) { return display(mean, std, 5); }
+    private static String display(double mean, double std, int digits) {
+        return String.format(Locale.ROOT, "%." + digits + "f(%." + digits + "f)", mean, std);
+    }
+    private static String columnName(String method) {
+        if (method.equals("full")) { return "Full"; }
+        return method.equals("no-transfer") ? "NoTransfer" : "FixedTransfer";
+    }
     private static double[] values(List<Sample> samples, int metric) { return samples.stream().mapToDouble(sample -> sample.metrics[metric]).toArray(); }
     private static String classHash(Class<?> type) throws IOException {
         try (java.io.InputStream input = type.getResourceAsStream(type.getSimpleName() + ".class")) {
@@ -331,20 +370,21 @@ public final class MPSLGPTransferAblationMain {
         final String group;
         final int task, scenario;
         final Map<String, List<Sample>> byMethod = new LinkedHashMap<>();
-        Target(Run run) {
+        Target(Run run, List<String> methods) {
             group = run.group; task = run.task; scenario = run.scenario;
-            for (String method : METHODS) { byMethod.put(method, new ArrayList<>()); }
+            for (String method : methods) { byMethod.put(method, new ArrayList<>()); }
         }
     }
     private static final class Comparison {
         final Target target;
         final int metric;
+        final String control;
         final double[] gains;
         final MPSLGPPairedStatistics.Result test;
         double adjusted;
-        Comparison(Target target, int metric) throws IOException {
-            this.target = target; this.metric = metric;
-            List<Sample> full = target.byMethod.get("full"), none = target.byMethod.get("no-transfer");
+        Comparison(Target target, int metric, String control) throws IOException {
+            this.target = target; this.metric = metric; this.control = control;
+            List<Sample> full = target.byMethod.get("full"), none = target.byMethod.get(control);
             gains = new double[full.size()];
             for (int i = 0; i < gains.length; i++) {
                 if (full.get(i).run.seed != none.get(i).run.seed) { throw new IOException("Unmatched statistical pair."); }
@@ -360,6 +400,7 @@ public final class MPSLGPTransferAblationMain {
         Path output = Paths.get("src", "mengxu", "algorithm", "multiobjective", "MPSLGP",
                 "paper-draft", "results", "full-vs-no-transfer-thirty-seeds").toAbsolutePath().normalize();
         String scenarios = "R1,R2,R3,R4,R5,H1,H2,H3", runs = "30", start = "0";
+        List<String> methods = Arrays.asList("full", "no-transfer");
         boolean validOnly = true, help;
         static Config parse(String[] args) {
             Config config = new Config();
@@ -377,10 +418,29 @@ public final class MPSLGPTransferAblationMain {
                     case "--scenarios": config.scenarios = value; break;
                     case "--runs": config.runs = value; break;
                     case "--start-run": config.start = value; break;
+                    case "--algorithms":
+                        List<String> methods = new ArrayList<>();
+                        for (String item : value.toLowerCase(Locale.ROOT).split(",", -1)) {
+                            String method = item.trim();
+                            if (!SUPPORTED.contains(method) || methods.contains(method)) {
+                                throw new IllegalArgumentException("Invalid or duplicate ablation algorithm: " + item);
+                            }
+                            methods.add(method);
+                        }
+                        if (!methods.contains("full") || methods.size() < 2) {
+                            throw new IllegalArgumentException("Select Full and at least one transfer control.");
+                        }
+                        methods.sort(Comparator.comparingInt(SUPPORTED::indexOf));
+                        config.methods = methods; break;
                     case "--invalid-outcomes":
                         if (!Arrays.asList("reject", "valid-only").contains(value)) { throw new IllegalArgumentException("Invalid outcome policy."); }
                         config.validOnly = value.equals("valid-only"); break;
                     default: throw new IllegalArgumentException("Unsupported option: " + option);
+                }
+                if (!seen.contains("--output") && config.methods.contains("fixed-transfer")) {
+                    String name = config.methods.contains("no-transfer") ? "full-vs-no-vs-fixed-transfer-thirty-seeds"
+                            : "full-vs-fixed-transfer-thirty-seeds";
+                    config.output = config.output.resolveSibling(name);
                 }
             }
             if (!config.help) {
@@ -391,7 +451,7 @@ public final class MPSLGPTransferAblationMain {
         }
         MPSLGPPaperTestMain.Config scope() {
             return MPSLGPPaperTestMain.Config.parse(new String[]{"--training-root", training.toString(),
-                    "--output", tests.toString(), "--algorithms", "full,no-transfer", "--indicators", "IGD",
+                    "--output", tests.toString(), "--algorithms", String.join(",", methods), "--indicators", "IGD",
                     "--scenarios", scenarios, "--runs", runs, "--start-run", start});
         }
     }

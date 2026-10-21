@@ -6,7 +6,6 @@ import ec.multiobjective.MultiObjectiveFitness;
 import ec.util.Parameter;
 import mengxu.algorithm.ensemble.EnsembleRule;
 import mengxu.algorithm.lexicaseselection.OneInstanceMultiCaseMultiObjectiveFitness;
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.multitaskHeuristicLearning.GPRuleEvolutionStateMultiTaskLearningSurrogate;
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodel.GPRuleEvolutionStateMultiTaskLearningSurrogateSVR;
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodelOneSubpop.GPRuleEvolutionStateMultiTaskLearningSurrogateSVROneSubpop;
@@ -18,6 +17,7 @@ import yimei.jss.jobshop.Objective;
 import yimei.jss.jobshop.OperationOption;
 import yimei.jss.jobshop.SchedulingSet;
 import yimei.jss.jobshop.WorkCenter;
+import yimei.jss.gp.PreferenceStateAccess;
 import yimei.jss.rule.operation.evolved.GPRule;
 import yimei.jss.simulation.DynamicSimulation;
 import yimei.jss.simulation.RoutingDecisionSituation;
@@ -123,9 +123,10 @@ public abstract class AbstractRule extends EvolutionState{
 			simulation.setSequencingRule(sequencingRule);
 			simulation.setRoutingRule(routingRule);
 
-			if(state instanceof GPRuleEvolutionStatePSL){
+			if(PreferenceStateAccess.supports(state)){
 				simulation.state = state;
 				simulation.state.generation = preference_index;
+				PreferenceStateAccess.setPreferenceIndex(state, preference_index);
 			}
 
 			simulation.rerun();
@@ -149,9 +150,10 @@ public abstract class AbstractRule extends EvolutionState{
 			//System.out.println("The value of replication is "+schedulingSet.getReplications()); //50
 			for (int k = 1; k < schedulingSet.getReplications().get(j); k++) {
 
-				if(state instanceof GPRuleEvolutionStatePSL){
+				if(PreferenceStateAccess.supports(state)){
 					simulation.state = state;
 					simulation.state.generation = preference_index;
+					PreferenceStateAccess.setPreferenceIndex(state, preference_index);
 				}
 
 				simulation.rerun();

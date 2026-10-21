@@ -242,7 +242,7 @@ public final class MPSLGPTestSummaryMain {
     }
 
     static Run read(MPSLGPPaperTestMain.Job job, boolean validOnly) throws IOException {
-        if (!job.algorithm.equals("full") && !job.algorithm.equals("no-transfer")) {
+        if (!Arrays.asList("full", "no-transfer", "fixed-transfer").contains(job.algorithm)) {
             throw new IOException("Unsupported summary profile: " + job.algorithm);
         }
         Path directory = job.directory;
@@ -294,6 +294,13 @@ public final class MPSLGPTestSummaryMain {
         if (job.algorithm.equals("no-transfer")) {
             require(training, "mpslgp.transfer-probability", "0.0");
             require(training, "mpslgp.max-transfer-probability", "0.0");
+        } else if (job.algorithm.equals("fixed-transfer")) {
+            double probability = Double.parseDouble(training.getProperty("mpslgp.transfer-probability", "NaN"));
+            double maximum = Double.parseDouble(training.getProperty("mpslgp.max-transfer-probability", "NaN"));
+            if (!Double.isFinite(probability) || probability <= 0 || probability > 1
+                    || !Double.isFinite(maximum) || maximum <= 0 || maximum > 1) {
+                throw new IOException("Fixed-transfer requires a positive finite transfer probability and budget.");
+            }
         }
         Path trainingCompletion = Paths.get(spec.get("source.stats")).getParent().getParent().resolve("completed.properties");
         run.trainingSeconds = Long.parseLong(readProperties(trainingCompletion).getProperty("duration.seconds"));

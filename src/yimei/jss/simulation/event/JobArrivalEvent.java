@@ -1,6 +1,6 @@
 package yimei.jss.simulation.event;
 
-import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
+import yimei.jss.gp.PreferenceStateAccess;
 import mengxu.complexsimulation.HeterogeneousSimulation;
 import yimei.jss.jobshop.*;
 import yimei.jss.simulation.RoutingDecisionSituation;
@@ -41,11 +41,7 @@ public class JobArrivalEvent extends AbstractEvent {
                 operation.getOperationOptions(), simulation.getSystemState());
 
         //for normalising the terminals
-        if(simulation.state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(simulation.state, decisionSituation);
 
 //        //test
 //        System.out.print("RoutingDecisionSituation: ");
@@ -123,12 +119,7 @@ public class JobArrivalEvent extends AbstractEvent {
                 operation.getOperationOptions(), simulation.getSystemState());
 
         //add by mengxu 2024.4.18
-        if(simulation.state instanceof GPRuleEvolutionStatePSL){
-            int useTerminalNormalisation = ((GPRuleEvolutionStatePSL)simulation.state).terminalNormalisation;
-            if(useTerminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL)simulation.state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(simulation.state, decisionSituation);
 
 
         //modified by mengxu 2023.02.24
@@ -236,11 +227,7 @@ public class JobArrivalEvent extends AbstractEvent {
                 operation.getOperationOptions(), simulation.getSystemState());
 
         //for normalising the terminals
-        if(simulation.state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(simulation.state, decisionSituation);
 
 
         //modified by mengxu 2023.02.24
@@ -343,11 +330,7 @@ public class JobArrivalEvent extends AbstractEvent {
                 operation.getOperationOptions(), simulation.getSystemState());
 
         //for normalising the terminals
-        if(simulation.state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(simulation.state, decisionSituation);
 
 //        if (operation.getOperationOptions().size() >= minQueueLength) {
 //            situations.add(decisionSituation.clone());
@@ -411,11 +394,7 @@ public class JobArrivalEvent extends AbstractEvent {
                 operation.getOperationOptions(), simulation.getSystemState());
 
         //for normalising the terminals
-        if(simulation.state instanceof GPRuleEvolutionStatePSL){
-            if(((GPRuleEvolutionStatePSL) simulation.state).terminalNormalisation==0){
-                ((GPRuleEvolutionStatePSL) simulation.state).updateMaxTerminals(decisionSituation);
-            }
-        }
+        PreferenceStateAccess.updateNormalisationBounds(simulation.state, decisionSituation);
 
         //fzhang 2019.9.4 in order to get same length matrix
 //        System.out.println("operation.getOperationOptions().size(): " + operation.getOperationOptions().size());

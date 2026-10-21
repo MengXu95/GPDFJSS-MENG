@@ -79,9 +79,11 @@ Key switches in `GPMain.java`:
 
 ### MPSLGP joint-task preference analysis
 
+**Preference-runtime correction:** the old MPSLGP training path did not pass the preference to GP terminals correctly. All MPSLGP profiles need fresh training and testing before their results can describe the corrected method. Training and test launchers now default to separate `paper-runs-preference-v2` and `paper-tests-preference-v2` roots and reject legacy reuse. Existing paper figures and analyses still describe the old runs; they have not been regenerated. See the [correction and new IDEA configurations](src/mengxu/algorithm/multiobjective/MPSLGP/README.md#preference-runtime-v2).
+
 Select [MPSLGP Joint Task Preference Analysis](.run/MPSLGP%20Joint%20Task%20Preference%20Analysis.run.xml) in IntelliJ IDEA to plot R4/H3 preference distributions, response curves, and 30-seed empirical attainment boundaries. The native Java entry point uses the bundled chart/PDF libraries and existing completed tests; it starts no training or simulations. See the [analysis options and output descriptions](src/mengxu/algorithm/multiobjective/MPSLGP/README.md#joint-task-preference-analysis).
 
-For the matched transfer ablation, select [MPSLGP Full vs No Transfer Ablation](.run/MPSLGP%20Full%20vs%20No%20Transfer%20Ablation.run.xml). It recomputes both methods under joint target-specific references and exports all-group tables, invalid-outcome audits and paired tests; see the [ablation protocol](src/mengxu/algorithm/multiobjective/MPSLGP/README.md#full-versus-no-transfer-ablation).
+For the matched transfer ablation, select [MPSLGP Three Method Transfer Ablation](.run/MPSLGP%20Three%20Method%20Transfer%20Ablation.run.xml). It compares Full, no-transfer and fixed-transfer under shared target-specific references and exports all-group tables, invalid-outcome audits and paired tests; see the [ablation protocol](src/mengxu/algorithm/multiobjective/MPSLGP/README.md#transfer-ablation).
 
 ### EvoSpeak: Offline and Online
 

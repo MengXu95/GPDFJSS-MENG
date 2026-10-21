@@ -10,6 +10,7 @@ import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodel.GPRuleEvolut
 import mengxu.algorithm.multitaskHeuristicLearning.SVRrelationmodelOneSubpop.GPRuleEvolutionStateMultiTaskLearningSurrogateSVROneSubpop;
 import mengxu.algorithm.multitaskHeuristicLearning.onlysurrogate.GPRuleEvolutionStateMultiTaskLearningOnlySurrogate;
 import mengxu.complexsimulation.HeterogeneousSimulation;
+import yimei.jss.gp.PreferenceStateAccess;
 import yimei.jss.jobshop.FlexibleStaticInstance;
 import yimei.jss.jobshop.OperationOption;
 import yimei.jss.jobshop.WorkCenter;
@@ -120,12 +121,12 @@ public class RoutingPhenoCharacterisation extends PhenoCharacterisation {
             RoutingDecisionSituation situation = decisionSituations.get(i);
 
             //for normalising the terminals add by mengxu 2024.4.19
-            if(state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) state).terminalNormalisation == 0){
+            if(PreferenceStateAccess.supports(state)){
+                if(PreferenceStateAccess.terminalNormalisation(state) == 0){
                     ((GPRuleEvolutionStatePSL) preferenceState).initialMaxTerminals();
                     ((GPRuleEvolutionStatePSL) preferenceState).updateMaxTerminals(situation);
                 }
-                else if (((GPRuleEvolutionStatePSL) state).terminalNormalisation==1){
+                else if (PreferenceStateAccess.terminalNormalisation(state)==1){
                     ((GPRuleEvolutionStatePSL) preferenceState).terminalNormalisation=1;
                 }
                 else{
@@ -249,10 +250,10 @@ public class RoutingPhenoCharacterisation extends PhenoCharacterisation {
             RoutingDecisionSituation situation = decisionSituations.get(i);
 
             //for normalising the terminals add by mengxu 2024.4.19
-            if(state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) state).initialMaxTerminals();
-                    ((GPRuleEvolutionStatePSL) state).updateMaxTerminals(situation);
+            if(PreferenceStateAccess.supports(state)){
+                if(PreferenceStateAccess.terminalNormalisation(state)==0){
+                    PreferenceStateAccess.initialMaxTerminals(state);
+                    PreferenceStateAccess.updateMaxTerminals(state, situation);
                 }
             }
 
@@ -273,9 +274,9 @@ public class RoutingPhenoCharacterisation extends PhenoCharacterisation {
             situation.getSystemState().getSimulation().state = state;
 
             //for normalising the terminals add by mengxu 2024.4.19
-            if(state instanceof GPRuleEvolutionStatePSL){
-                if(((GPRuleEvolutionStatePSL) state).terminalNormalisation==0){
-                    ((GPRuleEvolutionStatePSL) state).updateMaxTerminals(situation);
+            if(PreferenceStateAccess.supports(state)){
+                if(PreferenceStateAccess.terminalNormalisation(state)==0){
+                    PreferenceStateAccess.updateMaxTerminals(state, situation);
                 }
             }
 

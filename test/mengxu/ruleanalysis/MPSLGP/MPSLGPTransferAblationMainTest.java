@@ -21,10 +21,15 @@ public final class MPSLGPTransferAblationMainTest {
         check(defaults.scope().algorithms.equals(Arrays.asList("full", "no-transfer"))
                 && defaults.scope().runs == 30 && defaults.scope().scenarios.size() == 8, "full formal comparison defaults");
         check(defaults.validOnly, "established conditional valid-preference protocol");
+        MPSLGPTransferAblationMain.Config three = MPSLGPTransferAblationMain.Config.parse(
+                new String[]{"--algorithms", "full,no-transfer,fixed-transfer"});
+        check(three.scope().algorithms.size() == 3
+                && three.output.endsWith("full-vs-no-vs-fixed-transfer-thirty-seeds"), "separate three-method scope/output");
         for (String[] invalid : Arrays.asList(new String[]{"--runs", "1"}, new String[]{"--runs", "61"},
                 new String[]{"--runs"}, new String[]{"--runs", "3", "--runs", "4"},
                 new String[]{"--scenarios", "R6"}, new String[]{"--invalid-outcomes", "ignore"},
-                new String[]{"--algorithms", "fixed-transfer"})) {
+                new String[]{"--algorithms", "fixed-transfer"}, new String[]{"--algorithms", "full,full"},
+                new String[]{"--algorithms", "full,unknown"})) {
             boolean rejected = false;
             try { MPSLGPTransferAblationMain.Config.parse(invalid); }
             catch (IllegalArgumentException e) { rejected = true; }
@@ -81,9 +86,41 @@ public final class MPSLGPTransferAblationMainTest {
             try { MPSLGPTransferAblationMain.main(rejectInvalid); }
             catch (IOException e) { rejected = e.getMessage().contains("invalid-fitness sentinel"); }
             check(rejected && !Files.exists(temp.resolve("reject-invalid")), "explicit reject policy writes no partial analysis");
+            String[] threeOptions = Arrays.copyOf(options, options.length + 2);
+            Path threeOutput = temp.resolve("three-methods");
+            threeOptions[Arrays.asList(threeOptions).indexOf("--output") + 1] = threeOutput.toString();
+            threeOptions[threeOptions.length - 2] = "--algorithms";
+            threeOptions[threeOptions.length - 1] = "full,no-transfer,fixed-transfer";
+            List<MPSLGPPaperTestMain.Job> threeJobs = MPSLGPPaperTestMain.plan(
+                    MPSLGPTransferAblationMain.Config.parse(threeOptions).scope());
+            for (MPSLGPPaperTestMain.Job job : threeJobs) {
+                if (job.algorithm.equals("fixed-transfer")) {
+                    MPSLGPTestSummaryMainTest.testFixture(job, job.task == 0 && job.run == 1 ? 2 : 0);
+                    shiftTest(job, 5);
+                }
+            }
+            MPSLGPTransferAblationMain.main(threeOptions);
+            check(rows(threeOutput, "per-run.csv").size() == 30 && rows(threeOutput, "mean-std.csv").size() == 15,
+                    "all three methods retain every seed");
+            check(rows(threeOutput, "paired-tests.csv").size() == 30
+                    && rows(threeOutput, "paired-gains.csv").size() == 60, "Full paired against each control");
+            check(rows(threeOutput, "paired-test-summary.csv").size() == 6, "metric summaries separate both controls");
+            check(rows(threeOutput, "table-comparison.csv").get(0).containsKey("FixedTransferHV"),
+                    "three-column comparison for every metric");
+            Properties threeProtocol = readProperties(threeOutput.resolve("protocol.properties"));
+            check(threeProtocol.getProperty("multiple.testing").contains("30")
+                    && threeProtocol.getProperty("fixed-transfer.invalid.rows").equals("4"),
+                    "one correction family and fixed-transfer invalid audit");
             Properties full = readProperties(training.resolve("full/IGD/R1/run00/attempt-0001/effective.params"));
             Properties none = readProperties(training.resolve("no-transfer/IGD/R1/run00/attempt-0001/effective.params"));
             MPSLGPTransferAblationMain.requireMatchedTraining(full, none);
+            Properties fixed = readProperties(training.resolve("fixed-transfer/IGD/R1/run00/attempt-0001/effective.params"));
+            MPSLGPTransferAblationMain.requireMatchedTraining(full, fixed, "fixed-transfer");
+            fixed.setProperty("mpslgp.transfer-probability", "0.2");
+            rejected = false;
+            try { MPSLGPTransferAblationMain.requireMatchedTraining(full, fixed, "fixed-transfer"); }
+            catch (IOException e) { rejected = e.getMessage().contains("Non-ablation training parameter"); }
+            check(rejected, "fixed control cannot silently change its transfer budget");
             none.setProperty("select.tournament.size", "8");
             rejected = false;
             try { MPSLGPTransferAblationMain.requireMatchedTraining(full, none); }
@@ -108,19 +145,24 @@ public final class MPSLGPTransferAblationMainTest {
         Properties completed = readProperties(full.resolve("completed.properties"));
         completed.setProperty("sha256.effective.params", fileHash(fullAttempt.resolve("effective.params")));
         writeProps(full.resolve("completed.properties"), completed);
-        Path none = training.resolve("no-transfer/IGD").resolve(group).resolve(String.format("run%02d", seed));
-        Path noneAttempt = none.resolve("attempt-0001");
-        Files.createDirectories(noneAttempt);
-        source.setProperty("mpslgp.adaptive-transfer", "false");
-        source.setProperty("mpslgp.transfer-probability", "0.0");
-        source.setProperty("mpslgp.max-transfer-probability", "0.0");
-        writeProps(noneAttempt.resolve("effective.params"), source);
-        Files.copy(fullAttempt.resolve("job." + seed + ".out.stat"), noneAttempt.resolve("job." + seed + ".out.stat"));
-        Properties metadata = readProperties(full.resolve("run.properties"));
-        metadata.setProperty("algorithm", "no-transfer");
-        writeProps(none.resolve("run.properties"), metadata);
-        completed.setProperty("sha256.effective.params", fileHash(noneAttempt.resolve("effective.params")));
-        writeProps(none.resolve("completed.properties"), completed);
+        for (String algorithm : Arrays.asList("no-transfer", "fixed-transfer")) {
+            Path control = training.resolve(algorithm).resolve("IGD").resolve(group).resolve(String.format("run%02d", seed));
+            Path attempt = control.resolve("attempt-0001");
+            Files.createDirectories(attempt);
+            Properties parameters = readProperties(fullAttempt.resolve("effective.params"));
+            parameters.setProperty("mpslgp.adaptive-transfer", "false");
+            if (algorithm.equals("no-transfer")) {
+                parameters.setProperty("mpslgp.transfer-probability", "0.0");
+                parameters.setProperty("mpslgp.max-transfer-probability", "0.0");
+            }
+            writeProps(attempt.resolve("effective.params"), parameters);
+            Files.copy(fullAttempt.resolve("job." + seed + ".out.stat"), attempt.resolve("job." + seed + ".out.stat"));
+            Properties metadata = readProperties(full.resolve("run.properties"));
+            metadata.setProperty("algorithm", algorithm);
+            writeProps(control.resolve("run.properties"), metadata);
+            completed.setProperty("sha256.effective.params", fileHash(attempt.resolve("effective.params")));
+            writeProps(control.resolve("completed.properties"), completed);
+        }
     }
 
     private static void shiftTest(MPSLGPPaperTestMain.Job job, double shift) throws IOException {
