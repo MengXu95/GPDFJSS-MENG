@@ -281,6 +281,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 
 	@Override
 	public void setup(EvolutionState state, Parameter base) {
+		yimei.jss.gp.PreferenceStateAccess.verifyRuntime();
 
 		Parameter numTasksParam = new Parameter("mpslgp.num-tasks");
 		this.numTasks = state.parameters.getIntWithDefault(numTasksParam, null, 1);
@@ -308,6 +309,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		//add by mengxu 2024.4.18
 		Parameter terminalNormalisationParam = new Parameter("terminal-normalisation"); //add by mengxu 2023.01.24
 		this.terminalNormalisation = state.parameters.getIntWithDefault(terminalNormalisationParam, null,2); //add by mengxu 2023.01.24
+		yimei.jss.gp.PreferenceStateAccess.validateCurrentPreference(this);
 
 		//add by mengxu 2024.5.24
 		Parameter HVEstimateStrategyParam = new Parameter("HV-estimated-strategy"); //add by mengxu 2023.01.24
@@ -1136,6 +1138,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 	    statistics.preEvaluationStatistics(this);
 
 		this.evaluatePreferenceIndex = this.generation;
+		yimei.jss.gp.PreferenceStateAccess.validateCurrentPreference(this);
 		this.evaluateOrder = 0;
 
 	    evaluator.evaluatePopulation(this);
@@ -1192,7 +1195,7 @@ public class GPRuleEvolutionStatePSL extends GPRuleEvolutionState {
 		printFrontforGen(false, false);//add by mengxu 2022.06.29
 		RuleOptimizationProblem problem = (RuleOptimizationProblem)evaluator.p_problem;
 
-		if(generation%printGap == 0){//add by mengxu 2022.08.05
+		if(generation%printGap == 0 && generation < numGenerations - 1){
 			statistics.middleStatistics(this, this.R_NOTDONE);
 		}
 

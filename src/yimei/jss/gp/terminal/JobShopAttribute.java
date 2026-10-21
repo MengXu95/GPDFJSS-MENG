@@ -1,6 +1,7 @@
 package yimei.jss.gp.terminal;
 
 import ec.EvolutionState;
+import yimei.jss.gp.PreferenceStateAccess;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL;
 import mengxu.algorithm.multiobjective.ParetoSetLearning.PSLInitializer;
 import mengxu.algorithm.multitaskHeuristicLearning.GPRuleEvolutionStateMultiTaskLearningSurrogate;
@@ -141,19 +142,7 @@ public enum JobShopAttribute {
     }
 
     private static double preferenceValue(EvolutionState state, int objectiveIndex, double scale) {
-        if (state instanceof GPRuleEvolutionStatePSL) {
-            return scale * ((PSLInitializer) state.initializer).weights[((GPRuleEvolutionStatePSL) state).evaluatePreferenceIndex][objectiveIndex];
-        }
-        if (state instanceof mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) {
-            mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL mpslgpState =
-                    (mengxu.algorithm.multiobjective.MPSLGP.GPRuleEvolutionStatePSL) state;
-            mengxu.algorithm.multiobjective.MPSLGP.PSLInitializer mpslgpInitializer =
-                    (mengxu.algorithm.multiobjective.MPSLGP.PSLInitializer) state.initializer;
-            return scale * mpslgpInitializer.weights[mpslgpState.evaluatePreferenceIndex][objectiveIndex];
-        }
-        System.err.println("Preference terminal is only defined for PSLGP or MPSLGP states.");
-        System.exit(1);
-        return 0;
+        return scale * PreferenceStateAccess.preference(state, objectiveIndex);
     }
 
     private static double maxTerminalValue(EvolutionState state, String key) {

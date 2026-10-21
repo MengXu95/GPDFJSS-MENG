@@ -34,6 +34,7 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
     public void evaluate(List<Fitness> currentFitnesses,
                          List<AbstractRule> rules,
                          EvolutionState state) {
+        if (PreferenceStateAccess.supports(state)) { PreferenceStateAccess.validateCurrentPreference(state); }
         //expecting 2 rules here - one routing rule and one sequencing rule
         if (rules.size() != 2) {
             System.out.println("Rule evaluation failed!");
@@ -156,6 +157,7 @@ public class MultipleTreeMultipleRuleEvaluationModel extends MultipleRuleEvaluat
                          List<AbstractRule> rules,
                          EvolutionState state,
                          Individual individual) {
+        if (PreferenceStateAccess.supports(state)) { PreferenceStateAccess.validateCurrentPreference(state); }
         //expecting 2 rules here - one routing rule and one sequencing rule
         if (rules.size() != 2) {
             System.out.println("Rule evaluation failed!");

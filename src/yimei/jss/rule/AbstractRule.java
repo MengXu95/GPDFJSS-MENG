@@ -94,6 +94,9 @@ public abstract class AbstractRule extends EvolutionState{
 
 	public void calcFitnessWithPreference(Fitness fitness, EvolutionState state, SchedulingSet schedulingSet, AbstractRule otherRule,
 							List<Objective> objectives, int preference_index) {
+		if (!PreferenceStateAccess.supports(state)) {
+			throw new IllegalStateException("Preference-aware testing needs a PSLGP or MPSLGP state.");
+		}
 		// whenever fitness is calculated, need a routing rule and a sequencing rule
 		if (this.getType() == otherRule.getType()) {
 			System.out.println(
@@ -127,6 +130,7 @@ public abstract class AbstractRule extends EvolutionState{
 				simulation.state = state;
 				simulation.state.generation = preference_index;
 				PreferenceStateAccess.setPreferenceIndex(state, preference_index);
+				PreferenceStateAccess.validateCurrentPreference(state);
 			}
 
 			simulation.rerun();
@@ -154,6 +158,7 @@ public abstract class AbstractRule extends EvolutionState{
 					simulation.state = state;
 					simulation.state.generation = preference_index;
 					PreferenceStateAccess.setPreferenceIndex(state, preference_index);
+					PreferenceStateAccess.validateCurrentPreference(state);
 				}
 
 				simulation.rerun();

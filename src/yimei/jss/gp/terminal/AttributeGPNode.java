@@ -56,6 +56,11 @@ public class AttributeGPNode extends GPNode {
         CalcPriorityProblem calcPrioProb = ((CalcPriorityProblem)problem);
 
         DoubleData data = ((DoubleData)input);
+        if ((attribute == JobShopAttribute.Preference_One || attribute == JobShopAttribute.Preference_Two)
+                && !PreferenceStateAccess.supports(state)) {
+            throw new IllegalStateException("Preference terminal " + attribute.getName()
+                    + " needs a PSLGP or MPSLGP state. Check simulation-state binding.");
+        }
         if(calcPrioProb.getOperation() == null || calcPrioProb.getWorkCenter()== null || calcPrioProb.getSystemState() == null) {
         	System.out.println("null");
         }

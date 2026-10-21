@@ -31,6 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
 
 public final class MPSLGPPreferenceRuntimeTest {
     private static final List<Objective> OBJECTIVES = Arrays.asList(
@@ -38,13 +43,16 @@ public final class MPSLGPPreferenceRuntimeTest {
     private static final double[][] WEIGHTS = {{.2, .8}, {.8, .2}};
     private static int assertions;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        PreferenceStateAccess.verifyRuntime();
         testTerminalModes();
+        testInvalidPreferenceContexts();
         testTrainingDispatch();
         testTestDispatch();
         testPhenotypes();
         testActualDecisionInputs();
         testTerminalSampling();
+        testMixedBuildRejection();
         check(!PreferenceStateAccess.supports(new EvolutionState()), "ordinary GP is not a preference state");
         System.out.println("PASS: MPSLGPPreferenceRuntimeTest (" + assertions + " assertions)");
     }
@@ -72,8 +80,45 @@ public final class MPSLGPPreferenceRuntimeTest {
             }
         }
         simulation.state = new EvolutionState();
-        close(100, priority("Pone", simulation), "ordinary GP preference constant is unchanged");
+        expectStateFailure(() -> priority("Pone", simulation), "ordinary GP cannot silently treat a preference as a constant");
+        expectStateFailure(() -> priority("Ptwo", simulation), "both preference terminals require a context");
+        simulation.state = null;
+        expectStateFailure(() -> priority("Pone", simulation), "missing simulation state cannot silently continue");
+        simulation.state = new EvolutionState();
         close(2, priority("PT", simulation), "ordinary GP processing time is unchanged");
+    }
+
+    private static void testInvalidPreferenceContexts() {
+        double[][][] invalid = {null, {}, {null}, {{.2}}, {{Double.NaN,1}}, {{Double.POSITIVE_INFINITY,0}},
+                {{-.1,1.1}}, {{.2,.2}}, {{20,80}}, {{0,0}}};
+        ProbeSimulation simulation = new ProbeSimulation();
+        for (boolean multitask : new boolean[]{false,true}) {
+            for (double[][] weights : invalid) {
+                EvolutionState state = state(multitask, 2);
+                if (multitask) { ((PSLInitializer)state.initializer).weights = weights; }
+                else { ((mengxu.algorithm.multiobjective.ParetoSetLearning.PSLInitializer)state.initializer).weights = weights; }
+                simulation.state = state;
+                expectStateFailure(() -> priority("Pone", simulation), "invalid weight vector rejected");
+            }
+            EvolutionState missing = state(multitask, 2);
+            missing.initializer = null;
+            simulation.state = missing;
+            expectStateFailure(() -> priority("Ptwo", simulation), "missing initializer rejected");
+            EvolutionState badIndex = state(multitask, 2);
+            PreferenceStateAccess.setPreferenceIndex(badIndex, 2);
+            simulation.state = badIndex;
+            expectStateFailure(() -> priority("Pone", simulation), "out-of-range preference index rejected");
+        }
+        expectStateFailure(() -> PreferenceStateAccess.forPreference(new EvolutionState(), new double[]{.2,.8}),
+                "surrogate cannot silently accept an unsupported source state");
+        double[] supplied = {.25,.75};
+        EvolutionState context = PreferenceStateAccess.forPreference(state(true, 2), supplied);
+        supplied[0] = .6;
+        close(.25, PreferenceStateAccess.preference(context, 0), "temporary context owns its explicit weight vector");
+        check(PreferenceStateAccess.runtimeProvenance().get("preference.runtime.check").equals("PASSED"),
+                "runtime self-check success is recorded");
+        check(PreferenceStateAccess.runtimeProvenance().containsKey("runtime.sha256.yimei.jss.gp.terminal.AttributeGPNode"),
+                "actual GP class-file fingerprint recorded");
     }
 
     private static void testTrainingDispatch() {
@@ -210,6 +255,85 @@ public final class MPSLGPPreferenceRuntimeTest {
         state.preferenceTerminalHighPro = false;
         terminal.resetNode(state, 0);
         check(state.uniformPicks == 1, "disabled preference bias retains uniform selection");
+    }
+
+    private static void testMixedBuildRejection() throws Exception {
+        Path temp = Files.createTempDirectory("mpslgp-stale-runtime-");
+        try {
+            String staleTerminal = String.join("\n",
+                    "package yimei.jss.gp.terminal;",
+                    "public class AttributeGPNode extends ec.gp.GPNode {",
+                    " private final JobShopAttribute attribute;",
+                    " public AttributeGPNode(JobShopAttribute a){attribute=a;children=new ec.gp.GPNode[0];}",
+                    " public JobShopAttribute getJobShopAttribute(){return attribute;}",
+                    " public String toString(){return attribute.getName();}",
+                    " public int expectedChildren(){return 0;}",
+                    " public void eval(ec.EvolutionState s,int t,ec.gp.GPData d,ec.gp.ADFStack a,ec.gp.GPIndividual i,ec.Problem p){",
+                    "  yimei.jss.gp.CalcPriorityProblem c=(yimei.jss.gp.CalcPriorityProblem)p;",
+                    "  ((yimei.jss.gp.data.DoubleData)d).value=s instanceof mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL",
+                    "    ?attribute.value_Pareto_set_learning(c.getOperation(),c.getWorkCenter(),c.getSystemState(),s)",
+                    "    :attribute.value(c.getOperation(),c.getWorkCenter(),c.getSystemState());",
+                    " }",
+                    "}");
+            assertStaleBuildRejected(temp.resolve("terminal"), "AttributeGPNode", staleTerminal, "expected 20.0");
+            String stalePhenotype = String.join("\n",
+                    "package yimei.jss.niching;",
+                    "public class RoutingPhenoCharacterisation extends PhenoCharacterisation {",
+                    " private final java.util.List<yimei.jss.simulation.RoutingDecisionSituation> situations;",
+                    " public RoutingPhenoCharacterisation(yimei.jss.rule.AbstractRule r,java.util.List<yimei.jss.simulation.RoutingDecisionSituation> s){super(r);situations=s;}",
+                    " protected void calcReferenceIndexes(){}",
+                    " protected void calcReferenceIndexes(ec.EvolutionState s){}",
+                    " protected void calcReferenceIndexesWithPreference(ec.EvolutionState s){}",
+                    " public int[] characterise(yimei.jss.rule.AbstractRule r){return new int[1];}",
+                    " public int[] decision(yimei.jss.rule.AbstractRule r){return new int[1];}",
+                    " public int[][] characterisePermutation(yimei.jss.rule.AbstractRule r){return new int[1][1];}",
+                    " public int[] characteriseForMultitask(ec.EvolutionState s,yimei.jss.rule.AbstractRule r,int t){return new int[1];}",
+                    " public int[] characteriseWithPreference(ec.EvolutionState ignored,yimei.jss.rule.AbstractRule r,double[] p){",
+                    "  mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL s=new mengxu.algorithm.multiobjective.ParetoSetLearning.GPRuleEvolutionStatePSL();",
+                    "  mengxu.algorithm.multiobjective.ParetoSetLearning.PSLInitializer i=new mengxu.algorithm.multiobjective.ParetoSetLearning.PSLInitializer();",
+                    "  i.weights=new double[][]{p};s.initializer=i;s.terminalNormalisation=0;",
+                    "  for(yimei.jss.simulation.RoutingDecisionSituation d:situations){d.getSystemState().getSimulation().state=s;",
+                    "   for(yimei.jss.jobshop.OperationOption o:d.getQueue()){r.priority(o,o.getWorkCenter(),d.getSystemState());}}",
+                    "  return new int[1];",
+                    " }",
+                    "}");
+            assertStaleBuildRejected(temp.resolve("phenotype"), "RoutingPhenoCharacterisation", stalePhenotype, "ROUTING phenotype");
+        } finally {
+            try (java.util.stream.Stream<Path> files = Files.walk(temp)) {
+                for (Path path : files.sorted(Comparator.reverseOrder()).toArray(Path[]::new)) { Files.delete(path); }
+            }
+        }
+    }
+
+    private static void assertStaleBuildRejected(Path root, String className, String source, String expectedMessage) throws Exception {
+        Files.createDirectories(root);
+        Path sourceFile = root.resolve(className + ".java"), classes = root.resolve("classes");
+        Files.createDirectory(classes);
+        Files.writeString(sourceFile, source);
+        javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        check(compiler != null, "mixed-build regression requires a JDK");
+        check(compiler.run(null, null, null, "-encoding", "UTF-8", "-classpath", System.getProperty("java.class.path"),
+                "-d", classes.toString(), sourceFile.toString()) == 0, "stale-build fixture compiled");
+        Path log = root.resolve("check.log");
+        Process process = new ProcessBuilder(PaperExperimentFiles.javaExecutable(), "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                "-cp", classes + java.io.File.pathSeparator + System.getProperty("java.class.path"),
+                MPSLGPPreferenceRuntimeCheck.class.getName()).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        try {
+            check(process.waitFor(20, TimeUnit.SECONDS), "stale-build check terminates promptly");
+            String output = Files.readString(log, StandardCharsets.UTF_8);
+            check(process.exitValue() != 0 && output.contains("self-check failed")
+                    && output.contains("Rebuild Project") && output.contains(expectedMessage),
+                    "actual stale classpath refused before training");
+        } finally {
+            if (process.isAlive()) { process.destroyForcibly(); }
+        }
+    }
+
+    private static void expectStateFailure(Runnable action, String message) {
+        boolean failed = false;
+        try { action.run(); }
+        catch (IllegalStateException expected) { failed = true; }
+        check(failed, message);
     }
 
     private static EvolutionState state(boolean multitask, int mode) {

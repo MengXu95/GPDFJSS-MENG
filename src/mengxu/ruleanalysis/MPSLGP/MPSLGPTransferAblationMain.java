@@ -51,10 +51,12 @@ public final class MPSLGPTransferAblationMain {
         for (MPSLGPPaperTestMain.Job job : jobs) { markers.add(job.directory.resolve("completed.properties")); }
         requireCompletions(markers);
         List<Sample> samples = new ArrayList<>();
+        List<Run> inputRuns = new ArrayList<>();
         Map<String, Map<String, Sample>> pairs = new LinkedHashMap<>();
         Map<Path, String> inputHashes = new TreeMap<>();
         for (MPSLGPPaperTestMain.Job job : jobs) {
             Run run = read(job, config.validOnly);
+            inputRuns.add(run);
             Sample sample = new Sample(job.algorithm, run, readProperties(Paths.get(job.spec.get("source.params"))));
             samples.add(sample);
             String key = run.group + "/" + run.task + "/" + run.seed;
@@ -62,6 +64,10 @@ public final class MPSLGPTransferAblationMain {
                 throw new IOException("Duplicate method/run: " + key);
             }
             inputHashes.putAll(run.inputs);
+        }
+        String runtimeVersion = requireUniformPreferenceRuntime(inputRuns);
+        if (runtimeVersion.equals("legacy-v1")) {
+            System.out.println("WARNING: legacy pre-correction training; ablation scores are historical, not corrected-method results.");
         }
         for (Map.Entry<String, Map<String, Sample>> entry : pairs.entrySet()) {
             if (entry.getValue().size() != config.methods.size()) { throw new IOException("Unpaired training seed: " + entry.getKey()); }
@@ -120,6 +126,7 @@ public final class MPSLGPTransferAblationMain {
         writeComparisons(config.output, comparisons);
         Map<String, String> protocol = new TreeMap<>();
         protocol.put("format", "mpslgp-transfer-ablation-v2");
+        protocol.put("preference.runtime.version", runtimeVersion);
         protocol.put("scope", String.join(" versus ", config.methods) + "; IGD training; groups " + String.join(",", scope.scenarios)
                 + "; seeds " + scope.startRun + "-" + (scope.startRun + scope.runs - 1));
         protocol.put("normalisation", "Per-target min/max over ALL selected methods, every selected group and seed, valid preference vectors only");

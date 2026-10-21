@@ -18,6 +18,16 @@ The old training path did not recognise the MPSLGP state when evaluating GP term
 
 Shared terminal evaluation, simulation-state binding, decision-time normalisation bounds, phenotype contexts and preference-biased terminal sampling now recognise both state types. Paper mode remains `terminal-normalisation = 2`: `Pone = 100*w1` and `Ptwo = 100*w2`, in training and testing. Modes 0 and 1 retain their original unit-scale preference values. The test protocol and the meaning of its preference inputs have not changed.
 
+**Fail-fast checks:** a GP tree containing `Pone` or `Ptwo` now requires a supported preference state. A missing state no longer produces a constant 100. Weight vectors must be present, finite, in `[0,1]`, sum to one and have a valid index. Temporary phenotype contexts copy the source mode and own a copy of the supplied vector. Unsupported source states and mixed legacy/v2 analysis inputs are errors.
+
+Before training or testing, an automatic self-check runs the actual loaded GP nodes, both training-evaluator overloads and routing/sequencing phenotype code on fixed inputs. It checks `20/80` and `80/20`, rejects missing contexts, and starts no scheduling simulation. A stale terminal or phenotype class causes an explicit `Rebuild Project` error. The same check runs inside each worker JVM and in direct MPSLGP state setup.
+
+In IDEA, run [MPSLGP Preference Runtime Check](../../../../../.run/MPSLGP%20Preference%20Runtime%20Check.run.xml) after **Build > Rebuild Project**. It prints the loaded class location and class-file hashes without launching an experiment. New run metadata records the check and critical class hashes. If those class files change during a training/test task, the task fails rather than being marked completed; do not rebuild while an experiment is running.
+
+These checks guard the specified input and execution paths; they are not a proof that every future algorithm change is correct. The regressions deliberately place stale classes first on a child JVM's classpath and confirm that startup refuses them. Single-generation training uses the valid midpoint preference `(0.5,0.5)` rather than an undefined grid.
+
+Final output is also checked with the strict task-rule reader before training is marked completed. The final generation writes its Top-N/front section once, even when it falls on a periodic reporting generation. Duplicate, incomplete or ambiguous selected-rule sections fail validation and remain retryable attempts.
+
 **All MPSLGP profiles need fresh training and held-out testing.** Testing the old trees again cannot repair how they were trained. Keep the old runs and their analyses as legacy records; they are not evidence for the corrected learner. No old experiment or paper result is automatically overwritten or regenerated.
 
 New training snapshots contain `mpslgp.preference-runtime-version = 2`, which changes their configuration fingerprints. The v1 file-format labels are unchanged; use the runtime marker to identify corrected runs. The default roots are now:
@@ -25,7 +35,7 @@ New training snapshots contain `mpslgp.preference-runtime-version = 2`, which ch
 - Training: `src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2`.
 - Held-out tests: `src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2`.
 
-Pointing corrected training at a legacy run is a configuration error, including with `--skip-existing`. The test launcher rejects training without the v2 marker before writing test outputs or starting workers. The low-level worker checks it too. Historical analysis remains read-only and can still load the old files without relabelling them as v2. For corrected summaries, pass both new roots explicitly; existing paper-analysis configurations still point to the legacy records.
+Pointing corrected training at a legacy run is a configuration error, including with `--skip-existing`. The test launcher rejects training without the v2 marker before writing test outputs or starting workers. The low-level worker checks it too. Historical analysis remains read-only, prints a legacy warning and records its version; it cannot pool legacy and corrected runs. For corrected summaries, pass both new roots explicitly; existing paper-analysis configurations still point to the legacy records.
 
 Two new IDEA configurations make the three-method rerun explicit:
 

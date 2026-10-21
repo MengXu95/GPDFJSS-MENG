@@ -33,6 +33,7 @@ public final class MPSLGPPaperTrainingMainTest {
             testCompletionAndRetry(temp.resolve("resume"));
             testLegacyRuntimeCannotResume(temp.resolve("legacy"));
             testFailures(temp.resolve("fail"));
+            testAmbiguousFinalSelection(temp.resolve("ambiguous"));
             testLock(temp.resolve("lock"));
             testParallel(temp.resolve("parallel"));
             System.out.println("PASS: MPSLGPPaperTrainingMainTest (" + assertions + " assertions)");
@@ -230,6 +231,26 @@ public final class MPSLGPPaperTrainingMainTest {
         check(!Files.exists(directory.resolve("attempt-0002")), "rejected legacy reuse creates no attempt");
     }
 
+    private static void testAmbiguousFinalSelection(Path root) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        check(run(root, output, (command, directory, progress) -> {
+            success(directory);
+            String seed = properties(directory.resolve("effective.params")).getProperty("seed.0");
+            Path stats = directory.resolve("job." + seed + ".out.stat");
+            Files.writeString(stats, Files.readString(stats) + "\nTop N individuals by MPSLGP Task:\n");
+            return 0;
+        }) == 1, "ambiguous final selection is not a completed training run");
+        Path directory = root.resolve("full/IGD/R1/run00");
+        check(!Files.exists(directory.resolve("completed.properties")), "malformed selected rules have no completion marker");
+        check(output.toString("UTF-8").contains("Invalid final task selection"), "strict selection error is reported");
+        check(run(root, output, (command, attempt, progress) -> {
+            success(attempt);
+            return 0;
+        }, "--skip-existing") == 0, "malformed training output can retry with a valid selection");
+        check(properties(directory.resolve("completed.properties")).getProperty("attempt").equals("attempt-0002"),
+                "retry preserves the ambiguous attempt");
+    }
+
     private static void testLock(Path root) throws Exception {
         Path directory = root.resolve("full/IGD/R1/run00");
         Files.createDirectories(directory);
@@ -285,10 +306,12 @@ public final class MPSLGPPaperTrainingMainTest {
         int tasks = Integer.parseInt(p.getProperty("mpslgp.num-tasks"));
         int last = Integer.parseInt(p.getProperty("generations")) - 1;
         String seed = p.getProperty("seed.0");
-        StringBuilder stats = new StringBuilder("Generation: " + last + "\nPARETO FRONTS BY MPSLGP TASK\n");
+        StringBuilder stats = new StringBuilder("Generation: " + last + "\nTop N individuals by MPSLGP Task:\n");
         for (int task = 0; task < tasks; task++) {
-            stats.append("MPSLGP Task ").append(task).append(" Top 1 individuals:\n");
+            stats.append("MPSLGP Task ").append(task).append(" Top 1 individuals:\n")
+                    .append("Evaluated: true\nFitness: [1.0 1.0]\nTree 0:\n(+ PT Pone)\nTree 1:\n(+ WIQ Ptwo)\n");
         }
+        stats.append("PARETO FRONTS BY MPSLGP TASK\n");
         Files.writeString(directory.resolve("job." + seed + ".out.stat"), stats.toString());
         Files.writeString(directory.resolve("job." + seed + ".front.stat"), "0 1.0 1.0\n");
         Files.writeString(directory.resolve("training.log"), "Generation " + last + "\nComplete\n");

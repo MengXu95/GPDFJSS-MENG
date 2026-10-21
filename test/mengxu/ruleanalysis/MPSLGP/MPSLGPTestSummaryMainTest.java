@@ -23,6 +23,17 @@ public final class MPSLGPTestSummaryMainTest {
         check(defaults.algorithms.equals(Arrays.asList("full")) && defaults.indicators.equals(Arrays.asList("IGD"))
                 && defaults.preferences == 200 && defaults.replications == 30 && !defaults.smoke, "formal Full protocol");
         check(defaults.training.endsWith("paper-runs"), "default sibling training root");
+        MPSLGPTestSummaryMain.Run old = new MPSLGPTestSummaryMain.Run("R1", 0, 0, 1);
+        MPSLGPTestSummaryMain.Run corrected = new MPSLGPTestSummaryMain.Run("R1", 0, 1, 1);
+        corrected.preferenceRuntimeVersion = "2";
+        check(MPSLGPTestSummaryMain.requireUniformPreferenceRuntime(Arrays.asList(old)).equals("legacy-v1"),
+                "historical data retains its legacy label");
+        check(MPSLGPTestSummaryMain.requireUniformPreferenceRuntime(Arrays.asList(corrected)).equals("2"),
+                "corrected data retains its runtime label");
+        boolean mixedRejected = false;
+        try { MPSLGPTestSummaryMain.requireUniformPreferenceRuntime(Arrays.asList(old, corrected)); }
+        catch (IOException e) { mixedRejected = e.getMessage().contains("Mixed preference runtimes"); }
+        check(mixedRejected, "mixed old/corrected results cannot be silently pooled");
         check(MPSLGPTestSummaryMain.invalidOutcomePolicy(new String[]{"paper-tests", "summary"}).equals("reject"),
                 "invalid outcomes rejected unless explicitly authorized");
         MPSLGPPaperTestMain.Config full = MPSLGPTestSummaryMain.selection(new String[]{"paper-tests", "summary",

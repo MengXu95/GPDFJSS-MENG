@@ -110,28 +110,16 @@ public class RoutingPhenoCharacterisation extends PhenoCharacterisation {
     public int[] characteriseWithPreference(EvolutionState state, AbstractRule rule, double[] preference) {
         int[] charList = new int[decisionSituations.size()];
 
-        EvolutionState preferenceState = new GPRuleEvolutionStatePSL();
-        preferenceState.initializer = new PSLInitializer();
-        double[][] weightsNew = new double[1][];
-        weightsNew[0] = preference;
-        ((PSLInitializer)preferenceState.initializer).weights = weightsNew;
+        GPRuleEvolutionStatePSL preferenceState = PreferenceStateAccess.forPreference(state, preference);
 
         for (int i = 0; i < decisionSituations.size(); i++) {
             //this is for routing rule
             RoutingDecisionSituation situation = decisionSituations.get(i);
 
             //for normalising the terminals add by mengxu 2024.4.19
-            if(PreferenceStateAccess.supports(state)){
-                if(PreferenceStateAccess.terminalNormalisation(state) == 0){
-                    ((GPRuleEvolutionStatePSL) preferenceState).initialMaxTerminals();
-                    ((GPRuleEvolutionStatePSL) preferenceState).updateMaxTerminals(situation);
-                }
-                else if (PreferenceStateAccess.terminalNormalisation(state)==1){
-                    ((GPRuleEvolutionStatePSL) preferenceState).terminalNormalisation=1;
-                }
-                else{
-                    ((GPRuleEvolutionStatePSL) preferenceState).terminalNormalisation=2;
-                }
+            if(preferenceState.terminalNormalisation == 0){
+                preferenceState.initialMaxTerminals();
+                preferenceState.updateMaxTerminals(situation);
             }
 
             List<OperationOption> queue = situation.getQueue();

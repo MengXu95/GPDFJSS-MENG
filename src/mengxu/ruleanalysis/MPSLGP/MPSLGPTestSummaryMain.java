@@ -49,6 +49,10 @@ public final class MPSLGPTestSummaryMain {
         requireCompletions(markers);
         List<Run> runs = new ArrayList<>();
         for (MPSLGPPaperTestMain.Job job : jobs) { runs.add(read(job, validOnly)); }
+        String runtimeVersion = requireUniformPreferenceRuntime(runs);
+        if (runtimeVersion.equals("legacy-v1")) {
+            System.out.println("WARNING: legacy pre-correction training; this is historical analysis, not corrected MPSLGP evidence.");
+        }
         runs.sort(Comparator.comparingInt((Run run) -> config.scenarios.indexOf(run.group))
                 .thenComparingInt(run -> run.task).thenComparingInt(run -> run.seed));
         Map<Integer, List<double[]>> pools = new TreeMap<>();
@@ -157,6 +161,7 @@ public final class MPSLGPTestSummaryMain {
                 : "Reject invalid-fitness sentinels");
         protocol.put("test.root", config.output.toString());
         protocol.put("training.root", config.training.toString());
+        protocol.put("preference.runtime.version", runtimeVersion);
         protocol.put("table.vii", "MPSLGP-only descriptive indicators; published PSLGP-I columns are not recomputed or calibrated here");
         protocol.put("statistical.unit", "One trained heuristic per target task and training seed");
         protocol.put("standard.deviation", "Sample standard deviation, denominator n-1, n=" + config.runs);
@@ -285,6 +290,11 @@ public final class MPSLGPTestSummaryMain {
             run.inputs.put(path, hash);
         }
         Properties training = readProperties(Paths.get(spec.get("source.params")));
+        String runtime = training.getProperty(yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER);
+        if (runtime != null && !runtime.equals("1") && !runtime.equals(yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION)) {
+            throw new IOException("Unsupported training preference runtime: " + runtime);
+        }
+        run.preferenceRuntimeVersion = runtime == null || runtime.equals("1") ? "legacy-v1" : runtime;
         for (String[] field : new String[][]{{"pop.subpop.0.size", "1000"}, {"generations", "50"},
                 {"seed.0", Integer.toString(job.run)}, {"compare-criteria", "IGD"},
                 {"mpslgp.adaptive-transfer", Boolean.toString(job.algorithm.equals("full"))},
@@ -324,6 +334,17 @@ public final class MPSLGPTestSummaryMain {
         return run;
     }
 
+    static String requireUniformPreferenceRuntime(List<Run> runs) throws IOException {
+        if (runs.isEmpty()) { throw new IOException("No training runs selected."); }
+        String version = runs.get(0).preferenceRuntimeVersion;
+        for (Run run : runs) {
+            if (!version.equals(run.preferenceRuntimeVersion)) {
+                throw new IOException("Mixed preference runtimes in one analysis. Keep legacy and corrected experiments separate.");
+            }
+        }
+        return version;
+    }
+
     private static void require(Properties properties, String key, String expected) throws IOException {
         if (!expected.equals(properties.getProperty(key))) { throw new IOException("Metadata mismatch: " + key); }
     }
@@ -337,6 +358,7 @@ public final class MPSLGPTestSummaryMain {
         double[] values;
         int seqNodes, routingNodes;
         long trainingSeconds, testingSeconds;
+        String preferenceRuntimeVersion = "legacy-v1";
         Run(String group, int task, int seed, int scenario) {
             this.group = group; this.task = task; this.seed = seed; this.scenario = scenario;
         }

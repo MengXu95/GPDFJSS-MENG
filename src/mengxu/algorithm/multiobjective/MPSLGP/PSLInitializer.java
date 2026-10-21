@@ -1214,6 +1214,10 @@ public class PSLInitializer extends GPInitializer {
 
 	private void initWeightsWithBoundaryRelaxationStrategy_new(final EvolutionState state) {
 		weights = new double[state.numGenerations][numObjectives];
+		if (state.numGenerations == 1 && numObjectives == 2) {
+			weights[0] = new double[]{0.5, 0.5};
+			return;
+		}
 		int[] perm = new int[state.numGenerations];
 		MOEADUtils.randomPermutation(state,0,perm,state.numGenerations);
 		int numOutsideBoundary = (int) (state.numGenerations * 0.1);

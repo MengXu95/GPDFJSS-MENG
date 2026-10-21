@@ -59,6 +59,8 @@ public final class MPSLGPPaperTestMain {
     static int execute(String[] args, PrintStream out, ProcessRunner runner) throws Exception {
         Config config = Config.parse(args);
         if (config.help) { usage(out); return 0; }
+        yimei.jss.gp.PreferenceStateAccess.verifyRuntime();
+        out.println("Preference runtime v2 self-check PASSED: actual GP nodes, evaluator binding and phenotype inputs.");
         List<Job> jobs = plan(config);
         for (Job job : jobs) { requireCurrentPreferenceRuntime(job.spec); }
         Files.createDirectories(config.output.resolve("batches"));
@@ -275,6 +277,7 @@ public final class MPSLGPPaperTestMain {
                 out.println("[TEST DRY-RUN] " + identity() + " set=" + setName + " source=" + spec.get("source.stats"));
                 return new Result(this, "PLANNED", 0, directory, "No simulation started");
             }
+            Map<String, String> runtimeBefore = yimei.jss.gp.PreferenceStateAccess.runtimeProvenance();
             Path attempt = nextAttempt(directory);
             atomicWrite(attempt.resolve("test.properties"), serialized);
             atomicWrite(attempt.resolve("selected-heuristic.properties"), selectedProperties(spec));
@@ -290,6 +293,10 @@ public final class MPSLGPPaperTestMain {
                 if (exit != 0) { throw new IOException("Worker exit code " + exit + "; log=" + attempt.resolve("testing.log")); }
                 int invalidRows = validateOutputs(attempt, spec);
                 verifySource(spec);
+                Map<String, String> runtimeAfter = yimei.jss.gp.PreferenceStateAccess.runtimeProvenance();
+                if (!runtimeBefore.equals(runtimeAfter)) {
+                    throw new IOException("Runtime class files changed during testing; stop rebuilding and retry.");
+                }
                 long seconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start);
                 Map<String, String> result = new TreeMap<>();
                 result.put("status", "COMPLETED");
@@ -299,6 +306,7 @@ public final class MPSLGPPaperTestMain {
                 result.put("duration.seconds", Long.toString(seconds));
                 result.put("invalid.preference.rows", Integer.toString(invalidRows));
                 result.put("valid.preference.rows", Integer.toString(config.preferences - invalidRows));
+                result.putAll(runtimeAfter);
                 for (String artifact : artifacts()) { result.put("sha256." + artifact, fileHash(attempt.resolve(artifact))); }
                 atomicWrite(attempt.resolve("status.properties"), serialize(result));
                 atomicWrite(markerFile, serialize(result));
@@ -357,6 +365,7 @@ public final class MPSLGPPaperTestMain {
         for (String key : input.stringPropertyNames()) { spec.put(key, input.getProperty(key)); }
         if (!FORMAT.equals(spec.get("format"))) { throw new IOException("Unsupported test configuration format."); }
         requireCurrentPreferenceRuntime(spec);
+        yimei.jss.gp.PreferenceStateAccess.verifyRuntime();
         verifySource(spec);
         int task = Integer.parseInt(spec.get("task"));
         int generation = Integer.parseInt(spec.get("generation"));

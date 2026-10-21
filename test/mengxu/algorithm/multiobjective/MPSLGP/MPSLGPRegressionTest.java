@@ -30,6 +30,7 @@ public class MPSLGPRegressionTest {
         }
         testTaskInitialization();
         testConfigurationOverrides();
+        testOneGenerationPreferences();
         testSurrogateCacheAlignment();
         testTaskLocalSurrogate();
         testTaskReferenceIsolation();
@@ -90,6 +91,16 @@ public class MPSLGPRegressionTest {
         } finally {
             state.output.close();
         }
+    }
+
+    private static void testOneGenerationPreferences() {
+        GPRuleEvolutionStatePSL state = initializedState("generations", "1", "num-preferences-for-HV", "3");
+        try {
+            double[][] weights = ((PSLInitializer)state.initializer).weights;
+            require(weights.length == 1, "One generation needs one preference vector.");
+            requireClose(.5, weights[0][0], "Single-generation first preference");
+            requireClose(.5, weights[0][1], "Single-generation second preference");
+        } finally { state.output.close(); }
     }
 
     private static GPRuleEvolutionStatePSL adaptiveState(double[][][] utilities) throws ReflectiveOperationException {

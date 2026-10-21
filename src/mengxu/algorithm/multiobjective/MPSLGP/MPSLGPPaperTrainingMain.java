@@ -67,6 +67,8 @@ public final class MPSLGPPaperTrainingMain {
             usage(out);
             return 0;
         }
+        yimei.jss.gp.PreferenceStateAccess.verifyRuntime();
+        out.println("Preference runtime v2 self-check PASSED: actual GP nodes, evaluator binding and phenotype inputs.");
         Map<String, String> base = loadParameters(config.param);
         List<Job> jobs = new ArrayList<>();
         for (String algorithm : config.algorithms) {
@@ -254,9 +256,10 @@ public final class MPSLGPPaperTrainingMain {
                 }
                 out.println("[RETRY] " + identity() + " " + invalid + "; preserving the previous attempt");
             }
+            Map<String, String> runtimeBefore = yimei.jss.gp.PreferenceStateAccess.runtimeProvenance();
             Map<String, String> metadata = new TreeMap<>();
             metadata.put("format", FORMAT);
-            metadata.put("preference.runtime.version", yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION);
+            metadata.putAll(runtimeBefore);
             metadata.put("configuration.sha256", fingerprint);
             metadata.put("algorithm", algorithm);
             metadata.put("description", ALGORITHMS.get(algorithm));
@@ -292,6 +295,10 @@ public final class MPSLGPPaperTrainingMain {
                 int exit = runner.run(command, attempt, line -> out.println("[GEN] " + identity() + " " + line));
                 long seconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start);
                 String invalid = exit == 0 ? invalidOutputs(attempt) : "Training process exited with code " + exit;
+                Map<String, String> runtimeAfter = yimei.jss.gp.PreferenceStateAccess.runtimeProvenance();
+                if (exit == 0 && !runtimeBefore.equals(runtimeAfter)) {
+                    invalid = "Runtime class files changed during training; stop rebuilding and retry in a stable build.";
+                }
                 Map<String, String> outcome = new TreeMap<>();
                 outcome.put("configuration.sha256", fingerprint);
                 outcome.put("attempt", attempt.getFileName().toString());
@@ -299,6 +306,7 @@ public final class MPSLGPPaperTrainingMain {
                 outcome.put("finished", Instant.now().toString());
                 outcome.put("exit.code", Integer.toString(exit));
                 outcome.put("duration.seconds", Long.toString(seconds));
+                outcome.putAll(runtimeAfter);
                 if (invalid != null) {
                     outcome.put("status", "FAILED");
                     outcome.put("reason", invalid);
@@ -365,6 +373,14 @@ public final class MPSLGPPaperTrainingMain {
                 if (!stats.contains("MPSLGP Task " + task + " Top 1 individuals:")) {
                     return "No selected final heuristic for task " + task;
                 }
+            }
+            try {
+                for (int task = 0; task < scenario.tasks.length; task++) {
+                    mengxu.ruleanalysis.MPSLGP.ParetoSetLearningMultipleTreeResultFileReader
+                            .readFinalTaskHeuristic(attempt.resolve(statName()), task, config.generations - 1);
+                }
+            } catch (IOException e) {
+                return "Invalid final task selection: " + e.getMessage();
             }
             return null;
         }
