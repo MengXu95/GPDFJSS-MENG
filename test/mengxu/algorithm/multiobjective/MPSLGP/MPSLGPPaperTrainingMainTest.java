@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public final class MPSLGPPaperTrainingMainTest {
@@ -27,6 +29,7 @@ public final class MPSLGPPaperTrainingMainTest {
         Path temp = Files.createTempDirectory("mpslgp-runner-test-");
         try {
             testProfiles();
+            testSavedConfiguration();
             testArguments();
             testSerialization();
             testDryRun(temp.resolve("dry"));
@@ -35,7 +38,8 @@ public final class MPSLGPPaperTrainingMainTest {
             testFailures(temp.resolve("fail"));
             testAmbiguousFinalSelection(temp.resolve("ambiguous"));
             testLock(temp.resolve("lock"));
-            testParallel(temp.resolve("parallel"));
+            testParallel(temp.resolve("parallel-two"), 2);
+            testParallel(temp.resolve("parallel-five"), 5);
             System.out.println("PASS: MPSLGPPaperTrainingMainTest (" + assertions + " assertions)");
         } finally {
             try (Stream<Path> paths = Files.walk(temp)) {
@@ -96,6 +100,48 @@ public final class MPSLGPPaperTrainingMainTest {
             for (int task : scenario.tasks) { coverage[task]++; }
         }
         for (int task = 1; task <= 10; task++) { check(coverage[task] > 0, "scenario " + task + " covered"); }
+    }
+
+    private static void testSavedConfiguration() throws Exception {
+        Path configFile = Path.of(".run", "MPSLGP Paper Training.run.xml");
+        org.w3c.dom.Document document = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder().parse(configFile.toFile());
+        org.w3c.dom.Element configuration = (org.w3c.dom.Element) document
+                .getElementsByTagName("configuration").item(0);
+        check(configuration.getAttribute("name").equals("MPSLGP Paper Training"), "saved training name");
+        Map<String, String> options = new TreeMap<>();
+        org.w3c.dom.NodeList nodes = configuration.getElementsByTagName("option");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            org.w3c.dom.Element node = (org.w3c.dom.Element) nodes.item(i);
+            options.put(node.getAttribute("name"), node.getAttribute("value"));
+            if (node.getAttribute("name").equals("Make")) {
+                check(node.getAttribute("enabled").equals("true"), "saved training builds before launch");
+            }
+        }
+        check(options.containsKey("Make"), "saved training has a build step");
+        check(options.get("MAIN_CLASS_NAME").equals(MPSLGPPaperTrainingMain.class.getName()), "saved training main");
+        check(options.get("WORKING_DIRECTORY").equals("$PROJECT_DIR$"), "saved training working directory");
+        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED"), "saved training VM access");
+        String arguments = options.get("PROGRAM_PARAMETERS");
+        for (String algorithm : MPSLGPPaperTrainingMain.ALGORITHMS.keySet()) {
+            MPSLGPPaperTrainingMain.Config c = MPSLGPPaperTrainingMain.Config.parse(
+                    arguments.replace("--algorithms full", "--algorithms " + algorithm).split("\\s+"));
+            check(c.algorithms.equals(Arrays.asList(algorithm)), "saved training algorithm selection " + algorithm);
+            check(c.scenarios.equals(new ArrayList<>(MPSLGPPaperTrainingMain.SCENARIOS.keySet()))
+                    && c.runs == 30 && c.startRun == 0, "saved training all groups and seeds " + algorithm);
+            check(c.scenarios.size() * c.runs == 240, "saved training has 240 jobs per profile");
+            check(c.parallel == 5 && c.heap.equals("2g") && c.skipExisting, "saved training five workers and resume");
+            check(!c.smoke && !c.dryRun && c.indicators.equals(Arrays.asList("IGD")), "saved training formal IGD budget");
+            check(c.results.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
+                    "paper-runs-preference-v2").toAbsolutePath().normalize()), "saved training v2 output root");
+        }
+        try (Stream<Path> files = Files.list(Path.of(".run"))) {
+            List<String> names = new ArrayList<>();
+            files.map(path -> path.getFileName().toString()).filter(name -> name.startsWith("MPSLGP"))
+                    .sorted().forEach(names::add);
+            check(names.equals(Arrays.asList("MPSLGP Paper Test.run.xml", "MPSLGP Paper Training.run.xml")),
+                    "only two saved MPSLGP configurations");
+        }
     }
 
     private static void testArguments() {
@@ -263,24 +309,29 @@ public final class MPSLGPPaperTrainingMainTest {
         }
     }
 
-    private static void testParallel(Path root) throws Exception {
+    private static void testParallel(Path root, int workers) throws Exception {
         AtomicInteger active = new AtomicInteger();
         AtomicInteger peak = new AtomicInteger();
         AtomicInteger done = new AtomicInteger();
+        CountDownLatch started = new CountDownLatch(workers);
         int status = MPSLGPPaperTrainingMain.execute(new String[]{"--results", root.toString(),
-                "--algorithms", "full", "--scenarios", "R1", "--runs", "4", "--parallel", "2"},
+                "--algorithms", "full", "--scenarios", "R1", "--runs", Integer.toString(workers * 2),
+                "--parallel", Integer.toString(workers), "--skip-existing"},
                 new PrintStream(new ByteArrayOutputStream()), (command, directory, progress) -> {
                     int count = active.incrementAndGet();
                     peak.accumulateAndGet(count, Math::max);
                     try {
-                        Thread.sleep(25);
+                        started.countDown();
+                        if (!started.await(10, TimeUnit.SECONDS)) {
+                            throw new IOException("Expected " + workers + " concurrent training jobs did not start.");
+                        }
                         success(directory);
                         done.incrementAndGet();
                         return 0;
                     } finally { active.decrementAndGet(); }
                 });
-        check(status == 0 && done.get() == 4, "all parallel runs complete");
-        check(peak.get() == 2, "parallelism limit");
+        check(status == 0 && done.get() == workers * 2 && active.get() == 0, "all parallel training jobs complete");
+        check(peak.get() == workers, "exact training parallelism cap " + workers);
     }
 
     private static int run(Path root, ByteArrayOutputStream output,

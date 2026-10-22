@@ -48,6 +48,7 @@ public final class MPSLGPPaperTestMainTest {
             fixture(training, "R2", new int[]{3, 4});
             fixture(training, "R5", new int[]{8, 9});
             testArguments();
+            testSavedConfiguration();
             testPlan(training, temp.resolve("plan"));
             testLegacyTrainingReadOnly(temp.resolve("legacy-training"), temp.resolve("legacy-output"));
             testResume(training, temp.resolve("resume"));
@@ -92,6 +93,43 @@ public final class MPSLGPPaperTestMainTest {
             try { MPSLGPPaperTestMain.Config.parse(invalid); }
             catch (IllegalArgumentException e) { rejected = true; }
             check(rejected, "reject " + Arrays.toString(invalid));
+        }
+    }
+
+    private static void testSavedConfiguration() throws Exception {
+        org.w3c.dom.Document document = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder().parse(Path.of(".run", "MPSLGP Paper Test.run.xml").toFile());
+        org.w3c.dom.Element configuration = (org.w3c.dom.Element)document.getElementsByTagName("configuration").item(0);
+        check(configuration.getAttribute("name").equals("MPSLGP Paper Test"), "saved testing name");
+        Map<String, String> options = new TreeMap<>();
+        org.w3c.dom.NodeList nodes = configuration.getElementsByTagName("option");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            org.w3c.dom.Element node = (org.w3c.dom.Element)nodes.item(i);
+            options.put(node.getAttribute("name"), node.getAttribute("value"));
+            if (node.getAttribute("name").equals("Make")) {
+                check(node.getAttribute("enabled").equals("true"), "saved testing builds before launch");
+            }
+        }
+        check(options.containsKey("Make"), "saved testing has a build step");
+        check(options.get("MAIN_CLASS_NAME").equals(MPSLGPPaperTestMain.class.getName()), "saved testing main");
+        check(options.get("WORKING_DIRECTORY").equals("$PROJECT_DIR$"), "saved testing working directory");
+        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED"), "saved testing VM access");
+        String arguments = options.get("PROGRAM_PARAMETERS");
+        for (String algorithm : Arrays.asList("full", "no-transfer", "fixed-transfer", "task-pair",
+                "survival-only", "no-gate", "primary-task")) {
+            MPSLGPPaperTestMain.Config c = MPSLGPPaperTestMain.Config.parse(
+                    arguments.replace("--algorithms full", "--algorithms " + algorithm).split("\\s+"));
+            check(c.algorithms.equals(Arrays.asList(algorithm)), "saved testing algorithm selection " + algorithm);
+            check(c.scenarios.equals(Arrays.asList("R1", "R2", "R3", "R4", "R5", "H1", "H2", "H3"))
+                    && c.runs == 30 && c.startRun == 0 && c.tasks.isEmpty(), "saved testing all groups/seeds/tasks " + algorithm);
+            check(c.preferences == 200 && c.replications == 30 && !c.smoke && !c.dryRun,
+                    "saved testing formal protocol " + algorithm);
+            check(c.parallel == 5 && c.heap.equals("2g") && c.skipExisting, "saved testing five workers and resume");
+            check(c.indicators.equals(Arrays.asList("IGD")), "saved testing IGD selection");
+            check(c.training.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
+                    "paper-runs-preference-v2").toAbsolutePath().normalize()), "saved testing reads corrected training");
+            check(c.output.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
+                    "paper-tests-preference-v2").toAbsolutePath().normalize()), "saved testing separate v2 output");
         }
     }
 

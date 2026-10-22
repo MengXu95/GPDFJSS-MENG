@@ -22,7 +22,7 @@ Shared terminal evaluation, simulation-state binding, decision-time normalisatio
 
 Before training or testing, an automatic self-check runs the actual loaded GP nodes, both training-evaluator overloads and routing/sequencing phenotype code on fixed inputs. It checks `20/80` and `80/20`, rejects missing contexts, and starts no scheduling simulation. A stale terminal or phenotype class causes an explicit `Rebuild Project` error. The same check runs inside each worker JVM and in direct MPSLGP state setup.
 
-In IDEA, run [MPSLGP Preference Runtime Check](../../../../../.run/MPSLGP%20Preference%20Runtime%20Check.run.xml) after **Build > Rebuild Project**. It prints the loaded class location and class-file hashes without launching an experiment. New run metadata records the check and critical class hashes. If those class files change during a training/test task, the task fails rather than being marked completed; do not rebuild while an experiment is running.
+Use **Build > Rebuild Project** before starting a batch. Both saved configurations run the preference self-check automatically. For a standalone check without an experiment, run the `mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPreferenceRuntimeCheck` main class directly; it prints the loaded class location and class-file hashes. New run metadata records the check and critical class hashes. If those class files change during a training/test task, the task fails rather than being marked completed; do not rebuild while an experiment is running.
 
 These checks guard the specified input and execution paths; they are not a proof that every future algorithm change is correct. The regressions deliberately place stale classes first on a child JVM's classpath and confirm that startup refuses them. Single-generation training uses the valid midpoint preference `(0.5,0.5)` rather than an undefined grid.
 
@@ -35,16 +35,18 @@ New training snapshots contain `mpslgp.preference-runtime-version = 2`, which ch
 - Training: `src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2`.
 - Held-out tests: `src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2`.
 
-Pointing corrected training at a legacy run is a configuration error, including with `--skip-existing`. The test launcher rejects training without the v2 marker before writing test outputs or starting workers. The low-level worker checks it too. Historical analysis remains read-only, prints a legacy warning and records its version; it cannot pool legacy and corrected runs. For corrected summaries, pass both new roots explicitly; existing paper-analysis configurations still point to the legacy records.
+Pointing corrected training at a legacy run is a configuration error, including with `--skip-existing`. The test launcher rejects training without the v2 marker before writing test outputs or starting workers. The low-level worker checks it too. Historical analysis remains read-only, prints a legacy warning and records its version; it cannot pool legacy and corrected runs. For corrected summaries, pass both new roots explicitly. Analysis tools remain available as Java entry points rather than saved IDEA configurations.
 
-Two new IDEA configurations make the three-method rerun explicit:
+Only two MPSLGP IDEA configurations are kept:
 
 | Configuration | Work |
 | --- | --- |
-| [MPSLGP Preference V2 Ablation Training](../../../../../.run/MPSLGP%20Preference%20V2%20Ablation%20Training.run.xml) | Full, no-transfer and fixed-transfer; all eight groups, 30 seeds, IGD; 720 training jobs, up to four child JVMs. |
-| [MPSLGP Preference V2 Ablation Test Parallel 5](../../../../../.run/MPSLGP%20Preference%20V2%20Ablation%20Test%20Parallel%205.run.xml) | The matching 1,620 task tests, each with 200 preferences and 30 replications; five child JVMs with 2 GB heap each. Run only after training finishes. |
+| [MPSLGP Paper Training](../../../../../.run/MPSLGP%20Paper%20Training.run.xml) | Selected algorithm, all eight groups, seeds 0--29, IGD; 240 training jobs per algorithm, up to five child JVMs. |
+| [MPSLGP Paper Test](../../../../../.run/MPSLGP%20Paper%20Test.run.xml) | Matching 540 task tests per algorithm, each with 200 preferences and 30 replications; up to five child JVMs. Run only after the selected training finishes. |
 
-Both use the new roots explicitly and build before launch. The older training/testing configurations also use the corrected defaults unless an explicit path overrides them. To run just one method, change `--algorithms` to `full`, `no-transfer` or `fixed-transfer`; do not change the roots back to the legacy directories.
+Both default to `--algorithms full`, use the new roots explicitly, build before launch, and include `--parallel 5 --heap 2g --skip-existing`. Change the `--algorithms` value in **both** configurations to select a profile. The seven choices are `full`, `no-transfer`, `fixed-transfer`, `task-pair`, `survival-only`, `no-gate` and `primary-task`. A comma-separated list such as `full,no-transfer,fixed-transfer` schedules those methods under the same global five-worker cap. Do not change the roots back to the legacy directories. Other shared run configurations, including GPMain, are removed; their Java entry points remain available.
+
+IDEA also stores temporary configurations locally in `.idea/workspace.xml`. To remove old entries there, close IDEA first, remove only obsolete RunManager configurations/list entries, then reopen the project. Keep the two shared configurations above; do not remove their program arguments. The project-local list has been cleaned to select Training by default.
 
 Start with a dry run and a small smoke run, not the full batch. The regression checks below cover actual GP-node values, both evaluation-model overloads, replication loops, routing/sequencing phenotype contexts, original-test numerical parity, and rejection of legacy completion records.
 
@@ -142,20 +144,15 @@ To train every profile under every indicator, use `--indicators IGD,HV,GD` witho
 
 The shared configurations in `.run` use module **GPDFJSS-MENG**, main class **`mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPaperTrainingMain`**, working directory **`$PROJECT_DIR$`**, VM option **`--add-opens java.base/java.lang=ALL-UNNAMED`**, and **Make** before launch:
 
-| Configuration | Program arguments | Intended use |
-| --- | --- | --- |
-| `MPSLGP Paper Dry Run` | `--dry-run --runs 1 --skip-existing` | Inspect all profiles/scenarios without training. |
-| `MPSLGP Paper Training` | `--algorithms fixed-transfer --parallel 4 --skip-existing` | Current saved selection: 240 fixed-transfer jobs. With no algorithm selector, the CLI default is all seven profiles. |
-| [MPSLGP Paper No Transfer](../../../../../.run/MPSLGP%20Paper%20No%20Transfer.run.xml) | `--algorithms no-transfer --parallel 4 --skip-existing` | No-transfer only: 240 paper training jobs, four concurrent child JVMs with the default 2 GB heap each. |
-| [MPSLGP Full R1 H3 - 5 Seeds](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --parallel 1 --skip-existing` | Full MPSLGP only: five seeds (0--4) for each of R1 and H3, ten jobs in total. |
-| `MPSLGP Paper Smoke` | `--smoke --scenarios R1,H3 --runs 1 --skip-existing` | Isolated 14-job training smoke batch. |
-| `MPSLGP Paper Indicator Robustness` | `--algorithms full --indicators IGD,HV,GD --skip-existing` | Full-profile aggregation-indicator comparison. |
+Select [MPSLGP Paper Training](../../../../../.run/MPSLGP%20Paper%20Training.run.xml). Its saved program arguments are:
 
-The five-seed configuration uses the formal paper budget (total population 1,000 and 50 evaluated generations), not the smoke budget. R1 contains two same-objective tasks; H3 contains three tasks with mixed objective pairs. Each scenario runs seeds 0, 1, 2, 3, and 4 sequentially, and verified completed runs are skipped.
+```text
+--algorithms full --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --parallel 5 --heap 2g --skip-existing --results src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2
+```
 
-The child heap is controlled by the runner's `--heap`, not by increasing only the launcher's IntelliJ heap. These configurations do not start final held-out testing.
+Edit `--algorithms` in **Run > Edit Configurations > Program arguments**. Changing it to `no-transfer`, for example, trains that profile across all eight groups and seeds 0--29. Each profile has 240 training jobs. Five independent group/seed jobs can overlap; a free worker starts the next queued job. The formal population, generation and simulation budgets are unchanged.
 
-Select **MPSLGP Paper No Transfer** from IntelliJ's Run configuration list to train the no-transfer profile without changing the other launcher settings. It uses the standard paper budget and seeds 0--29, writes to `paper-runs-preference-v2\no-transfer\IGD`, and skips matching verified completions. Four child JVMs can use 8 GB of heap in total, plus JVM and IDE overhead.
+The child heap is controlled by `--heap`, not by the launcher's own IDEA heap. Five children can use **10 GB** of heap in total, plus JVM and IDE overhead. Training does not start held-out testing automatically. `--skip-existing` skips only matching, verified completed jobs; its supported alias is `--skip existing`, not `-skip existing`.
 
 ### Results, completion checks, and resuming
 
@@ -226,30 +223,25 @@ $main = 'mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain'
 & $java --add-opens java.base/java.lang=ALL-UNNAMED -cp $cp $main --algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing
 ```
 
-The following shared IDEA configurations use module **GPDFJSS-MENG**, main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain`**, working directory **`$PROJECT_DIR$`**, VM option **`--add-opens java.base/java.lang=ALL-UNNAMED`**, and **Make** before launch, matching the training configurations:
+Select [MPSLGP Paper Test](../../../../../.run/MPSLGP%20Paper%20Test.run.xml). It uses module **GPDFJSS-MENG**, main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain`**, working directory **`$PROJECT_DIR$`**, VM option **`--add-opens java.base/java.lang=ALL-UNNAMED`**, and **Make** before launch. Its saved program arguments are:
 
-| Configuration | Program arguments | Intended use |
-| --- | --- | --- |
-| [MPSLGP Full R1 H3 5 Seeds Test](../../../../../.run/MPSLGP%20Full%20R1%20H3%205%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | Formal 25-task test batch; 150,000 replications before verified skips. |
-| [MPSLGP Full R1 H3 Test Dry Run](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Dry%20Run.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 5 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing --dry-run` | Inspect the same formal batch without simulations. |
-| [MPSLGP Full R1 H3 Test Smoke](../../../../../.run/MPSLGP%20Full%20R1%20H3%20Test%20Smoke.run.xml) | `--algorithms full --indicators IGD --scenarios R1,H3 --runs 1 --start-run 0 --smoke --parallel 1 --skip-existing` | Separate test-smoke namespace; defaults to three preferences and one replication. |
-| [MPSLGP Full All Groups 30 Seeds Test](../../../../../.run/MPSLGP%20Full%20All%20Groups%2030%20Seeds%20Test.run.xml) | `--algorithms full --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 1 --skip-existing` | All 240 Full training runs: 540 task tests and 3,240,000 replications before verified skips. |
-| [MPSLGP Paper Test Parallel 5](../../../../../.run/MPSLGP%20Paper%20Test%20Parallel%205.run.xml) | `--algorithms fixed-transfer --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 5 --heap 2g --skip-existing` | Up to five selected task heuristics tested concurrently; child heaps total at most 10 GB. |
-| [MPSLGP Paper Test Parallel 8](../../../../../.run/MPSLGP%20Paper%20Test%20Parallel%208.run.xml) | `--algorithms fixed-transfer --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 8 --heap 2g --skip-existing` | Up to eight selected task heuristics tested concurrently; child heaps total at most 16 GB. |
+```text
+--algorithms full --indicators IGD --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --preferences 200 --replications 30 --parallel 5 --heap 2g --skip-existing --training-root src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2 --output src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2
+```
 
-The all-group configuration covers 18 group/task targets (six two-task groups and two three-task groups) over seeds 0--29. It reuses the formal test namespace and skips intact matching completed tests, including the initial 25 R1/H3 task tests. Training completion alone does not provide these held-out metrics. The configuration does not launch automatically; start it only when the additional computation is intended.
+Set `--algorithms` to the same selection as training. Each algorithm covers 18 group/task targets (six two-task groups and two three-task groups) over seeds 0--29: **540 task tests**, or 3,240,000 replications before verified skips. Missing training completions are errors; finish the selected training batch first. The configuration starts no training.
 
 ### Parallel testing of five or more heuristics
 
-Select **MPSLGP Paper Test Parallel 5** in IDEA to test up to five task heuristics at once. The new parallel configurations default to `fixed-transfer`, matching the current test batch. Change only the `--algorithms` value to test another completed profile; the configurations do not retrain it.
+Select **MPSLGP Paper Test** in IDEA to test up to five task heuristics at once. It defaults to `full`; change `--algorithms` to test another completed profile without retraining it.
 
 Each task job tests one final training-selected sequencing/routing pair in its **own child JVM**. Its 200 preferences and 30 replications per preference are unchanged. `--parallel 5` does not mean Top-5 candidates, five ensembles, or a reduced test set. The worker processes isolate the simulation and GP state. Completed jobs free a worker slot for the next queued task.
 
-The existing runner already accepts any positive `--parallel N`. Five and eight are ready-to-use configurations, not hard-coded limits. Start with five. With `--heap 2g`, five children can use 10 GB of heap and eight can use 16 GB; allow extra memory for JVM overhead, IDEA and any other training/testing processes. The launcher's own VM heap setting does not replace `--heap`.
+The runner accepts any positive `--parallel N`; the saved configuration uses five. With `--heap 2g`, five children can use 10 GB of heap; allow extra memory for JVM overhead and IDEA. The launcher's own VM heap setting does not replace `--heap`. Avoid running training and testing simultaneously: each has its own worker cap and builds before launch, so concurrent launchers can exceed the memory budget or change class files during an active experiment.
 
 `--skip-existing` reuses verified results even if the concurrency changes. Stop an older test launcher before resuming the **same batch** with a parallel configuration, so two launchers do not compete for the same task locks. Existing failed attempts are preserved and matching unfinished tasks are retried. Do not manually copy or delete results to change the parallelism.
 
-Append `--dry-run` to either configuration to verify inputs and export a plan without starting worker JVMs. The startup log reports the maximum worker count and each worker's heap. The parallel regression tests use synchronized fake workers to prove five/eight tasks can overlap, never exceed the selected cap, keep task files separate, and reuse completed outputs after changing concurrency.
+Append `--dry-run` temporarily to the training or test configuration to verify its plan without starting worker JVMs, then remove it for real runs. The test dry run still requires completed training. The startup log reports the worker count and heap. Synchronized regression workers verify that five training jobs and five test tasks can overlap without exceeding their caps; test coverage also checks eight-worker support and resuming after a concurrency change.
 
 ### Test outputs, aggregation, and resuming
 
@@ -289,10 +281,10 @@ An equal test protocol does **not** erase training-budget differences: MPSLGP us
 
 `mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain` validates a complete selection of formal Full/IGD results and writes per-run indicators, mean/sample-standard-deviation summaries, normalized reference fronts, an explicit metric protocol, and input hashes. Its first two arguments are the test root and a **new** output directory. With no other options it preserves the original R1/H3 seeds 0--4 selection. Optional `--scenarios`, `--runs`, and `--start-run` select a different scope; `--training-root` overrides the default sibling `paper-runs` source. `--invalid-outcomes reject` is the default; `--invalid-outcomes valid-only` explicitly selects conditional metrics over valid preferences, retaining every seed and separately auditing excluded outcomes. At least two runs are required for sample standard deviation. A seed with no valid preferences remains an error. `--self-test` checks the metric arithmetic without loading results.
 
-For the complete Full batch, first finish **MPSLGP Full All Groups 30 Seeds Test**, then select [MPSLGP Full All Groups 30 Seeds Summary](../../../../../.run/MPSLGP%20Full%20All%20Groups%2030%20Seeds%20Summary.run.xml) in IDEA. The summary uses main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain`** and these arguments:
+For the complete Full batch, first finish **MPSLGP Paper Test** with `--algorithms full`. Summary shortcuts are no longer saved in IDEA; run main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPTestSummaryMain`** directly with these arguments and a new output directory:
 
 ```text
-"$PROJECT_DIR$\src\mengxu\ruleanalysis\MPSLGP\paper-tests" "$PROJECT_DIR$\src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\results\full-all-groups-thirty-seeds" --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --invalid-outcomes valid-only
+"$PROJECT_DIR$\src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2" "$PROJECT_DIR$\src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\results\full-all-groups-thirty-seeds-v2" --training-root "$PROJECT_DIR$\src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2" --scenarios R1,R2,R3,R4,R5,H1,H2,H3 --runs 30 --start-run 0 --invalid-outcomes valid-only
 ```
 
 The summary launches no simulations. It verifies the selected training jobs and every expected held-out completion, protocol, source hash, and output before creating the summary directory. Missing tests are explicit errors; it never silently uses fewer seeds. Complete inputs produce 540 per-task run rows, 108,000 preference outcomes and 18 group/task summary rows. `table-vii-mpslgp.csv` contains the MPSLGP HV/IGD/GD means and sample standard deviations; `table-viii.csv` contains the distinct/nondominated outcome and tree-node summaries. Published PSLGP-I values are not recomputed by this program. Rerunning a summary requires a new output directory to preserve its reference data and provenance.
@@ -316,13 +308,13 @@ These are **descriptive MPSLGP-only metrics**, not numbers calibrated to the pub
 
 ## Transfer ablation
 
-Select [MPSLGP Three Method Transfer Ablation](../../../../../.run/MPSLGP%20Three%20Method%20Transfer%20Ablation.run.xml) in IntelliJ IDEA to run [`MPSLGPTransferAblationMain`](../../../ruleanalysis/MPSLGP/MPSLGPTransferAblationMain.java) for **full, no-transfer and fixed-transfer**. It reads completed training/tests only and launches no simulations. The configuration covers all eight groups and seeds 0--29, using the established conditional valid-only protocol:
+Run [`MPSLGPTransferAblationMain`](../../../ruleanalysis/MPSLGP/MPSLGPTransferAblationMain.java) directly for **full, no-transfer and fixed-transfer**; no analysis shortcut is saved in IDEA. It reads completed training/tests only and launches no simulations. For corrected results, pass the v2 roots and a new output directory:
 
 ```text
---algorithms full,no-transfer,fixed-transfer --invalid-outcomes valid-only
+--algorithms full,no-transfer,fixed-transfer --tests src\mengxu\ruleanalysis\MPSLGP\paper-tests-preference-v2 --training-root src\mengxu\ruleanalysis\MPSLGP\paper-runs-preference-v2 --output src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft\results\full-vs-no-vs-fixed-transfer-thirty-seeds-v2 --invalid-outcomes valid-only
 ```
 
-The original [MPSLGP Full vs No Transfer Ablation](../../../../../.run/MPSLGP%20Full%20vs%20No%20Transfer%20Ablation.run.xml) still runs the two-method comparison. Without `--algorithms`, the program keeps that original default; `--algorithms full,fixed-transfer` also supports a separate two-method comparison.
+Without `--algorithms`, the program keeps the original Full/no-transfer default; `--algorithms full,fixed-transfer` also supports a separate two-method comparison.
 
 For every matched group/seed, the program verifies that No-transfer differs from Full only in its three transfer-control fields. Fixed-transfer may differ only in `mpslgp.adaptive-transfer`; its fixed transfer probability and budget must match Full's configured values. Source/output hashes, completion markers, final selected heuristics and all 200 preference rows are checked before analysis.
 
@@ -354,13 +346,13 @@ Dependency-free regression entry points are `MPSLGPTransferAblationMainTest` and
 
 ### Run directly in IntelliJ IDEA
 
-Select [MPSLGP Joint Task Preference Analysis](../../../../../.run/MPSLGP%20Joint%20Task%20Preference%20Analysis.run.xml) and click **Run**. It builds first, uses module **GPDFJSS-MENG**, runs **`mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMain`**, and defaults to:
+No analysis shortcut is saved in IDEA. To inspect results, run main class **`mengxu.ruleanalysis.MPSLGP.MPSLGPJointTaskAnalysisMain`** directly with module **GPDFJSS-MENG** and working directory **`$PROJECT_DIR$`**, for example:
 
 ```text
 --groups R4,H3 --focus-panels all --hide-outliers H3:5
 ```
 
-R4 and H3 each contain three tasks. Both figures use two group rows and three task columns: R4 above H3, with scenarios 1, 5 and 3/8 from left to right. Every panel uses the same selected seed. The paper configuration focuses all scatter panels independently and applies display-only outlier filtering to H3/scenario 5. Response curves, quality indicators and EAFs use the full data and are unaffected.
+R4 and H3 each contain three tasks. Both figures use two group rows and three task columns: R4 above H3, with scenarios 1, 5 and 3/8 from left to right. Every panel uses the same selected seed. These example arguments focus all scatter panels independently and apply display-only outlier filtering to H3/scenario 5. Response curves, quality indicators and EAFs use the full data and are unaffected.
 
 To select a specific run:
 
