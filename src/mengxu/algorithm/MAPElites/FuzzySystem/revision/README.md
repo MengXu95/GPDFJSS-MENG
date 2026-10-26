@@ -17,6 +17,8 @@ This module separates final-archive parsing, preference selection, and held-out 
 
 Complexity counts each node occurrence with costs terminal=1, `+/-`=2, `*` and protected `/`=3, `Max/Min`=4. Operator names are matched consistently; unknown internal operators fail explicitly.
 
+Priority evaluation accepts `Max`/`Min` case-insensitively and follows the native GP operators: equal operands retain the right operand, including its signed zero. This preserves their behavior inside protected division. Differential checks compare both operators against actual GP-node evaluation, including signed-zero ties and nested division. Non-finite native priorities remain explicit errors.
+
 Sensitivity is `priority-output-forward-absolute-v2`: collect frozen candidate input vectors, perturb one used terminal at a time by positive absolute epsilon, calculate `abs(h(x + epsilon e_j) - h(x)) / epsilon`, and average over probe/unique-terminal pairs. Average the sequencing and routing scores with equal weight. Constant rules have derivative zero. Inputs and priority outputs are raw, with no implicit feature or output rescaling. Consequently, this is a scale-dependent local output measure, not a guarantee about decision rankings or performance variance.
 
 The default epsilon is `0.001` in each terminal's raw unit. Probe collection uses matching, independently repeated reference simulations with the same instance seed and reference WSPT/WIQ policy for the two decision types. Sample exact-candidate-count situations and freeze their numerical terminal values. Original pool indices and candidate indices form probe IDs. `probes.csv` records the actual values used.

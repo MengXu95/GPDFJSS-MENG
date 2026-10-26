@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import yimei.jss.gp.data.DoubleData;
 import yimei.jss.rule.RuleType;
 import yimei.jss.rule.operation.evolved.GPRule;
 
@@ -32,6 +33,7 @@ public final class RevisionChecks {
         }
         try {
             FuzzyCoreChecks.runChecks();
+            nativeOperatorChecks();
             sensitivityChecks();
             Path root = Files.createTempDirectory("qdgp-revision-checks-");
             try {
@@ -65,10 +67,43 @@ public final class RevisionChecks {
         }
     }
 
+    private static void nativeOperatorChecks() {
+        double[][] operands = {{-2, 2}, {2, -2}, {2, 2}, {0.0, -0.0},
+                {-0.0, 0.0}, {0.0, 0.0}, {-0.0, -0.0}};
+        for (String operator : Arrays.asList("Max", "Min", "max", "min", "MAX", "mIn")) {
+            for (double[] pair : operands) {
+                compareNativePriority("(" + operator + " " + Double.toString(pair[0])
+                        + " " + Double.toString(pair[1]) + ")");
+            }
+        }
+        compareNativePriority("(/ 2 (Min (* (- 2 2) -1) (- 2 2)))");
+        compareNativePriority("(/ 2 (Max 0.0 -0.0))");
+        compareNativePriority("(/ 0 (Max 0.0 -0.0))");
+    }
+
+    private static void compareNativePriority(String expression) {
+        GPRule rule = PriorityExpression.parseRule(RuleType.SEQUENCING, expression);
+        DoubleData nativeResult = new DoubleData();
+        rule.getGPTree().child.eval(null, 0, nativeResult, null, null, null);
+        if (Double.isFinite(nativeResult.value)) {
+            double actual = PriorityExpression.evaluate(rule.getGPTree().child, Collections.emptyMap());
+            check(Double.doubleToRawLongBits(actual) == Double.doubleToRawLongBits(nativeResult.value),
+                    "Native GP operator mismatch: " + expression);
+        } else {
+            try {
+                PriorityExpression.evaluate(rule.getGPTree().child, Collections.emptyMap());
+                throw new AssertionError("Non-finite native GP priority was accepted: " + expression);
+            } catch (IllegalArgumentException expected) {
+                check(expected.getMessage().contains("Non-finite priority"), "Native non-finite priority guard");
+            }
+        }
+    }
+
     private static void sensitivityChecks() {
         Map<String, Double> original = new LinkedHashMap<>();
         original.put("PT", 2.0);
         original.put("WIQ", 3.0);
+        original.put("rDD", -1.0);
         SensitivityProbeSet.Probe probe = new SensitivityProbeSet.Probe("fixture-0", original);
         original.put("PT", 999.0);
         check(probe.values().get("PT") == 2.0, "Probe snapshot must be immutable");
@@ -89,6 +124,12 @@ public final class RevisionChecks {
         close(PriorityExpression.evaluate(divide.getGPTree().child, probe.values()), 1.0, "protected division");
         GPRule lowerCase = PriorityExpression.parseRule(RuleType.SEQUENCING, "(max PT WIQ)");
         close(PriorityExpression.evaluate(lowerCase.getGPTree().child, probe.values()), 3.0, "canonical operator parsing");
+        GPRule signedZero = PriorityExpression.parseRule(RuleType.SEQUENCING,
+                "(/ PT (Min (* (- PT PT) rDD) (- PT PT)))");
+        close(PriorityExpression.evaluate(signedZero.getGPTree().child, probe.values()),
+                1.0, "Min signed-zero protected division");
+        close(calculator.calculateTree(signedZero.getGPTree().child, samples),
+                0.0, "Min signed-zero sensitivity");
         try {
             PriorityExpression.parseRule(RuleType.SEQUENCING, "(+ PT WIQ NOR)");
             throw new AssertionError("Extra GP arguments were silently ignored");

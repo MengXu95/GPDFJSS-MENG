@@ -146,8 +146,9 @@ public final class PriorityExpression {
                 case "-": value = left - right; break;
                 case "*": value = left * right; break;
                 case "/": value = Double.compare(right, 0.0) == 0 ? 1.0 : left / right; break;
-                case "max": value = Math.max(left, right); break;
-                case "min": value = Math.min(left, right); break;
+                // Native GP operators retain the right operand on ties, including signed zero.
+                case "max": value = left > right ? left : right; break;
+                case "min": value = left < right ? left : right; break;
                 default: throw new IllegalArgumentException("Unsupported operator: " + node.name());
             }
         }
