@@ -6,6 +6,7 @@ This module separates final-archive parsing, preference selection, and held-out 
 
 - Default protocol: **paper-v2**. These are new experiments, not a reconstruction of the old tables.
 - Read only the final `All individuals in GridMAP` section; enforce its declared count. Do not substitute generation-best rules.
+- Parsing, probe capture and sensitivity use one immutable terminal policy: `NIQ, WIQ, MWT, PT, NPT, OWT, WKR, NOR, W, TIS, rDD, SL, TRANT`. Other registered attributes, such as `DD` or `Pone`, are rejected during preflight, including dry-run, before any experiment output is created. Additional terminals require explicit capture/runtime support and a protocol update.
 - Preserve original archive ordinal, two tree expressions, tree hash and stored fitness. Positive infinity is retained in the raw export and explicitly excluded from the candidate pool.
 - Build the pool from the best finite stored fitness values, breaking ties by original ordinal. Require the requested pool size; do not silently shrink it.
 - Evaluate pool members on separate validation instances for scoring and normalisation. Tests are run only after selection.
@@ -82,6 +83,8 @@ Selected expression hashes are cached within each run to avoid duplicate test si
 
 The original three Fuzzy test `main` methods now forward to the explicit revision CLI instead of using hard-coded macOS paths. `FuzzySystemTestEnhanced.runPaperVerificationAndSave` runs held-out revision evaluation into a new directory. The old no-output `runPaperVerification` method rejects ambiguous use and directs callers to the safe entry point. Scalar `PaperVerificationTest` remains a clearly labelled legacy input-metric diagnostic, not a scheduling test.
 
+`PaperVerificationTest` draws synthetic metrics from nonnegative truncated Gaussians by rejection sampling, not by clipping invalid values to zero. Raw experimental inputs remain subject to strict validation. Its optional argument is a new output CSV path; without it, the filename is `paper_verification_results.csv` in the working directory. Exports use UTF-8, locale-independent numbers and refuse to overwrite existing files. I/O failures are propagated. `runSyntheticVerification` supports bounded deterministic checks; none of these synthetic outputs are paper experiment results.
+
 All new implementation files are under this revision package. Compile into a separate output directory rather than overwriting existing `bin/out`; include the project's ECJ sources and required libraries. Core checks use no additional test dependency.
 
 From the Java project root, the supplied compile-only script can prepare an isolated classpath:
@@ -102,6 +105,7 @@ For varying-instance historical archives, raw stored fitness may come from diffe
 
 - Fresh isolated compilation with OpenJDK 26.0.1 succeeded, producing 474 class files including required project dependencies. The compiler reported 54 warnings in existing ECJ dependency sources.
 - Deterministic core, strict archive/parser, numerical sensitivity, input protection and seed-disjointness checks passed. The synthetic end-to-end scheduling smoke test also passed.
+- Follow-up regressions cover native `Max`/`Min` signed-zero behavior, all 13 supported terminals, unsupported-terminal rejection before output creation, and reproducible nonnegative synthetic diagnostics. The legacy CLI's default 30 synthetic runs with 200 candidates also completed under a German locale with valid locale-independent CSV output; these are diagnostic checks, not scheduling experiments.
 - A read-only check of `NfixIns`, `mean-tardiness-0.85-1.5`, run 0 parsed all 2,601 final archive members: 1,964 finite candidates and 637 stored failures. The input SHA-256 remained unchanged.
 - A real-archive integration check with three candidates, top-1, one validation seed and one test seed completed. It produced 24 case/method result records (six profiles times four selectors), three candidate-metric records and three candidate/test records. Six validation/test simulations plus two reference probe simulations were executed; the manifest reported `COMPLETE`.
 - That integration check used 20 recorded jobs, no warm-up, and one probe per role from a 200-job reference simulation. It verifies plumbing only. No full 30-run study, parameter sweep, statistical conclusion or exact legacy-table reproduction is claimed.

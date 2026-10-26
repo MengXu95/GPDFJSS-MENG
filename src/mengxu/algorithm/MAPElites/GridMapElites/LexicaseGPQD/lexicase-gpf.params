@@ -1,0 +1,3 @@
+parent.0 = lexicase-common.params
+lexqd.method = LexicaseGPf
+eval.problem.eval-model.rotate-sim-seed = false

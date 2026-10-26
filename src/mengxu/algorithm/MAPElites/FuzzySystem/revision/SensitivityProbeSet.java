@@ -1,6 +1,7 @@
 package mengxu.algorithm.MAPElites.FuzzySystem.revision;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,10 +22,28 @@ import yimei.jss.simulation.SequencingDecisionSituation;
 import yimei.jss.simulation.state.SystemState;
 
 public final class SensitivityProbeSet {
-    public static final String[] TERMINALS = {
+    private static final List<String> SUPPORTED_TERMINALS = Collections.unmodifiableList(Arrays.asList(
         "NIQ", "WIQ", "MWT", "PT", "NPT", "OWT", "WKR",
         "NOR", "W", "TIS", "rDD", "SL", "TRANT"
-    };
+    ));
+
+    /** Compatibility snapshot; use supportedTerminals() for the immutable policy. */
+    @Deprecated
+    public static final String[] TERMINALS = SUPPORTED_TERMINALS.toArray(new String[0]);
+
+    public static List<String> supportedTerminals() { return SUPPORTED_TERMINALS; }
+
+    static JobShopAttribute requireSupportedTerminal(String terminal) {
+        if (!SUPPORTED_TERMINALS.contains(terminal)) {
+            throw new IllegalArgumentException("Unsupported revision terminal: " + terminal
+                    + "; supported terminals: " + SUPPORTED_TERMINALS);
+        }
+        JobShopAttribute attribute = JobShopAttribute.get(terminal);
+        if (attribute == null) {
+            throw new IllegalStateException("Configured probe terminal is unavailable: " + terminal);
+        }
+        return attribute;
+    }
 
     public static final class Probe {
         private final String id;
@@ -39,6 +58,7 @@ public final class SensitivityProbeSet {
                         || !Double.isFinite(entry.getValue())) {
                     throw new IllegalArgumentException("Non-finite probe terminal in " + id);
                 }
+                requireSupportedTerminal(entry.getKey());
             }
             this.id = id;
             this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
@@ -133,8 +153,8 @@ public final class SensitivityProbeSet {
 
     private static Probe capture(String id, OperationOption operation, WorkCenter machine, SystemState state) {
         Map<String, Double> values = new LinkedHashMap<>();
-        for (String terminal : TERMINALS) {
-            values.put(terminal, JobShopAttribute.get(terminal).value(operation, machine, state));
+        for (String terminal : SUPPORTED_TERMINALS) {
+            values.put(terminal, requireSupportedTerminal(terminal).value(operation, machine, state));
         }
         return new Probe(id, values);
     }

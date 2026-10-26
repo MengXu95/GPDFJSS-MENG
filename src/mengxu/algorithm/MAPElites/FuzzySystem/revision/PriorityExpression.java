@@ -72,8 +72,7 @@ public final class PriorityExpression {
             }
             if (token.equals(")")) { throw new IllegalArgumentException("Unexpected closing parenthesis"); }
             if (isNumber(token)) { return new ConstantTerminal(Double.parseDouble(token)); }
-            JobShopAttribute attribute = JobShopAttribute.get(token);
-            if (attribute == null) { throw new IllegalArgumentException("Unknown GP terminal: " + token); }
+            JobShopAttribute attribute = SensitivityProbeSet.requireSupportedTerminal(token);
             return new AttributeGPNode(attribute);
         }
     }
@@ -89,9 +88,7 @@ public final class PriorityExpression {
         int arity = node.children == null ? 0 : node.children.length;
         if (arity == 0) {
             if (!isNumber(node.name())) {
-                if (JobShopAttribute.get(node.name()) == null) {
-                    throw new IllegalArgumentException("Unknown terminal: " + node.name());
-                }
+                SensitivityProbeSet.requireSupportedTerminal(node.name());
                 names.add(node.name());
             }
             return;
@@ -131,6 +128,7 @@ public final class PriorityExpression {
             if (isNumber(node.name())) {
                 value = Double.parseDouble(node.name());
             } else {
+                SensitivityProbeSet.requireSupportedTerminal(node.name());
                 Double terminal = inputs.get(node.name());
                 if (terminal == null) {
                     throw new IllegalArgumentException("Probe lacks terminal: " + node.name());

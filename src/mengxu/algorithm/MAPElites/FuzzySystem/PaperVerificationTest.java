@@ -1,8 +1,12 @@
 package mengxu.algorithm.MAPElites.FuzzySystem;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 /**
@@ -321,7 +325,8 @@ public class PaperVerificationTest {
      * Export results to CSV for LaTeX table generation
      */
     public void exportToCSV(String filename) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filename),
+                StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW)) {
             // Write header
             writer.write("Case,Method,Performance,Complexity,Sensitivity,PerfImp%,ComplexImp%,SensImp%\n");
 
@@ -343,12 +348,12 @@ public class PaperVerificationTest {
                 double sensImp = ((avgRandomSens - avgFuzzySens) / avgRandomSens) * 100;
 
                 // Fuzzy row
-                writer.write(String.format("%s,Fuzzy,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f\n",
+                writer.write(String.format(Locale.ROOT, "%s,Fuzzy,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f\n",
                         caseName, avgFuzzyPerf, avgFuzzyComplex, avgFuzzySens,
                         perfImp, complexImp, sensImp));
 
                 // Random row
-                writer.write(String.format("%s,Random,%.4f,%.4f,%.4f,0.00,0.00,0.00\n",
+                writer.write(String.format(Locale.ROOT, "%s,Random,%.4f,%.4f,%.4f,0.00,0.00,0.00\n",
                         caseName, avgRandomPerf, avgRandomComplex, avgRandomSens));
             }
         }
@@ -492,29 +497,24 @@ public class PaperVerificationTest {
         }
     }
 
-    public static void main(String[] args) {
-        // Example usage with synthetic data
-        System.out.println("Testing with synthetic data...\n");
-
-        PaperVerificationTest test = new PaperVerificationTest(42);
-
-        // Generate 30 runs of synthetic data
-        int numRuns = 30;
-        int numHeuristics = 200;
+    public void runSyntheticVerification(int numRuns, int numHeuristics, int topK, long dataSeed) {
+        if (numRuns < 1 || numHeuristics < 1 || topK < 1 || topK > numHeuristics) {
+            throw new IllegalArgumentException("Positive run/candidate counts and top-k <= candidates are required");
+        }
         List<List<Double>> perfAllRun = new ArrayList<>();
         List<List<Double>> complexAllRun = new ArrayList<>();
         List<List<Double>> sensAllRun = new ArrayList<>();
 
-        Random rand = new Random(42);
+        Random rand = new Random(dataSeed);
         for (int i = 0; i < numRuns; i++) {
             List<Double> perfs = new ArrayList<>();
             List<Double> complexities = new ArrayList<>();
             List<Double> sensitivities = new ArrayList<>();
 
             for (int j = 0; j < numHeuristics; j++) {
-                perfs.add(220 + rand.nextGaussian() * 20);      // Mean=50, StdDev=20
-                complexities.add(20 + rand.nextGaussian() * 10); // Mean=20, StdDev=10
-                sensitivities.add(0.25 + rand.nextGaussian() * 0.1); // Mean=0.5, StdDev=0.2
+                perfs.add(nextNonnegativeGaussian(rand, 220, 20));
+                complexities.add(nextNonnegativeGaussian(rand, 20, 10));
+                sensitivities.add(nextNonnegativeGaussian(rand, 0.25, 0.1));
             }
 
             perfAllRun.add(perfs);
@@ -522,14 +522,29 @@ public class PaperVerificationTest {
             sensAllRun.add(sensitivities);
         }
 
-        // Run verification
-        test.runVerification(perfAllRun, complexAllRun, sensAllRun, 5);
+        runVerification(perfAllRun, complexAllRun, sensAllRun, topK);
+    }
 
-        // Export to CSV
-        try {
-            test.exportToCSV("paper_verification_results.csv");
-        } catch (IOException e) {
-            e.printStackTrace();
+    private static double nextNonnegativeGaussian(Random random, double mean, double standardDeviation) {
+        double value;
+        do {
+            value = mean + random.nextGaussian() * standardDeviation;
+        } while (!Double.isFinite(value) || value < 0);
+        return value;
+    }
+
+    public static void main(String[] args) throws IOException {
+        if (args.length > 1) {
+            throw new IllegalArgumentException("Usage: PaperVerificationTest [new-output.csv]");
         }
+        Path output = Paths.get(args.length == 0 ? "paper_verification_results.csv" : args[0])
+                .toAbsolutePath().normalize();
+        if (Files.exists(output)) {
+            throw new java.nio.file.FileAlreadyExistsException(output.toString());
+        }
+        System.out.println("Legacy synthetic input-metric diagnostic; no scheduling test.\n");
+        PaperVerificationTest test = new PaperVerificationTest(42);
+        test.runSyntheticVerification(30, 200, 5, 42);
+        test.exportToCSV(output.toString());
     }
 }

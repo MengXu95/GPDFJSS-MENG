@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import mengxu.algorithm.MAPElites.FuzzySystem.PaperVerificationTest;
 import yimei.jss.gp.data.DoubleData;
 import yimei.jss.rule.RuleType;
 import yimei.jss.rule.operation.evolved.GPRule;
@@ -35,9 +36,11 @@ public final class RevisionChecks {
             FuzzyCoreChecks.runChecks();
             nativeOperatorChecks();
             sensitivityChecks();
+            terminalPolicyChecks();
             Path root = Files.createTempDirectory("qdgp-revision-checks-");
             try {
                 archiveAndPathChecks(root);
+                syntheticDiagnosticChecks(root);
                 if (includeSmoke) { smoke(root); }
             } finally {
                 try (Stream<Path> paths = Files.walk(root)) {
@@ -138,6 +141,43 @@ public final class RevisionChecks {
         }
     }
 
+    private static void terminalPolicyChecks() {
+        Map<String, Double> values = new LinkedHashMap<>();
+        for (String terminal : SensitivityProbeSet.supportedTerminals()) { values.put(terminal, 2.0); }
+        SensitivityProbeSet.Probe probe = new SensitivityProbeSet.Probe("supported-terminals", values);
+        for (String terminal : SensitivityProbeSet.supportedTerminals()) {
+            GPRule rule = PriorityExpression.parseRule(RuleType.SEQUENCING, terminal);
+            check(PriorityExpression.terminals(rule.getGPTree().child).contains(terminal),
+                    "Supported terminal must parse and validate: " + terminal);
+            close(new OutputSensitivityCalculator(0.001).calculateTree(rule.getGPTree().child,
+                    Collections.singletonList(probe)), 1.0, "Supported terminal derivative: " + terminal);
+        }
+        try {
+            SensitivityProbeSet.supportedTerminals().set(0, "DD");
+            throw new AssertionError("Supported-terminal policy is mutable");
+        } catch (UnsupportedOperationException expected) {
+            check(SensitivityProbeSet.supportedTerminals().contains("NIQ"), "Stable terminal policy");
+        }
+        for (String terminal : Arrays.asList("DD", "Pone", "UNKNOWN")) {
+            try {
+                PriorityExpression.parseRule(RuleType.SEQUENCING, terminal);
+                throw new AssertionError("Unsupported terminal was parsed: " + terminal);
+            } catch (IllegalArgumentException expected) {
+                check(expected.getMessage().contains("Unsupported revision terminal: " + terminal),
+                        "Explicit unsupported-terminal error");
+            }
+        }
+        GPRule unsupported = GPRule.readFromLispExpression(RuleType.SEQUENCING, "DD");
+        try {
+            new OutputSensitivityCalculator(0.001).calculateTree(unsupported.getGPTree().child,
+                    Collections.singletonList(probe));
+            throw new AssertionError("Externally parsed unsupported terminal was accepted");
+        } catch (IllegalArgumentException expected) {
+            check(expected.getMessage().contains("Unsupported revision terminal: DD"),
+                    "Shared terminal policy for external trees");
+        }
+    }
+
     private static void archiveAndPathChecks(Path root) throws IOException {
         Path input = root.resolve("input");
         Path archiveDirectory = input.resolve("NfixIns/multipletreegp-dynamic/mean-tardiness-0.85-1.5");
@@ -155,6 +195,26 @@ public final class RevisionChecks {
                 "--top-k", "1", "--dry-run"};
         RevisionExperiment.run(RevisionConfiguration.fromArgs(dryRun));
         check(hash.equals(RevisionCsv.fileHash(archive)), "Dry run must not change inputs");
+        Path unsupported = archiveDirectory.resolve("job.1.out.stat");
+        Files.write(unsupported, fixture(true).replace("(+ PT WIQ)", "DD").getBytes(StandardCharsets.UTF_8));
+        String unsupportedHash = RevisionCsv.fileHash(unsupported);
+        Path rejectedOutput = root.resolve("unsupported-output");
+        for (boolean dry : Arrays.asList(true, false)) {
+            List<String> arguments = new java.util.ArrayList<>(Arrays.asList("--input-root", input.toString(),
+                    "--output-root", rejectedOutput.toString(), "--runs", "1", "--pool-size", "2", "--top-k", "1"));
+            if (dry) { arguments.add("--dry-run"); }
+            try {
+                RevisionExperiment.run(RevisionConfiguration.fromArgs(arguments.toArray(new String[0])));
+                throw new AssertionError("Unsupported archive terminal passed preflight");
+            } catch (IOException expected) {
+                check(expected.getMessage().contains("job.1.out.stat")
+                        && expected.getCause() instanceof IllegalArgumentException
+                        && expected.getCause().getMessage().contains("Unsupported revision terminal: DD"),
+                        "Contextual unsupported archive error");
+            }
+            check(!Files.exists(rejectedOutput), "Unsupported inputs must fail before output creation");
+            check(unsupportedHash.equals(RevisionCsv.fileHash(unsupported)), "Rejected input must remain unchanged");
+        }
         Path malformed = archiveDirectory.resolve("bad.stat");
         Files.write(malformed, fixture(true).replace("GridMAP number: 3", "GridMAP number: 4")
                 .getBytes(StandardCharsets.UTF_8));
@@ -176,6 +236,40 @@ public final class RevisionChecks {
             throw new AssertionError("Overlapping validation/test seeds were accepted");
         } catch (IllegalArgumentException expected) {
             check(expected.getMessage().contains("overlap"), "Disjoint test-set guard");
+        }
+    }
+
+    private static void syntheticDiagnosticChecks(Path root) throws IOException {
+        Path first = root.resolve("synthetic-first.csv");
+        Path second = root.resolve("synthetic-second.csv");
+        for (Path output : Arrays.asList(first, second)) {
+            PaperVerificationTest diagnostic = new PaperVerificationTest(42);
+            diagnostic.runSyntheticVerification(2, 20, 3, 42);
+            diagnostic.exportToCSV(output.toString());
+            List<String> rows = Files.readAllLines(output, StandardCharsets.UTF_8);
+            check(rows.size() == 13, "Six legacy profiles times two methods");
+            for (String row : rows.subList(1, rows.size())) {
+                String[] fields = row.split(",");
+                check(fields.length == 8, "Stable synthetic CSV format");
+                for (int column = 2; column <= 4; column++) {
+                    double value = Double.parseDouble(fields[column]);
+                    check(Double.isFinite(value) && value >= 0, "Valid synthetic metric");
+                }
+            }
+        }
+        String originalHash = RevisionCsv.fileHash(first);
+        check(originalHash.equals(RevisionCsv.fileHash(second)), "Reproducible synthetic diagnostic");
+        try {
+            PaperVerificationTest.main(new String[]{first.toString()});
+            throw new AssertionError("Legacy diagnostic overwrote its output");
+        } catch (java.nio.file.FileAlreadyExistsException expected) {
+            check(originalHash.equals(RevisionCsv.fileHash(first)), "Preserve existing diagnostic output");
+        }
+        try {
+            new PaperVerificationTest(42).runSyntheticVerification(0, 20, 3, 42);
+            throw new AssertionError("Invalid synthetic run count was accepted");
+        } catch (IllegalArgumentException expected) {
+            check(expected.getMessage().contains("Positive run/candidate"), "Explicit synthetic configuration error");
         }
     }
 
