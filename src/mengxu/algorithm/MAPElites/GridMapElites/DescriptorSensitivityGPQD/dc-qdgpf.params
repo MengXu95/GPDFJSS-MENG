@@ -1,0 +1,12 @@
+parent.0 = ..\\UniformParentGPQD\\archive-common.params
+state = mengxu.algorithm.MAPElites.GridMapElites.DescriptorSensitivityGPQD.DcState
+stat = mengxu.algorithm.MAPElites.GridMapElites.DescriptorSensitivityGPQD.DcStatistics
+eval.problem.eval-model.rotate-sim-seed = false
+using-manual-rule-normalisation = true
+penalty-level = 0
+random-parent-selection-probability = 0.5
+generations = 201
+pop.subpop.0.species.pipe.source.0.prob = 0.85
+pop.subpop.0.species.pipe.source.1.prob = 0.15
+pop.subpop.0.species.pipe.source.2.prob = 0.0
+quit-on-run-complete = false

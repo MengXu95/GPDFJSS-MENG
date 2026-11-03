@@ -3,14 +3,14 @@ package mengxu.algorithm.MAPElites.FuzzySystem;
 import java.util.*;
 
 /**
- * Simple demonstration of the Fuzzy System for Heuristic Selection
- * Shows basic usage patterns and expected outputs
+ * Legacy target-matching and fixed-SI demonstration, not the importance study.
+ * Use revision.ExperimentAStudy for the current recommendation protocol.
  */
 public class FuzzySystemDemo {
     
     public static void main(String[] args) {
         System.out.println("=".repeat(80));
-        System.out.println("FUZZY SYSTEM FOR HEURISTIC SELECTION - DEMO");
+        System.out.println("LEGACY TARGET-MATCHING / FIXED-SI DEMO - NOT THE IMPORTANCE STUDY");
         System.out.println("=".repeat(80));
         
         // Demo 1: Basic fuzzy inference

@@ -11,13 +11,13 @@ import java.nio.file.Paths;
 import mengxu.algorithm.lexicaseselection.GPRuleEvolutionStateOneInstanceMultiCase;
 import yimei.jss.ruleoptimisation.MultipleTreeRuleOptimizationProblem;
 
-public final class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanceMultiCase {
-    Path outputRoot;
-    String method;
-    int runId;
-    int snapshotInterval;
-    double evaluationSeconds;
-    private boolean outputOwned;
+public class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanceMultiCase {
+    protected Path outputRoot;
+    protected String method;
+    protected int runId;
+    protected int snapshotInterval;
+    protected double evaluationSeconds;
+    protected boolean outputOwned;
 
     @Override public void setup(EvolutionState state, Parameter base) {
         super.setup(state, base);
@@ -34,14 +34,14 @@ public final class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanc
         }
         if (!(evaluator.p_problem instanceof MultipleTreeRuleOptimizationProblem)
                 || !(((MultipleTreeRuleOptimizationProblem) evaluator.p_problem).getEvaluationModel()
-                instanceof OneInstanceEvaluation) || !(statistics instanceof PopulationStatistics)) {
+                instanceof OneInstanceEvaluation) || !acceptsStatistics(statistics)) {
             throw new IllegalArgumentException("Use the isolated Lexicase evaluation/statistics classes");
         }
         method = parameters.getString(new Parameter("lexqd.method"), null);
-        if (!"LexicaseGPf".equals(method) && !"LexicaseGP".equals(method)) {
+        if (!acceptsMethod(method)) {
             throw new IllegalArgumentException("lexqd.method must be LexicaseGPf or LexicaseGP");
         }
-        if (model().isRotatable() != method.equals("LexicaseGP")) {
+        if (model().isRotatable() != isRotatingMethod(method)) {
             throw new IllegalArgumentException("Method label does not match fixed/rotating training");
         }
         runId = parameters.getIntWithDefault(new Parameter("lexqd.run-id"), null, 0);
@@ -51,6 +51,17 @@ public final class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanc
             throw new IllegalArgumentException("A new output directory, nonnegative run ID and positive snapshot interval are required");
         }
         outputRoot = Paths.get(target).toAbsolutePath().normalize();
+        prepareOutput();
+        genForUseLS = -1;
+    }
+
+    protected boolean acceptsStatistics(ec.Statistics value) { return value instanceof PopulationStatistics; }
+    protected boolean acceptsMethod(String value) {
+        return "LexicaseGPf".equals(value) || "LexicaseGP".equals(value);
+    }
+    protected boolean isRotatingMethod(String value) { return "LexicaseGP".equals(value); }
+
+    protected void prepareOutput() {
         try {
             if (outputRoot.getParent() == null || Files.exists(outputRoot)) {
                 throw new IllegalArgumentException("Refusing to overwrite output: " + outputRoot);
@@ -59,10 +70,9 @@ public final class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanc
             Files.createDirectory(outputRoot);
             outputOwned = true;
         } catch (IOException e) { throw new UncheckedIOException(e); }
-        genForUseLS = -1;
     }
 
-    OneInstanceEvaluation model() {
+    public OneInstanceEvaluation model() {
         return (OneInstanceEvaluation) ((MultipleTreeRuleOptimizationProblem) evaluator.p_problem).getEvaluationModel();
     }
 
@@ -114,10 +124,14 @@ public final class LexicaseEvolutionState extends GPRuleEvolutionStateOneInstanc
             while (result == R_NOTDONE) { result = evolve(); }
             finish(result);
         } catch (RuntimeException failure) {
-            if (outputOwned && statistics instanceof PopulationStatistics) {
-                ((PopulationStatistics) statistics).failed(this, failure);
-            }
+            failedRun(failure);
             throw failure;
+        }
+    }
+
+    protected void failedRun(RuntimeException failure) {
+        if (outputOwned && statistics instanceof PopulationStatistics) {
+            ((PopulationStatistics) statistics).failed(this, failure);
         }
     }
 }

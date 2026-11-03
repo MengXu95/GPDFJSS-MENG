@@ -106,14 +106,7 @@ public class GPRuleEvolutionStateGridMAPElites extends GPRuleEvolutionState {
 //				RoutingPhenoCharacterisation.defaultPhenoCharacterisation(simulation);
 
 		//dynamic simulation
-		int minQueueLength = 3;
-		int numDecisionSituations = 4;
-		this.base = minQueueLength;
-		this.gridSIze = (int) Math.pow(minQueueLength, numDecisionSituations);
-		phenoCharacterisation[0] =
-				SequencingPhenoCharacterisation.defaultPhenoCharacterisation(simulation, minQueueLength, numDecisionSituations);
-		phenoCharacterisation[1] =
-				RoutingPhenoCharacterisation.defaultPhenoCharacterisation(simulation,minQueueLength, numDecisionSituations);
+		configurePhenoCharacterisation(simulation);
 
 		//generate the PC map, added by mengxu 2023.06.21
 		Parameter useGridMapParam = new Parameter("use-grid-map");
@@ -150,6 +143,17 @@ public class GPRuleEvolutionStateGridMAPElites extends GPRuleEvolutionState {
 		//add by mengxu 2025.1.15
 		Parameter numAcceptParam = new Parameter("number-accept");
 		this.num_accept = state.parameters.getInt(numAcceptParam, null,1);
+	}
+
+	protected void configurePhenoCharacterisation(Simulation simulation) {
+		int minQueueLength = 3;
+		int numDecisionSituations = 4;
+		this.base = minQueueLength;
+		this.gridSIze = (int) Math.pow(minQueueLength, numDecisionSituations);
+		phenoCharacterisation[0] =
+				SequencingPhenoCharacterisation.defaultPhenoCharacterisation(simulation, minQueueLength, numDecisionSituations);
+		phenoCharacterisation[1] =
+				RoutingPhenoCharacterisation.defaultPhenoCharacterisation(simulation, minQueueLength, numDecisionSituations);
 	}
 
 	// Utility method to print a double array

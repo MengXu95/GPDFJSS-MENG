@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Fuzzy B - 10 Whole Library Attributes" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.MAPElites.FuzzySystem.revision.WholeLibraryStudy" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--input &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-A-importance-v2\QDGPf&quot; --input &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-A-importance-v2\QDGP&quot; --output-root &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-B-whole-library-v1&quot; --expected-runs 30 --resume" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="-Xmx3g --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

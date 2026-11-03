@@ -288,7 +288,7 @@ public final class RevisionChecks {
         String before = RevisionCsv.fileHash(archive);
         RevisionExperiment.run(configuration);
         List<String> results = Files.readAllLines(output.resolve("run_results.csv"), StandardCharsets.UTF_8);
-        check(results.size() == 25, "Six cases times four selectors");
+        check(results.size() == 19, "Six importance cases times three selectors");
         for (String line : results.subList(1, results.size())) {
             String[] fields = line.split(",");
             check(Double.parseDouble(fields[5]) < 1_000_000, "Test objective must not be stored training fitness");

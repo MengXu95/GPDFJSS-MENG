@@ -6,7 +6,8 @@ import java.util.Map;
 
 /**
  * User Preference Vector (UPV) for encoding user scheduling preferences
- * Linguistic targets and explicit criterion-importance weights (not target strengths).
+ * Linguistic labels and explicit criterion-importance weights (not target strengths).
+ * Target diagnostics may request any term; monotone importance requires beneficial labels.
  */
 public class UserPreferenceVector {
 
@@ -80,7 +81,7 @@ public class UserPreferenceVector {
     }
 
     /**
-     * Create a preset UPV for high-performance preference
+     * Create a high-performance target-match diagnostic (not a monotone-importance profile).
      */
     public static UserPreferenceVector highPerformance() {
         UserPreferenceVector upv = new UserPreferenceVector();
@@ -91,7 +92,7 @@ public class UserPreferenceVector {
     }
 
     /**
-     * Create a preset UPV for balanced preference
+     * Create a balanced target-match diagnostic (not a monotone-importance profile).
      */
     public static UserPreferenceVector balanced() {
         UserPreferenceVector upv = new UserPreferenceVector();
@@ -102,7 +103,7 @@ public class UserPreferenceVector {
     }
 
     /**
-     * Create a preset UPV for interpretable preference
+     * Create an interpretable target-match diagnostic (not a monotone-importance profile).
      */
     public static UserPreferenceVector interpretable() {
         UserPreferenceVector upv = new UserPreferenceVector();
@@ -113,7 +114,7 @@ public class UserPreferenceVector {
     }
 
     /**
-     * Create a preset UPV for robust/stable preference
+     * Create a robust/stable target-match diagnostic (not a monotone-importance profile).
      */
     public static UserPreferenceVector robust() {
         UserPreferenceVector upv = new UserPreferenceVector();
@@ -123,7 +124,7 @@ public class UserPreferenceVector {
         return upv;
     }
 
-    // ========== Paper Verification Scenarios (Table 3) ==========
+    // ========== Historical target-match diagnostics (not importance profiles) ==========
 
     /**
      * C1: High Performance, Low Stability
@@ -211,8 +212,8 @@ public class UserPreferenceVector {
     }
 
     /**
-     * Revised-paper C5: High/Moderate/Hard targets with explicit importance weights
-     * Performance=5, Stability=3, Interpretability=1. Legacy C5 remains available.
+     * Historical paper-v2 target diagnostic C5: High/Moderate/Hard targets with weights
+     * Performance=5, Stability=3, Interpretability=1. Not a monotone-importance case.
      */
     public static UserPreferenceVector case5_HighPerformanceModerateStability() {
         return new UserPreferenceVector()
@@ -221,7 +222,7 @@ public class UserPreferenceVector {
                 .setPreference("Interpretability", "Hard", 1.0);
     }
 
-    /** Fresh vectors, ordered C1-C6, matching the historical verification cases. */
+    /** Fresh target-diagnostic vectors, ordered C1-C6, matching historical verification. */
     public static Map<String, UserPreferenceVector> legacyCases() {
         Map<String, UserPreferenceVector> cases = new LinkedHashMap<>();
         cases.put("C1", case1_HighPerformance());
@@ -233,11 +234,36 @@ public class UserPreferenceVector {
         return Collections.unmodifiableMap(cases);
     }
 
-    /** Revised-paper cases differ from the legacy protocol only at C5. */
+    /** Historical paper-v2 target diagnostics: only C5 differs from legacyCases(). */
     public static Map<String, UserPreferenceVector> revisionCases() {
         Map<String, UserPreferenceVector> cases = new LinkedHashMap<>(legacyCases());
         cases.put("C5", case5_HighPerformanceModerateStability());
         return Collections.unmodifiableMap(cases);
+    }
+
+    /**
+     * Fresh monotone-importance profiles, ordered C1-C6; weights below are in P,I,S order.
+     * All labels are beneficial: High performance, Easy interpretation, Stable behavior.
+     * C1 performance priority (5,1,1); C2 stability priority (1,1,5);
+     * C3 interpretability priority (1,5,1); C4 equal importance (1,1,1);
+     * C5 performance then stability (5,1,3); C6 joint performance/stability (5,1,5).
+     */
+    public static Map<String, UserPreferenceVector> importanceCases() {
+        Map<String, UserPreferenceVector> cases = new LinkedHashMap<>();
+        cases.put("C1", importance(5.0, 1.0, 1.0));
+        cases.put("C2", importance(1.0, 1.0, 5.0));
+        cases.put("C3", importance(1.0, 5.0, 1.0));
+        cases.put("C4", importance(1.0, 1.0, 1.0));
+        cases.put("C5", importance(5.0, 1.0, 3.0));
+        cases.put("C6", importance(5.0, 1.0, 5.0));
+        return Collections.unmodifiableMap(cases);
+    }
+
+    private static UserPreferenceVector importance(double performance, double interpretability, double stability) {
+        return new UserPreferenceVector()
+                .setPreference("Performance", "High", performance)
+                .setPreference("Interpretability", "Easy", interpretability)
+                .setPreference("Stability", "Stable", stability);
     }
 
     @Override

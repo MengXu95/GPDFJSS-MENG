@@ -1,0 +1,35 @@
+param(
+    [Parameter(Mandatory = $true)][string]$JdkHome,
+    [Parameter(Mandatory = $true)][string]$BuildDirectory
+)
+$ErrorActionPreference = 'Stop'
+$project = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..\..\..\..')).Path
+$output = [IO.Path]::GetFullPath($BuildDirectory)
+$javac = Join-Path $JdkHome 'bin\javac.exe'
+if (-not (Test-Path -LiteralPath $javac -PathType Leaf)) { throw "Missing javac: $javac" }
+foreach ($name in @('src', 'bin', 'out', '.git')) {
+    $protected = [IO.Path]::GetFullPath((Join-Path $project $name)).TrimEnd('\')
+    if ($output.Equals($protected, [StringComparison]::OrdinalIgnoreCase) -or
+        $output.StartsWith($protected + '\', [StringComparison]::OrdinalIgnoreCase)) {
+        throw "BuildDirectory must not be inside $name."
+    }
+}
+if (Test-Path -LiteralPath $output) { throw "Refusing existing build directory: $output" }
+New-Item -ItemType Directory -Path $output | Out-Null
+$jars = @(Get-ChildItem -LiteralPath (Join-Path $project 'libraries') -File -Filter '*.jar' |
+    Where-Object { $_.Name -notmatch 'javadoc' } | ForEach-Object FullName)
+$classpath = (@((Join-Path $project 'bin')) + $jars) -join ';'
+$sources = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter '*.java' | ForEach-Object FullName)
+foreach ($relative in @(
+    'src\mengxu\algorithm\MAPElites\GridMapElites\AllIndexAllSwapCrossoverPipelineGridMAPElites.java',
+    'src\mengxu\algorithm\MAPElites\GridMapElites\MutationPipelineGridMAPElites.java',
+    'src\mengxu\complexsimulation\ruleevaluation\MultipleTreeMultipleRuleHeterogeneousEvaluationModel.java'
+)) {
+    $sources += Join-Path $project $relative
+}
+& $javac '-J-Duser.language=en' '-J-Duser.country=US' -encoding UTF-8 -proc:none `
+    -Xprefer:source -sourcepath (Join-Path $project 'src') -classpath $classpath -d $output @sources
+if ($LASTEXITCODE -ne 0) { throw "Uniform-parent compilation failed; original bin/out unchanged." }
+(@($output, (Join-Path $project 'bin')) + $jars) -join ';' |
+    Set-Content -LiteralPath (Join-Path $output 'runtime-classpath.txt') -Encoding UTF8
+Write-Output "Uniform archive-parent baseline compiled: $output"

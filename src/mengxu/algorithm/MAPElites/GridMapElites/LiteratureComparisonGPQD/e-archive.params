@@ -1,0 +1,7 @@
+parent.0 = ..\\UniformParentGPQD\\archive-common.params
+state = mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.EGridState
+stat = mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.EGridStatistics
+eval.problem.eval-model = mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.EGridEvaluation
+random-parent-selection-probability = 0.5
+penalty-level = 0
+using-manual-rule-normalisation = true

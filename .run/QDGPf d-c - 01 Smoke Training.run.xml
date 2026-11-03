@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="QDGPf d-c - 01 Smoke Training" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.MAPElites.GridMapElites.DescriptorSensitivityGPQD.DcTraining" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--config &quot;$PROJECT_DIR$\src\mengxu\algorithm\MAPElites\GridMapElites\DescriptorSensitivityGPQD\dc-study.properties&quot; --resume --set runs=1 --set population=10 --set elitism=2 --set generations=2 --set training-output-root=D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-C-qdgpf-dc-smoke-v1\training --set test-output-root=D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-C-qdgpf-dc-smoke-v1\test" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="-Xmx3g --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

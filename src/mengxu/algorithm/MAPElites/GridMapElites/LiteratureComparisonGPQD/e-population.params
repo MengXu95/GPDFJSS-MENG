@@ -1,0 +1,3 @@
+parent.0 = ..\\LexicaseGPQD\\lexicase-common.params
+state = mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.EPopulationState
+stat = mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.EPopulationStatistics

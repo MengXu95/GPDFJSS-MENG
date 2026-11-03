@@ -60,7 +60,7 @@ public final class OutputSensitivityCalculator {
                 modified.put(terminal, perturbed);
                 double derivative = Math.abs(PriorityExpression.evaluate(tree, modified) - baseline) / epsilon;
                 if (!Double.isFinite(derivative)) {
-                    throw new IllegalArgumentException("Non-finite sensitivity at probe " + probe.id());
+                    throw new CandidateMetricException("Non-finite sensitivity at probe " + probe.id());
                 }
                 count++;
                 mean += (derivative - mean) / count;

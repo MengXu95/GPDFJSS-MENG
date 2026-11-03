@@ -45,10 +45,11 @@ public final class RevisionConfiguration {
     public final boolean dryRun;
     public final boolean allMetrics;
     public final boolean legacyProfiles;
+    public final boolean importanceProfiles;
     public final boolean legacyNormalisation;
     private final Map<String, String> options;
 
-    private RevisionConfiguration(Map<String, String> supplied) throws IOException {
+    private RevisionConfiguration(Map<String, String> supplied, boolean studyOutput) throws IOException {
         Map<String, String> values = defaults();
         for (Map.Entry<String, String> entry : supplied.entrySet()) {
             if (!values.containsKey(entry.getKey())) {
@@ -94,7 +95,8 @@ public final class RevisionConfiguration {
         if (output.isEmpty() && !dryRun) {
             throw new IllegalArgumentException("output-root is required for execution");
         }
-        outputRoot = output.isEmpty() ? null : checkedOutput(Paths.get(output), inputRoot);
+        outputRoot = output.isEmpty() ? null : studyOutput && Files.exists(Paths.get(output))
+                ? checkedStudyDirectory(Paths.get(output), inputRoot) : checkedOutput(Paths.get(output), inputRoot);
         runs = parseRuns(required(values, "runs"));
         poolSize = positiveInt(values, "pool-size");
         topK = positiveInt(values, "top-k");
@@ -133,20 +135,32 @@ public final class RevisionConfiguration {
         }
         allMetrics = scope.equals("all");
         String profiles = required(values, "profiles");
-        if (!profiles.equals("paper-v2") && !profiles.equals("legacy")) {
-            throw new IllegalArgumentException("profiles must be paper-v2 or legacy");
+        if (!profiles.equals("importance-v1") && !profiles.equals("paper-v2") && !profiles.equals("legacy")) {
+            throw new IllegalArgumentException("profiles must be importance-v1, paper-v2 (target diagnostic), or legacy");
         }
         legacyProfiles = profiles.equals("legacy");
+        importanceProfiles = profiles.equals("importance-v1");
         String normalisation = required(values, "normalisation");
         if (!normalisation.equals("all-minmax") && !normalisation.equals("legacy-reciprocal")) {
             throw new IllegalArgumentException("Unknown normalisation");
         }
         legacyNormalisation = normalisation.equals("legacy-reciprocal");
+        if (importanceProfiles && legacyNormalisation) {
+            throw new IllegalArgumentException("Importance profiles require all-minmax desirabilities");
+        }
     }
 
     public Map<String, String> options() { return options; }
 
     public static RevisionConfiguration fromArgs(String[] args) throws IOException {
+        return parseArgs(args, false);
+    }
+
+    static RevisionConfiguration forStudy(String[] args) throws IOException {
+        return parseArgs(args, true);
+    }
+
+    private static RevisionConfiguration parseArgs(String[] args, boolean studyOutput) throws IOException {
         Map<String, String> values = new LinkedHashMap<>();
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--config")) {
@@ -171,7 +185,15 @@ public final class RevisionConfiguration {
             if (++i >= args.length) { throw new IllegalArgumentException("Missing value for --" + key); }
             values.put(key, args[i]);
         }
-        return new RevisionConfiguration(values);
+        return new RevisionConfiguration(values, studyOutput);
+    }
+
+    private static Path checkedStudyDirectory(Path output, Path input) throws IOException {
+        Path resolved = output.toRealPath();
+        if (!Files.isDirectory(resolved) || resolved.startsWith(input) || input.startsWith(resolved)) {
+            throw new IllegalArgumentException("Study output must be a directory outside the read-only input root");
+        }
+        return resolved;
     }
 
     static Path checkedOutput(Path output, Path input) throws IOException {
@@ -267,7 +289,7 @@ public final class RevisionConfiguration {
         values.put("warmup-jobs", "500");
         values.put("epsilon", "0.001");
         values.put("metrics-scope", "pool");
-        values.put("profiles", "paper-v2");
+        values.put("profiles", "importance-v1");
         values.put("normalisation", "all-minmax");
         values.put("dry-run", "false");
         return values;

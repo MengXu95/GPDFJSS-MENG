@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Comparison test between fuzzy-based heuristic selection and random selection
- * Evaluates the effectiveness of the fuzzy inference system
+ * Legacy synthetic target-matching comparison, not a held-out scheduling study.
+ * Use revision.ExperimentAStudy for monotone importance-based comparisons.
  */
 public class FuzzySystemComparison {
 
@@ -334,6 +334,7 @@ public class FuzzySystemComparison {
      * Main test method
      */
     public static void main(String[] args) {
+        System.out.println("LEGACY SYNTHETIC TARGET DIAGNOSTIC - NOT THE IMPORTANCE STUDY");
         FuzzySystemComparison comparison = new FuzzySystemComparison(42);
 
         // Run synthetic data comparison

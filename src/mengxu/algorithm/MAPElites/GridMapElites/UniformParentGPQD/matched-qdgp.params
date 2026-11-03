@@ -1,0 +1,3 @@
+parent.0 = archive-common.params
+uniform.label = MatchedQDGP
+eval.problem.eval-model.rotate-sim-seed = true

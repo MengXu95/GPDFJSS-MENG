@@ -20,7 +20,7 @@ import mengxu.algorithm.MAPElites.FuzzySystem.Heuristic;
 import mengxu.algorithm.MAPElites.FuzzySystem.UserPreferenceVector;
 
 public final class RevisionExperiment {
-    public static final String PROTOCOL = "paper-v2";
+    public static final String PROTOCOL = "paper-v3-importance";
 
     private RevisionExperiment() { }
 
@@ -32,6 +32,7 @@ public final class RevisionExperiment {
                     + "[--runs 0:29] [--pool-size 500] [--top-k 3] [--dry-run]");
             System.out.println("New priority-output sensitivity; explicit legacy profile/normalisation "
                     + "options do not reproduce the old phenotype-distance metric.");
+            System.out.println("Default: monotone importance. --profiles paper-v2 or legacy selects target diagnostics only.");
             return;
         }
         run(RevisionConfiguration.fromArgs(args));
@@ -47,15 +48,16 @@ public final class RevisionExperiment {
         Files.createDirectory(configuration.outputRoot);
         Properties manifest = new Properties();
         manifest.putAll(configuration.options());
-        manifest.setProperty("protocol", PROTOCOL);
+        manifest.setProperty("protocol", configuration.importanceProfiles ? PROTOCOL : "legacy-target-diagnostic");
         manifest.setProperty("resolved-input-root", configuration.inputRoot.toString());
         manifest.setProperty("resolved-archive-directory", configuration.archiveDirectory.toString());
         manifest.setProperty("model-input-centres", "0.2,0.5,0.8; sigma=0.15");
         manifest.setProperty("model-si-range", configuration.legacyNormalisation ? "0:200" : "0:100");
         manifest.setProperty("sensitivity-version", OutputSensitivityCalculator.VERSION);
         manifest.setProperty("complexity-version", "weighted-nodes-case-correct-v2");
-        manifest.setProperty("selection", "FUZZY_PROFILE_MATCH,MANUAL_WS,MANUAL_TARGET,RANDOM");
-        manifest.setProperty("si-role", "diagnostic; not used by FUZZY_PROFILE_MATCH");
+        manifest.setProperty("selection", configuration.importanceProfiles
+                ? "FUZZY_IMPORTANCE,MANUAL_WS,RANDOM" : "FUZZY_PROFILE_MATCH,MANUAL_WS,MANUAL_TARGET,RANDOM");
+        manifest.setProperty("si-role", "fixed legacy diagnostic; not used by either preference-ranking mode");
         manifest.setProperty("fitness-pool-order", "finite stored fitness, then original archive ordinal");
         manifest.setProperty("performance-for-selection", "validation objective; not stored training fitness");
         manifest.setProperty("validation-seeds", seedDescription(configuration.validationSeed,
@@ -91,7 +93,7 @@ public final class RevisionExperiment {
         }
     }
 
-    private static Map<Integer, FinalArchiveReader.Archive> load(RevisionConfiguration configuration)
+    static Map<Integer, FinalArchiveReader.Archive> load(RevisionConfiguration configuration)
             throws IOException {
         Map<Integer, FinalArchiveReader.Archive> archives = new LinkedHashMap<>();
         FinalArchiveReader reader = new FinalArchiveReader();
@@ -133,9 +135,8 @@ public final class RevisionExperiment {
         manifest.setProperty("probe-simulation-count", "2");
         manifest.setProperty("simulation-count-scope", "validation and test; probe simulations counted separately");
         exportProbes(configuration.outputRoot, probes);
-        Map<String, UserPreferenceVector> profiles = configuration.legacyProfiles
-                ? UserPreferenceVector.legacyCases() : UserPreferenceVector.revisionCases();
-        exportProfiles(configuration.outputRoot, profiles);
+        Map<String, UserPreferenceVector> profiles = profileCases(configuration);
+        exportProfiles(configuration.outputRoot, profiles, configuration.importanceProfiles);
         try (RevisionCsv raw = new RevisionCsv(configuration.outputRoot.resolve("archive_members.csv"),
                     "run_id", "candidate_id", "archive_ordinal", "tree_hash", "stored_fitness",
                     "candidate_pool", "status", "sequencing", "routing");
@@ -214,17 +215,22 @@ public final class RevisionExperiment {
                 ? FuzzyModelFactory.createLegacy() : FuzzyModelFactory.createRevision();
         FuzzyHeuristicSelector selector = new FuzzyHeuristicSelector(model, configuration.legacyNormalisation
                 ? FuzzyHeuristicSelector.NormalizationMode.LEGACY_RECIPROCAL
-                : FuzzyHeuristicSelector.NormalizationMode.MIN_MAX_ALL);
+                : FuzzyHeuristicSelector.NormalizationMode.MIN_MAX_ALL,
+                configuration.importanceProfiles ? FuzzyHeuristicSelector.PreferenceMode.MONOTONE_IMPORTANCE
+                        : FuzzyHeuristicSelector.PreferenceMode.TARGET_MATCH);
         selector.buildLibrary(performances, complexities, sensitivities);
         Map<String, SchedulingEvaluator.Evaluation> testCache = new LinkedHashMap<>();
         java.util.Set<String> exportedTests = new java.util.HashSet<>();
         for (Map.Entry<String, UserPreferenceVector> profile : profiles.entrySet()) {
             Map<String, List<Heuristic>> selected = new LinkedHashMap<>();
-            selected.put("FUZZY_PROFILE_MATCH", selector.selectByPreference(profile.getValue(), configuration.topK));
+            String fuzzy = configuration.importanceProfiles ? "FUZZY_IMPORTANCE" : "FUZZY_PROFILE_MATCH";
+            selected.put(fuzzy, selector.selectByPreference(profile.getValue(), configuration.topK));
             selected.put("MANUAL_WS", manual(selector.getHeuristicLibrary(), profile.getValue(),
                     model, configuration.topK, false));
-            selected.put("MANUAL_TARGET", manual(selector.getHeuristicLibrary(), profile.getValue(),
-                    model, configuration.topK, true));
+            if (!configuration.importanceProfiles) {
+                selected.put("MANUAL_TARGET", manual(selector.getHeuristicLibrary(), profile.getValue(),
+                        model, configuration.topK, true));
+            }
             long randomSeed = configuration.selectionSeed ^ ((long) run << 32) ^ profile.getKey().hashCode();
             selected.put("RANDOM", selector.selectRandomly(configuration.topK, new Random(randomSeed)));
             for (Map.Entry<String, List<Heuristic>> method : selected.entrySet()) {
@@ -249,7 +255,7 @@ public final class RevisionExperiment {
                     }
                     rank++;
                     Object score = method.getKey().equals("RANDOM") ? ""
-                            : method.getKey().equals("FUZZY_PROFILE_MATCH")
+                            : method.getKey().equals(fuzzy)
                             ? selector.getPreferenceSimilarity(heuristic, profile.getValue())
                             : manualScore(heuristic, profile.getValue(), model,
                                     method.getKey().equals("MANUAL_TARGET"));
@@ -269,7 +275,7 @@ public final class RevisionExperiment {
                 + ", unique tested expressions=" + testCache.size());
     }
 
-    private static List<Heuristic> manual(List<Heuristic> library, UserPreferenceVector profile,
+    static List<Heuristic> manual(List<Heuristic> library, UserPreferenceVector profile,
                                           FuzzyInferenceSystem model, int topK, boolean target) {
         List<Heuristic> ranked = new ArrayList<>(library);
         ranked.sort(Comparator.comparingDouble((Heuristic h) -> manualScore(h, profile, model, target))
@@ -277,7 +283,7 @@ public final class RevisionExperiment {
         return new ArrayList<>(ranked.subList(0, topK));
     }
 
-    private static double manualScore(Heuristic heuristic, UserPreferenceVector profile,
+    static double manualScore(Heuristic heuristic, UserPreferenceVector profile,
                                       FuzzyInferenceSystem model, boolean targetMatching) {
         double score = 0;
         double weightSum = 0;
@@ -300,9 +306,18 @@ public final class RevisionExperiment {
         return score / weightSum;
     }
 
-    private static void exportProfiles(Path output, Map<String, UserPreferenceVector> profiles) throws IOException {
+    static void exportProfiles(Path output, Map<String, UserPreferenceVector> profiles) throws IOException {
+        exportProfiles(output, profiles, false);
+    }
+
+    static Map<String, UserPreferenceVector> profileCases(RevisionConfiguration config) {
+        return config.importanceProfiles ? UserPreferenceVector.importanceCases()
+                : config.legacyProfiles ? UserPreferenceVector.legacyCases() : UserPreferenceVector.revisionCases();
+    }
+
+    static void exportProfiles(Path output, Map<String, UserPreferenceVector> profiles, boolean importance) throws IOException {
         try (RevisionCsv csv = new RevisionCsv(output.resolve("profiles.csv"),
-                "case_id", "variable", "target_term", "importance_weight")) {
+                "case_id", "variable", importance ? "beneficial_direction" : "target_term", "importance_weight")) {
             for (Map.Entry<String, UserPreferenceVector> entry : profiles.entrySet()) {
                 for (Map.Entry<String, String> term : entry.getValue().getPreferences().entrySet()) {
                     csv.row(entry.getKey(), term.getKey(), term.getValue(), entry.getValue().getWeight(term.getKey()));
@@ -311,7 +326,7 @@ public final class RevisionExperiment {
         }
     }
 
-    private static void exportProbes(Path output, SensitivityProbeSet probes) throws IOException {
+    static void exportProbes(Path output, SensitivityProbeSet probes) throws IOException {
         try (RevisionCsv csv = new RevisionCsv(output.resolve("probes.csv"),
                 "role", "probe_id", "terminal", "raw_value")) {
             writeProbes(csv, "SEQUENCING", probes.sequencing());
@@ -333,7 +348,7 @@ public final class RevisionExperiment {
                 StandardCharsets.UTF_8, replace
                         ? new StandardOpenOption[]{StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING}
                         : new StandardOpenOption[]{StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW})) {
-            properties.store(writer, "QDGP revision experiment: explicit paper-v2 protocol");
+            properties.store(writer, "QDGP revision experiment: explicit profile protocol");
         }
     }
 

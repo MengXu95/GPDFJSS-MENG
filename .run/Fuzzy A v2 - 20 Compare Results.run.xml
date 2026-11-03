@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Fuzzy A v2 - 20 Compare Results" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.MAPElites.FuzzySystem.revision.ExperimentAAnalysis" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--input &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-A-importance-v2\QDGPf&quot; --input &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-A-importance-v2\QDGP&quot; --output-root &quot;D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-A-importance-v2\comparison-v2&quot; --expected-runs 30 --alpha 0.05 --bootstrap-samples 10000 --bootstrap-seed 42" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="-Xmx2g --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

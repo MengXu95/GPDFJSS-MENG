@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="QDGPf d-c - 05 Prepare IO Recovery" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.MAPElites.GridMapElites.DescriptorSensitivityGPQD.DcIoRecovery" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--prepare --config &quot;$PROJECT_DIR$\src\mengxu\algorithm\MAPElites\GridMapElites\DescriptorSensitivityGPQD\dc-study.properties&quot; --recovery-root D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-C-qdgpf-dc-v1\io-recovery-v1" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="-Xmx1g --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

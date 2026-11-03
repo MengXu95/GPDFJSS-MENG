@@ -1,0 +1,4 @@
+parent.0 = archive-common.params
+uniform.label = UniformParentGP
+random-parent-selection-probability = 1.0
+eval.problem.eval-model.rotate-sim-seed = true

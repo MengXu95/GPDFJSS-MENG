@@ -151,7 +151,7 @@ public final class PriorityExpression {
             }
         }
         if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Non-finite priority at " + node.name());
+            throw new CandidateMetricException("Non-finite priority at " + node.name());
         }
         return value;
     }

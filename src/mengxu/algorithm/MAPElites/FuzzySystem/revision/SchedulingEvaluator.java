@@ -11,14 +11,22 @@ public final class SchedulingEvaluator {
     public static final class Evaluation {
         private final List<Double> values;
         private final double mean;
+        private final List<String> failures;
 
         Evaluation(List<Double> values, double mean) {
+            this(values, mean, Collections.nCopies(values.size(), ""));
+        }
+
+        Evaluation(List<Double> values, double mean, List<String> failures) {
             this.values = Collections.unmodifiableList(new ArrayList<>(values));
             this.mean = mean;
+            this.failures = Collections.unmodifiableList(new ArrayList<>(failures));
         }
 
         public List<Double> values() { return values; }
         public double mean() { return mean; }
+        public List<String> failures() { return failures; }
+        public long failedCount() { return failures.stream().filter(value -> !value.isEmpty()).count(); }
     }
 
     private final int machines;
@@ -45,27 +53,41 @@ public final class SchedulingEvaluator {
     }
 
     public Evaluation evaluate(ArchiveCandidate candidate, long firstSeed, int instances) {
+        return evaluate(candidate, firstSeed, instances, true);
+    }
+
+    public Evaluation evaluateRecordingFailures(ArchiveCandidate candidate, long firstSeed, int instances) {
+        return evaluate(candidate, firstSeed, instances, false);
+    }
+
+    private Evaluation evaluate(ArchiveCandidate candidate, long firstSeed, int instances, boolean failFast) {
         if (candidate == null || instances < 1) {
             throw new IllegalArgumentException("A candidate and positive instance count are required");
         }
         List<Double> values = new ArrayList<>();
+        List<String> failures = new ArrayList<>();
         double mean = 0;
         for (int i = 0; i < instances; i++) {
             long seed = Math.addExact(firstSeed, i);
             GPRule[] rules = candidate.rules();
             HeterogeneousSimulation simulation = HeterogeneousSimulation.standardMissing(seed,
                     rules[0], rules[1], machines, jobs, warmup, utilisation, dueFactor);
-            simulation.rerun();
             simulationCount++;
+            simulation.rerun();
             double value = simulation.objectiveValue(objective);
+            String failure = "";
             if (!Double.isFinite(value) || value < 0 || value == Double.MAX_VALUE) {
-                throw new IllegalStateException("Failed scheduling evaluation: candidate="
-                        + candidate.id() + ", seed=" + seed + ", objective=" + value);
+                failure = "Failed scheduling evaluation: candidate="
+                        + candidate.id() + ", seed=" + seed + ", objective=" + value;
+                if (failFast) { throw new IllegalStateException(failure); }
+                value = Double.POSITIVE_INFINITY;
             }
             values.add(value);
-            mean += (value - mean) / (i + 1);
+            failures.add(failure);
+            if (Double.isFinite(value) && Double.isFinite(mean)) { mean += (value - mean) / (i + 1); }
+            else { mean = Double.POSITIVE_INFINITY; }
         }
-        return new Evaluation(values, mean);
+        return new Evaluation(values, mean, failures);
     }
 
     public long simulationCount() { return simulationCount; }

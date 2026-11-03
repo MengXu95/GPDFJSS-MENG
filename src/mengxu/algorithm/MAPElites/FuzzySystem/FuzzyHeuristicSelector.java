@@ -4,9 +4,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Fuzzy-based heuristic selector using user preference matching
- * Matches weighted memberships in the user's target terms (target membership is 1).
- * Preference matching is separate from the preference-independent SI ranking.
+ * Fuzzy-based selector with explicit target-matching and monotone-importance modes.
+ * Both recommendation scores are separate from the preference-independent SI diagnostic.
  */
 public class FuzzyHeuristicSelector {
 
@@ -15,20 +14,47 @@ public class FuzzyHeuristicSelector {
         MIN_MAX_ALL
     }
 
+    public enum PreferenceMode {
+        TARGET_MATCH,
+        MONOTONE_IMPORTANCE
+    }
+
+    private static final String[][] ORDERED_TERMS = {
+            {"Performance", "Low", "Medium", "High"},
+            {"Interpretability", "Hard", "Moderate", "Easy"},
+            {"Stability", "Unstable", "Moderate", "Stable"}
+    };
+
     private final FuzzyInferenceSystem fuzzySystem;
     private final NormalizationMode normalizationMode;
+    private final PreferenceMode preferenceMode;
     private final List<Heuristic> heuristicLibrary;
+    private final Map<Heuristic, Map<String, Double>> orderedTermUtilities = new IdentityHashMap<>();
 
     public FuzzyHeuristicSelector(FuzzyInferenceSystem fuzzySystem) {
         this(fuzzySystem, NormalizationMode.LEGACY_RECIPROCAL);
     }
 
     public FuzzyHeuristicSelector(FuzzyInferenceSystem fuzzySystem, NormalizationMode normalizationMode) {
-        if (fuzzySystem == null || normalizationMode == null) {
-            throw new IllegalArgumentException("Fuzzy engine and normalization mode are required");
+        this(fuzzySystem, normalizationMode, PreferenceMode.TARGET_MATCH);
+    }
+
+    /**
+     * Importance mode uses min-max desirabilities and cached ordered-term utilities.
+     * Existing one- and two-argument constructors retain target-membership semantics.
+     */
+    public FuzzyHeuristicSelector(FuzzyInferenceSystem fuzzySystem, NormalizationMode normalizationMode,
+                                  PreferenceMode preferenceMode) {
+        if (fuzzySystem == null || normalizationMode == null || preferenceMode == null) {
+            throw new IllegalArgumentException("Fuzzy engine, normalization and preference modes are required");
+        }
+        if (preferenceMode == PreferenceMode.MONOTONE_IMPORTANCE
+                && normalizationMode != NormalizationMode.MIN_MAX_ALL) {
+            throw new IllegalArgumentException("Monotone importance requires MIN_MAX_ALL normalization");
         }
         this.fuzzySystem = fuzzySystem;
         this.normalizationMode = normalizationMode;
+        this.preferenceMode = preferenceMode;
         this.heuristicLibrary = new ArrayList<>();
         validateEngine();
     }
@@ -63,6 +89,14 @@ public class FuzzyHeuristicSelector {
         double minStability = Collections.min(stabilities);
         double maxStability = Collections.max(stabilities);
         List<Heuristic> built = new ArrayList<>();
+        Map<Heuristic, Map<String, Double>> builtUtilities = new IdentityHashMap<>();
+        Map<String, MonotoneFuzzyUtility> utilityModels = new LinkedHashMap<>();
+        if (preferenceMode == PreferenceMode.MONOTONE_IMPORTANCE) {
+            for (String[] terms : ORDERED_TERMS) {
+                utilityModels.put(terms[0], new MonotoneFuzzyUtility(
+                        fuzzySystem.getInputVariables().get(terms[0]), terms[1], terms[2], terms[3]));
+            }
+        }
 
         for (int i = 0; i < performances.size(); i++) {
             Heuristic h = new Heuristic(i, performances.get(i),
@@ -81,6 +115,13 @@ public class FuzzyHeuristicSelector {
                     ? minMax(interpretabilities.get(i), minEase, maxEase) : h.getInterpretability());
             for (Map.Entry<String, Double> entry : inputs.entrySet()) {
                 h.setNormalizedCriterion(entry.getKey(), entry.getValue());
+            }
+            if (preferenceMode == PreferenceMode.MONOTONE_IMPORTANCE) {
+                Map<String, Double> utilities = new LinkedHashMap<>();
+                for (Map.Entry<String, MonotoneFuzzyUtility> model : utilityModels.entrySet()) {
+                    utilities.put(model.getKey(), model.getValue().evaluate(inputs.get(model.getKey())));
+                }
+                builtUtilities.put(h, Collections.unmodifiableMap(utilities));
             }
 
             double si = fuzzySystem.infer(inputs);
@@ -102,11 +143,13 @@ public class FuzzyHeuristicSelector {
         }
         heuristicLibrary.clear();
         heuristicLibrary.addAll(built);
+        orderedTermUtilities.clear();
+        orderedTermUtilities.putAll(builtUtilities);
     }
 
     /**
      * Select top-k heuristics based on user preference vector
-     * Uses fuzzy similarity matching
+     * Uses the configured target-match or monotone-importance score, never SI.
      */
     public List<Heuristic> selectByPreference(UserPreferenceVector upv, int k) {
         validateK(k);
@@ -115,7 +158,7 @@ public class FuzzyHeuristicSelector {
         List<HeuristicWithSimilarity> rankedHeuristics = new ArrayList<>();
 
         for (Heuristic h : heuristicLibrary) {
-            double similarity = computeFuzzySimilarity(h, upv);
+            double similarity = computePreferenceScore(h, upv);
             rankedHeuristics.add(new HeuristicWithSimilarity(h, similarity));
         }
 
@@ -186,13 +229,64 @@ public class FuzzyHeuristicSelector {
         return numerator / denominator;
     }
 
-    /** The same weighted target-membership score used by selectByPreference. */
+    private double computePreferenceScore(Heuristic heuristic, UserPreferenceVector upv) {
+        if (preferenceMode == PreferenceMode.TARGET_MATCH) {
+            return computeFuzzySimilarity(heuristic, upv);
+        }
+        Map<String, Double> utilities = orderedTermUtilities.get(heuristic);
+        if (utilities == null) {
+            throw new IllegalStateException("Missing cached ordered-term utilities");
+        }
+        double maxWeight = Collections.max(upv.getWeights().values());
+        double numerator = 0.0;
+        double denominator = 0.0;
+        for (String variable : upv.getPreferences().keySet()) {
+            double weight = upv.getWeight(variable) / maxWeight;
+            Double utility = utilities.get(variable);
+            if (utility == null) {
+                throw new IllegalStateException("Missing cached utility: " + variable);
+            }
+            numerator += weight * utility;
+            denominator += weight;
+        }
+        double score = numerator / denominator;
+        if (!(denominator > 0.0) || !Double.isFinite(score) || score < 0.0 || score > 1.0) {
+            throw new IllegalStateException("No finite importance score can be computed");
+        }
+        return score;
+    }
+
+    /** The configured recommendation score; the name is retained for compatibility. */
     public double getPreferenceSimilarity(Heuristic heuristic, UserPreferenceVector upv) {
         if (heuristic == null || !heuristicLibrary.contains(heuristic)) {
             throw new IllegalArgumentException("Heuristic must belong to this library");
         }
         validatePreferences(upv);
-        return computeFuzzySimilarity(heuristic, upv);
+        return computePreferenceScore(heuristic, upv);
+    }
+
+    /** Clearer alias for either target-match similarity or monotone-importance utility. */
+    public double getPreferenceScore(Heuristic heuristic, UserPreferenceVector upv) {
+        return getPreferenceSimilarity(heuristic, upv);
+    }
+
+    /**
+     * Read-only cached g values keyed by Performance, Interpretability and Stability,
+     * in that order. Available only for a current library member in importance mode;
+     * no utility or diagnostic inference is recomputed.
+     */
+    public Map<String, Double> getImportanceUtilities(Heuristic heuristic) {
+        if (preferenceMode != PreferenceMode.MONOTONE_IMPORTANCE) {
+            throw new IllegalStateException("Ordered-term utilities require MONOTONE_IMPORTANCE mode");
+        }
+        if (heuristic == null || !heuristicLibrary.contains(heuristic)) {
+            throw new IllegalArgumentException("Heuristic must belong to this library");
+        }
+        Map<String, Double> utilities = orderedTermUtilities.get(heuristic);
+        if (utilities == null) {
+            throw new IllegalStateException("Missing cached ordered-term utilities");
+        }
+        return utilities;
     }
 
     private static double minMax(double value, double min, double max) {
@@ -213,19 +307,17 @@ public class FuzzyHeuristicSelector {
     private void validateEngine() {
         fuzzySystem.validate();
         Map<String, FuzzyVariable> variables = fuzzySystem.getInputVariables();
-        String[][] required = {
-                {"Performance", "Low", "Medium", "High"},
-                {"Stability", "Unstable", "Moderate", "Stable"},
-                {"Interpretability", "Hard", "Moderate", "Easy"}
-        };
-        if (variables.size() != required.length) {
+        if (variables.size() != ORDERED_TERMS.length) {
             throw new IllegalArgumentException("Selector requires exactly three criterion variables");
         }
-        for (String[] names : required) {
+        for (String[] names : ORDERED_TERMS) {
             FuzzyVariable variable = variables.get(names[0]);
             if (variable == null || variable.getMinValue() > 0.0 || variable.getMaxValue() < 1.0
                     || !variable.getLinguisticTerms().containsAll(Arrays.asList(names).subList(1, names.length))) {
                 throw new IllegalArgumentException("Missing selector variable, terms or [0,1] domain: " + names[0]);
+            }
+            if (preferenceMode == PreferenceMode.MONOTONE_IMPORTANCE) {
+                new MonotoneFuzzyUtility(variable, names[1], names[2], names[3]);
             }
         }
     }
@@ -241,6 +333,14 @@ public class FuzzyHeuristicSelector {
             FuzzyVariable variable = variables.get(preference.getKey());
             if (variable == null || !variable.getLinguisticTerms().contains(preference.getValue())) {
                 throw new IllegalArgumentException("Unknown preference variable or term: " + preference);
+            }
+            if (preferenceMode == PreferenceMode.MONOTONE_IMPORTANCE) {
+                for (String[] terms : ORDERED_TERMS) {
+                    if (terms[0].equals(preference.getKey()) && !terms[3].equals(preference.getValue())) {
+                        throw new IllegalArgumentException(
+                                "Importance weights require beneficial High/Easy/Stable labels: " + preference);
+                    }
+                }
             }
         }
     }
@@ -284,6 +384,10 @@ public class FuzzyHeuristicSelector {
 
     public NormalizationMode getNormalizationMode() {
         return normalizationMode;
+    }
+
+    public PreferenceMode getPreferenceMode() {
+        return preferenceMode;
     }
 
     /**
