@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Baseline Gen49 - 00 Reader Self Test" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.ruleanalysis.MPSLGP.BaselineGenerationTestMain" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--self-test" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="--add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>
