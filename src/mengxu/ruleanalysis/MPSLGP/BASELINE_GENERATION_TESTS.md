@@ -10,7 +10,9 @@ Generation 49 has no Top-N section in these logs. Thus, saved-best selection is 
 
 ## IDEA Configurations
 
-Use the `GPDFJSS-MENG` module and its configured JDK. Run **Build > Rebuild Project** first. The shared configurations under `.run` use the project directory as the working directory:
+Use the `GPDFJSS-MENG` module and its configured JDK. Run **Build > Rebuild Project** first. The two PSLGP-I configurations are in IDEA's traditional `.idea/runConfigurations` directory and use the project directory as the working directory. The reader self-test remains under `.run`.
+
+If the two PSLGP-I entries are not visible, use **File > Reload All from Disk** (or **Synchronize** in older IDEA versions), then open **Run > Edit Configurations**. If they are still absent, close and reopen the `D:\javaProject\GPDFJSS-MENG` project. The traditional configuration files are local and ignored with `.idea`; they are not duplicated under `.run`.
 
 | Configuration | Purpose |
 |---|---|
@@ -40,7 +42,21 @@ src/mengxu/ruleanalysis/MPSLGP/baseline-tests-generation49
 
 Each method/scenario/run/generation directory contains `test.properties`, a `missing-...-ParetoFront.csv`, `test-outcomes.csv`, `testing.log`, and, after success, `completed.properties`. The CSV records the actual source generation. Input statistics and parameter hashes are checked before and after evaluation; workers independently re-read and verify the selected rules.
 
-Existing directories are never overwritten. `--skip-existing` reuses completed results only when their configuration and CSV hashes match. Incomplete or incompatible output requires another `--output` root. Smoke runs use a separate `smoke` subdirectory and are not paper results.
+Existing result files are never overwritten. `--skip-existing` reuses completed results only when their configuration and CSV hashes match. The IDEA configurations also enable `--retry-incomplete`: if an interrupted directory has the identical test specification and no active worker, complete CSV/detail data are validated and a missing completion marker is restored without simulations. Recovery validates all preference rows, run/generation identity, weights, selected-tree counts, training objectives and paired test values. Recovered results are counted as reused/skipped in batch progress.
+
+If matching interrupted results are incomplete, their entire directory is moved to a sibling such as `generation49.incomplete-<unique-id>` before a fresh test starts. The old files remain available for inspection. An incompatible configuration, an incorrect existing completion marker or an active worker still causes a refusal; use another output root for a different experiment. This retries interrupted tests from the beginning, not from an arbitrary partial preference row.
+
+Output eligibility is checked for every job during preflight, before any workers start, so an old conflicting directory cannot trigger a cascade that interrupts unrelated new jobs. The preflight logs `[RECOVERY READY]` for verified complete data without a marker and `[RETRY READY]` for matching partial output. It makes no output changes. Smoke runs use a separate `smoke` subdirectory and are not paper results.
+
+## Live Progress
+
+The IDEA coordinator console now shows preflight progress, each job's scenario/run/generation, worker PID, and log path. Child processes send their source-validation, runtime-check and test-set preparation stages to the console. The first finished preference, every ten finished preferences, and the final preference report the completed count, percentage, weights, objectives and elapsed time.
+
+`[BATCH PROGRESS]` shows finished jobs out of the planned total, including separate completed, verified-skipped, failed and running counts. A preference count concerns one job; the batch count concerns all 300 scenario/seed jobs. Every worker line is prefixed with its identity so five parallel jobs can be distinguished. Full worker output remains in that job's `testing.log`; progress is forwarded live without flooding the coordinator console with every simulation warning.
+
+Progress messages are event-based. A long preference evaluation can pause progress output until that evaluation finishes. Test CSVs are flushed after each preference. Logging does not change the preference grid, replication count, rule selection or fitness computation.
+
+An already-running old JVM cannot acquire these changes automatically. After the current batch completes, rebuild the project and start the test configuration again to use the new logging. Stopping an active batch may leave incomplete output directories, which are not treated as verified completed jobs by `--skip-existing`.
 
 ## Smaller Checks
 

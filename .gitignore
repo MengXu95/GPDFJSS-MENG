@@ -21,6 +21,7 @@ src/mengxu/ruleanalysis/MPSLGP/paper-tests/
 src/mengxu/ruleanalysis/MPSLGP/paper-runs-preference-v2/
 src/mengxu/ruleanalysis/MPSLGP/paper-tests-preference-v2/
 src/mengxu/ruleanalysis/MPSLGP/baseline-tests-generation49/
+src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49/
 *.csv
 *.stat
 *.pdf
