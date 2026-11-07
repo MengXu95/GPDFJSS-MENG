@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="LexGP Rotating Cumulative v1 - 00 Preflight" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.algorithm.MAPElites.GridMapElites.LiteratureComparisonGPQD.ERotatingCumulativeReplay" />
+    <module name="GPDFJSS-MENG" />
+    <option name="PROGRAM_PARAMETERS" value="--config &quot;$PROJECT_DIR$\src\mengxu\algorithm\MAPElites\GridMapElites\LiteratureComparisonGPQD\e-cumulative-rotating.properties&quot; --preflight" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="VM_PARAMETERS" value="-Xmx1g --add-opens java.base/java.lang=ALL-UNNAMED" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

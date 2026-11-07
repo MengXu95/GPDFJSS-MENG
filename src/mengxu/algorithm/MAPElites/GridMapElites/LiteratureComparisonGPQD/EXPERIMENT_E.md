@@ -1,5 +1,34 @@
 # E: all-scenario Lexicase-GP literature comparison
 
+## Completed Lexicase results (2026-11-04)
+
+The author has completed the **360 Lexicase training and evaluation cases**:
+six scenarios, fixed/rotating training, and 30 runs per group. The active root
+manifests are COMPLETE. The authoritative reports are currently
+`training\training-report` and `test\report-attempt-0001`; always follow the
+root `report.path` rather than assuming these names for a later extension.
+
+The read-only publication analysis is available at:
+
+```text
+D:\research\Response\ACM-TELO-2025-90\revision-results\experiment-E-lexicase-all-v1\analysis-python-v1
+```
+
+Its reproducible Python code and CLI documentation are in the manuscript
+repository's `revision-analysis\lexicase-results` directory. The report retains
+all 360 run blocks, 180,000 final population memberships, 72,000 sampled
+rule memberships, 360,000 validation outcomes and 18,000 executed held-out tests.
+There were no held-out failures or missing representatives. Validation retains
+988 failed instance outcomes involving 412 sampled rule memberships and 157 runs;
+conditional finite quality descriptions do not replace the infinite primary
+quality outcomes.
+
+This completion is **Lexicase-only**, not completion of the optional three-method
+comparison. No matched GP/QDGP groups are present: the report correctly says
+`COMPARISON_NOT_READY`, with 24 unavailable contrasts. Historical results and
+C's five-run default cannot be substituted without establishing matching.
+Do not rerun valid completed Lexicase cases merely to add the optional controls.
+
 ## Five-seed parallel execution (Lex E v2)
 
 Use the **Lex E v2** IDEA profiles for up to five independent seed JVMs.
