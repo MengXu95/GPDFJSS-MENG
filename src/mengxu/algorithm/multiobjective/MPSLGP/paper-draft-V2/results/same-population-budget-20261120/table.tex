@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\caption{\mm{Test performance under matched group-level population budgets: mean(std) of HV, IGD and GD over all 30 runs. Each method uses a total population allocation of 1,000 per group and 50 evaluated generations. Bounds and reference fronts are common within this comparison and are recomputed independently of Table~\ref{tab:latest-main-quality}. At baseline entries, $(\uparrow)$, $(\downarrow)$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha=0.05$. Bold identifies the best unrounded mean. Higher HV and lower IGD/GD are preferable. The 76 invalid PSLGP preference outcomes are excluded; all seeds are retained.}}
+\label{tab:same-budget-quality}
+\fontsize{6.5}{8}\selectfont
+\setlength{\tabcolsep}{0.6pt}
+\input{results/same-population-budget-20261120/table-rows.tex}
+\resizebox{\textwidth}{!}{%
+\mm{%
+\begin{tabular}{@{}lc*{9}{c}@{}}
+\toprule
+ & & \multicolumn{3}{c}{HV $\uparrow$} & \multicolumn{3}{c}{IGD $\downarrow$} & \multicolumn{3}{c}{GD $\downarrow$} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+Group & Scenario & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP \\
+\midrule
+\SameBudgetQualityRows
+\bottomrule
+\end{tabular}
+}
+}
+\end{table*}

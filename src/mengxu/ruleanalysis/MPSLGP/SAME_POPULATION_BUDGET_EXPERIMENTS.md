@@ -81,8 +81,19 @@ After an interruption, stop the old coordinator/workers, reload the IDEA configu
 
 The original NSGPII configurations and default output root are unchanged. The new formal output directories are ignored by Git; the local IDEA directory is also ignored by the repository's existing policy.
 
-## Later Analysis
+## Completed Analysis
 
-After both tests complete, read raw objective outcomes from the new baselines and the reused MPSLGP generation-49 outcomes. Rebuild scenario-specific bounds/reference fronts from only these three matched-budget comparison inputs; do not copy normalized scores from the earlier unequal-allocation table. Summarize HV, IGD and GD over all 30 seeds and perform paired signed-rank tests within each group/scenario. Preserve invalid-outcome accounting and distinguish significant rank results from mean ordering. Group training time counts joint MPSLGP once and sums independent task times.
+The completed V2 analysis is in [same-population-budget-20261120](../../algorithm/multiobjective/MPSLGP/paper-draft-V2/results/same-population-budget-20261120). From the repository root, using Python with the existing scientific-analysis dependencies (`numpy`, `pandas`, `scipy`, `javaproperties`, `matplotlib`), run:
 
-The new V2 Results subsection describes this protocol and explicitly marks results as pending. The runner does not generate numerical manuscript claims or overwrite historical tables.
+```powershell
+python src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft-V2\results\same-population-budget-20261120\analyze_same_budget.py --self-test
+python src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft-V2\results\same-population-budget-20261120\analyze_same_budget.py
+```
+
+After compiling `paper-draft-V2/mpslgp-method.tex`, use the same analysis command with `--validate` to cross-check the indicators with dense pairwise distances, exact tests with SciPy, all formatted table cells and the compiled PDF. This final validation also uses the existing `pymupdf` dependency.
+
+The script verifies the 1,080 new baseline training/test completion records and source/configuration hashes, population quotas, generation-49 selection, held-out protocol, and 540 reused MPSLGP task outcomes. Scenario-specific bounds/reference fronts are rebuilt from only these three matched-budget inputs; old normalized indicators are not reused. All 30 training seeds remain the independent units for each of the 18 group/scenario comparisons. Sample standard deviations use `ddof=1`; the 108 exact two-sided paired Wilcoxon tests omit exact-zero differences, use tied absolute midranks and alpha 0.05 without multiple-comparison correction, matching Table VI. Significant direction comes from paired rank sums, not the mean ordering.
+
+Outputs include raw-source SHA256 provenance (`input-manifest.csv`), per-run metrics, 54 mean/SD summaries, paired-test details, comparison counts, ten scenario reference fronts, the protocol JSON and a Table VI-style LaTeX table. The V2 Results subsection includes the completed analysis and table while preserving the original unequal-allocation table.
+
+The 76 invalid PSLGP preferences (one in R2/scenario 3, seed 26; 75 in R5/scenario 8, seed 23) are excluded only at the objective-pair level; neither seed is dropped. MPSLGP and NSGPII have no invalid outcomes. Reported indicators are conditional on valid outcomes. Group training time uses logged generation 0--49 elapsed seconds, counting joint MPSLGP once and summing independent task times; these cross-batch timings are not parallel makespan or proof of hardware-independent speedup.

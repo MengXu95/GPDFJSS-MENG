@@ -363,6 +363,12 @@ INPUT ./results/latest-20261106/table-vi-quality.pdf
 INPUT ./results/latest-20261106/table-vi-quality.pdf
 INPUT ./results/latest-20261106/table-vi-quality.pdf
 INPUT ./results/latest-20261106/table-vi-quality.pdf
+INPUT ./results/same-population-budget-20261120/table.tex
+INPUT ./results/same-population-budget-20261120/table.tex
+INPUT results/same-population-budget-20261120/table.tex
+INPUT ./results/same-population-budget-20261120/table-rows.tex
+INPUT ./results/same-population-budget-20261120/table-rows.tex
+INPUT results/same-population-budget-20261120/table-rows.tex
 INPUT ./results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf
 INPUT ./results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf
 INPUT ./results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf

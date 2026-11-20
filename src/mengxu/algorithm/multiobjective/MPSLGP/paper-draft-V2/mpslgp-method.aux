@@ -116,13 +116,11 @@
 \@writefile{toc}{\contentsline {section}{\numberline {V}Results}{9}{section.5}\protected@file@percent }
 \newlabel{sec:results}{{V}{9}{Results}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Test Performance}{9}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Comparison Under Matched Population Budgets}{10}{subsection.5.2}\protected@file@percent }
-\newlabel{sec:matched-population-budget}{{\mbox  {V-B}}{10}{Comparison Under Matched Population Budgets}{subsection.5.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training Time}{10}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}\textcolor {red}{Comparison Under Matched Population Budgets}}{10}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:matched-population-budget}{{\mbox  {V-B}}{10}{\mm {Comparison Under Matched Population Budgets}}{subsection.5.2}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces The mean(std) results of HV, IGD and GD comparison of all methods over all 30 runs. Methods share scenario-specific bounds and reference fronts. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the Wilcoxon test at $\alpha =0.05$.}}{11}{table.6}\protected@file@percent }
 \newlabel{tab:latest-main-quality}{{VI}{11}{The mean(std) results of HV, IGD and GD comparison of all methods over all 30 runs. Methods share scenario-specific bounds and reference fronts. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the Wilcoxon test at $\alpha =0.05$}{table.6}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Training time for the same task groups: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group.}}{11}{table.7}\protected@file@percent }
-\newlabel{tab:latest-training-time}{{VII}{11}{Training time for the same task groups: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group}{table.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training Time}{11}{subsection.5.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Ablation Study}{11}{subsection.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Further Analysis}{11}{section.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Shared and Task-Specific Tree Structure Analyses}{11}{subsection.6.1}\protected@file@percent }
@@ -133,14 +131,16 @@
 \newlabel{sec:tree-preference-effects}{{\mbox  {VI-B}}{12}{Task-Specific Effects of Preference Inputs}{subsection.6.2}{}}
 \newlabel{eq:case-tree-s1}{{16}{12}{Task-Specific Effects of Preference Inputs}{equation.16}{}}
 \newlabel{eq:case-tree-s3}{{17}{12}{Task-Specific Effects of Preference Inputs}{equation.17}{}}
-\newlabel{eq:case-tree-s5}{{18}{12}{Task-Specific Effects of Preference Inputs}{equation.18}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean.}}{13}{table.8}\protected@file@percent }
-\newlabel{tab:latest-ablation-quality}{{VIII}{13}{The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean}{table.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces \textcolor {red}{Test performance under matched group-level population budgets: mean(std) of HV, IGD and GD over all 30 runs. Each method uses a total population allocation of 1,000 per group and 50 evaluated generations. Bounds and reference fronts are common within this comparison and are recomputed independently of Table~\ref {tab:latest-main-quality}. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold identifies the best unrounded mean. Higher HV and lower IGD/GD are preferable. The 76 invalid PSLGP preference outcomes are excluded; all seeds are retained.}}}{13}{table.7}\protected@file@percent }
+\newlabel{tab:same-budget-quality}{{VII}{13}{\mm {Test performance under matched group-level population budgets: mean(std) of HV, IGD and GD over all 30 runs. Each method uses a total population allocation of 1,000 per group and 50 evaluated generations. Bounds and reference fronts are common within this comparison and are recomputed independently of Table~\ref {tab:latest-main-quality}. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold identifies the best unrounded mean. Higher HV and lower IGD/GD are preferable. The 76 invalid PSLGP preference outcomes are excluded; all seeds are retained.}}{table.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Training time for the original unequal-allocation comparison: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group.}}{13}{table.8}\protected@file@percent }
+\newlabel{tab:latest-training-time}{{VIII}{13}{Training time for the original unequal-allocation comparison: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group}{table.8}{}}
+\newlabel{eq:case-tree-s5}{{18}{13}{Task-Specific Effects of Preference Inputs}{equation.18}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Preference Response Analysis}{13}{subsection.6.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Pareto Front Analysis Across Multiple Runs}{13}{subsection.6.4}\protected@file@percent }
-\newlabel{eq:empirical-attainment}{{19}{13}{Pareto Front Analysis Across Multiple Runs}{equation.19}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT.}}{14}{figure.6}\protected@file@percent }
-\newlabel{fig:learned-sequencing-trees}{{6}{14}{The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT}{figure.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean.}}{14}{table.9}\protected@file@percent }
+\newlabel{tab:latest-ablation-quality}{{IX}{14}{The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean}{table.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Pareto Front Analysis Across Multiple Runs}{14}{subsection.6.4}\protected@file@percent }
+\newlabel{eq:empirical-attainment}{{19}{14}{Pareto Front Analysis Across Multiple Runs}{equation.19}{}}
 \newlabel{eq:attainment-boundary}{{20}{14}{Pareto Front Analysis Across Multiple Runs}{equation.20}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusions}{14}{section.7}\protected@file@percent }
 \newlabel{sec:conclusions}{{VII}{14}{Conclusions}{section.7}{}}
@@ -152,16 +152,14 @@
 \bibcite{xu2023genetic}{4}
 \bibcite{li2025multi}{5}
 \bibcite{xu2026pslgp}{6}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT.}}{15}{figure.6}\protected@file@percent }
+\newlabel{fig:learned-sequencing-trees}{{6}{15}{The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT}{figure.6}{}}
+\@writefile{toc}{\contentsline {section}{References}{15}{section*.1}\protected@file@percent }
 \bibcite{liang2026evoamc}{7}
 \bibcite{yi2025dynamic}{8}
 \bibcite{chen2026reinforcement}{9}
 \bibcite{luo2025fully}{10}
 \bibcite{zychowski2026multiobjective}{11}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds.}}{15}{figure.7}\protected@file@percent }
-\newlabel{fig:latest-preference-response}{{7}{15}{Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds}{figure.7}{}}
-\@writefile{toc}{\contentsline {section}{References}{15}{section*.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised.}}{15}{figure.8}\protected@file@percent }
-\newlabel{fig:latest-attainment}{{8}{15}{Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised}{figure.8}{}}
 \bibcite{chen2025optimizing}{12}
 \bibcite{yao2024novel}{13}
 \bibcite{roshanaei2013mathematical}{14}
@@ -172,6 +170,10 @@
 \bibcite{lei2018two}{19}
 \bibcite{fuladi2024dynamic}{20}
 \bibcite{mirjalili2018genetic}{21}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds.}}{16}{figure.7}\protected@file@percent }
+\newlabel{fig:latest-preference-response}{{7}{16}{Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds}{figure.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised.}}{16}{figure.8}\protected@file@percent }
+\newlabel{fig:latest-attainment}{{8}{16}{Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised}{figure.8}{}}
 \bibcite{van1987simulated}{22}
 \bibcite{hansen2010variable}{23}
 \bibcite{su2025decentralized}{24}
@@ -192,4 +194,4 @@
 \bibcite{riquelme2015performance}{39}
 \bibcite{zhang2019evolving}{40}
 \bibcite{zimmerman1993relative}{41}
-\gdef \@abspage@last{16}
+\gdef \@abspage@last{17}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.12)  15 NOV 2026 11:11
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.12)  20 NOV 2026 09:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -512,7 +512,7 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip61
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 39
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 40
 .
 
 (c:/texlive/2026/texmf-dist/tex/latex/lm/t1lmr.fd
@@ -525,24 +525,24 @@ File: l3backend-pdftex.def 2026-02-18 L3 backend support: PDF output (pdfTeX)
 (./mpslgp-method.aux)
 \openout1 = `mpslgp-method.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
 
 -- Lines per column: 58 (exact).
 (c:/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
@@ -567,13 +567,13 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-LaTeX Info: Redefining \microtypecontext on input line 39.
-Package microtype Info: Applying patch `item' on input line 39.
-Package microtype Info: Applying patch `toc' on input line 39.
-Package microtype Info: Applying patch `eqnum' on input line 39.
-Package microtype Info: Applying patch `footnote' on input line 39.
-Package microtype Info: Applying patch `verbatim' on input line 39.
-LaTeX Info: Redefining \microtypesetup on input line 39.
+LaTeX Info: Redefining \microtypecontext on input line 40.
+Package microtype Info: Applying patch `item' on input line 40.
+Package microtype Info: Applying patch `toc' on input line 40.
+Package microtype Info: Applying patch `eqnum' on input line 40.
+Package microtype Info: Applying patch `footnote' on input line 40.
+Package microtype Info: Applying patch `verbatim' on input line 40.
+LaTeX Info: Redefining \microtypesetup on input line 40.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -589,7 +589,7 @@ Package microtype Info: No adjustment of character kerning.
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
 )
-Package hyperref Info: Link coloring OFF on input line 39.
+Package hyperref Info: Link coloring OFF on input line 40.
 
 (./mpslgp-method.out) (./mpslgp-method.out)
 \@outlinefile=\write3
@@ -599,40 +599,40 @@ Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/10'.
 (microtype)             Ignoring protrusion settings for this character.
 
-Underfull \hbox (badness 2753) in paragraph at lines 58--59
+Underfull \hbox (badness 2753) in paragraph at lines 59--60
 []\T1/lmr/m/n/10 (+20) Cross-task ex-change must ac-count for preference-
  []
 
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 6
-2.
+3.
 (c:/texlive/2026/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 6
-2.
+3.
 
 (c:/texlive/2026/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-62.
+63.
 
 (c:/texlive/2026/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-62.
+63.
 
 (c:/texlive/2026/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 62.
+(Font)              <10> on input line 63.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 62.
+(Font)              <7> on input line 63.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 62.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 62.
+(Font)              <5> on input line 63.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 63.
 
 
 (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
@@ -641,7 +641,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (c:/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 62.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 63.
 
 
 (c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -654,7 +654,7 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 
 
 {c:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
-Underfull \hbox (badness 1406) in paragraph at lines 107--110
+Underfull \hbox (badness 1406) in paragraph at lines 108--111
 []\T1/lmr/m/n/10 (+20) PSLGP learns one preference-conditioned heuris-tic
  []
 
@@ -665,43 +665,43 @@ dvips/lm/lm-mathex.enc}]
 File: figures/MPSLGP_Editable_Figures.pdf Graphic file (type pdf)
 <use figures/MPSLGP_Editable_Figures.pdf, page 1>
 Package pdftex.def Info: figures/MPSLGP_Editable_Figures.pdf , page1 used on in
-put line 161.
+put line 162.
 (pdftex.def)             Requested size: 516.0pt x 315.32584pt.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 162.
+(Font)              <8> on input line 163.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 162.
+(Font)              <6> on input line 163.
  [3]
 <figures/MPSLGP_Editable_Figures.pdf, id=280, page=3, 1951.29pt x 1192.455pt>
 File: figures/MPSLGP_Editable_Figures.pdf Graphic file (type pdf)
 <use figures/MPSLGP_Editable_Figures.pdf, page 3>
 Package pdftex.def Info: figures/MPSLGP_Editable_Figures.pdf , page3 used on in
-put line 184.
+put line 185.
 (pdftex.def)             Requested size: 516.0pt x 315.32584pt.
  [4 <./figures/MPSLGP_Editable_Figures.pdf>]
 <figures/MPSLGP_Editable_Figures.pdf, id=332, page=2, 1951.29pt x 1192.455pt>
 File: figures/MPSLGP_Editable_Figures.pdf Graphic file (type pdf)
 <use figures/MPSLGP_Editable_Figures.pdf, page 2>
 Package pdftex.def Info: figures/MPSLGP_Editable_Figures.pdf , page2 used on in
-put line 230.
+put line 231.
 (pdftex.def)             Requested size: 516.0pt x 315.32584pt.
 <figures/MPSLGP_Editable_Figures.pdf, id=333, page=4, 1951.29pt x 1192.455pt>
 File: figures/MPSLGP_Editable_Figures.pdf Graphic file (type pdf)
 <use figures/MPSLGP_Editable_Figures.pdf, page 4>
 Package pdftex.def Info: figures/MPSLGP_Editable_Figures.pdf , page4 used on in
-put line 237.
+put line 238.
 (pdftex.def)             Requested size: 516.0pt x 315.32584pt.
 
 [5 <./figures/MPSLGP_Editable_Figures.pdf>] [6 <./figures/MPSLGP_Editable_Figur
 es.pdf>]
 Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on in
-put line 303.
+put line 304.
  [7 <./figures/MPSLGP_Editable_Figures.pdf>]
 Package microtype Info: Character `029' is missing
 (microtype)             in font `T1/lmr/m/sc/8'.
 (microtype)             Ignoring protrusion settings for this character.
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 4
-10.
+11.
 
 (c:/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -711,58 +711,60 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
  [8] [9]
-LaTeX Font Info:    Calculating math sizes for size <6.5> on input line 538.
+LaTeX Font Info:    Calculating math sizes for size <6.5> on input line 539.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6.5> on input line 538.
+(Font)              <6.5> on input line 539.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <4.54997> on input line 538.
+(Font)              <4.54997> on input line 539.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <3.25> on input line 538.
+(Font)              <3.25> on input line 539.
 <results/latest-20261106/table-vi-quality.pdf, id=449, 923.9422pt x 509.04855pt
 >
 File: results/latest-20261106/table-vi-quality.pdf Graphic file (type pdf)
 <use results/latest-20261106/table-vi-quality.pdf>
 Package pdftex.def Info: results/latest-20261106/table-vi-quality.pdf  used on 
-input line 551.
+input line 552.
 (pdftex.def)             Requested size: 516.0pt x 284.2885pt.
  [10]
-<results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf, id=462, 
+(./results/same-population-budget-20261120/table.tex
+(./results/same-population-budget-20261120/table-rows.tex)) [11]
+<results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf, id=473, 
 947.7445pt x 577.06839pt>
 File: results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf Grap
 hic file (type pdf)
 <use results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf>
 Package pdftex.def Info: results/latest-20261106/tree-case-study/learned-sequen
-cing-trees.pdf  used on input line 644.
+cing-trees.pdf  used on input line 651.
 (pdftex.def)             Requested size: 516.0pt x 314.20107pt.
- [11] [12 <./results/latest-20261106/table-vi-quality.pdf>]
+ [12 <./results/latest-20261106/table-vi-quality.pdf>]
 <results/latest-20261106/ablation-full-no-transfer/latest-preference-response.p
-df, id=514, 466.8002pt x 611.30121pt>
+df, id=517, 466.8002pt x 611.30121pt>
 File: results/latest-20261106/ablation-full-no-transfer/latest-preference-respo
 nse.pdf Graphic file (type pdf)
 <use results/latest-20261106/ablation-full-no-transfer/latest-preference-respon
 se.pdf>
 Package pdftex.def Info: results/latest-20261106/ablation-full-no-transfer/late
-st-preference-response.pdf  used on input line 693.
+st-preference-response.pdf  used on input line 700.
 (pdftex.def)             Requested size: 252.0pt x 330.00446pt.
  [13]
-<results/latest-20261106/mpslgp-empirical-attainment.pdf, id=523, 466.23425pt x
+<results/latest-20261106/mpslgp-empirical-attainment.pdf, id=526, 466.23425pt x
  539.68312pt>
 File: results/latest-20261106/mpslgp-empirical-attainment.pdf Graphic file (typ
 e pdf)
 <use results/latest-20261106/mpslgp-empirical-attainment.pdf>
 Package pdftex.def Info: results/latest-20261106/mpslgp-empirical-attainment.pd
-f  used on input line 732.
+f  used on input line 739.
 (pdftex.def)             Requested size: 252.0pt x 291.70453pt.
- [14 <./results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf>] 
-(./mpslgp-method.bbl [15 <./results/latest-20261106/ablation-full-no-transfer/l
-atest-preference-response.pdf> <./results/latest-20261106/mpslgp-empirical-atta
-inment.pdf>]
+ [14] (./mpslgp-method.bbl [15 <./results/latest-20261106/tree-case-study/learn
+ed-sequencing-trees.pdf>] [16 <./results/latest-20261106/ablation-full-no-trans
+fer/latest-preference-response.pdf> <./results/latest-20261106/mpslgp-empirical
+-attainment.pdf>]
 Underfull \hbox (badness 2503) in paragraph at lines 224--227
 []\T1/lmr/m/n/8 (+20) J. Bader and E. Zit-zler, ``Hype: An al-go-rithm for fast
 
  []
 
-) [16] (./mpslgp-method.aux)
+) [17] (./mpslgp-method.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
@@ -771,11 +773,11 @@ Package rerunfilecheck Info: File `mpslgp-method.out' has not changed.
 (rerunfilecheck)             Checksum: 8FD92E85707B793A23E7D73444720C39;7034.
  ) 
 Here is how much of TeX's memory you used:
- 15051 strings out of 467349
- 239222 string characters out of 5419862
- 734103 words of memory out of 5000000
- 43426 multiletter control sequences out of 15000+600000
- 888129 words of font info for 353 fonts, out of 8000000 for 9000
+ 15074 strings out of 467349
+ 239973 string characters out of 5419862
+ 750165 words of memory out of 5000000
+ 43435 multiletter control sequences out of 15000+600000
+ 888414 words of font info for 356 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  75i,13n,79p,2030b,611s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2026/texmf-dist/fonts/type1/public/lm/lmbx10.pfb><c:/texlive/2026
@@ -799,10 +801,10 @@ pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/lm/lmri8.pfb><c:/texlive/202
 /type1/public/lm/lmsy7.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/lm/lm
 sy8.pfb><c:/texlive/2026/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/texliv
 e/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on mpslgp-method.pdf (16 pages, 970270 bytes).
+Output written on mpslgp-method.pdf (17 pages, 977016 bytes).
 PDF statistics:
- 757 PDF objects out of 1000 (max. 8388607)
- 596 compressed objects within 6 object streams
- 144 named destinations out of 1000 (max. 500000)
+ 768 PDF objects out of 1000 (max. 8388607)
+ 605 compressed objects within 7 object streams
+ 146 named destinations out of 1000 (max. 500000)
  66385 words of extra memory for PDF output out of 74296 (max. 10000000)
 

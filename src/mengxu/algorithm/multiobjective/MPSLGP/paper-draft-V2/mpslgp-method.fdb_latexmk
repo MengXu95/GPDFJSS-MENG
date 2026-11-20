@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex mpslgp-method"] 1794712279.13762 "mpslgp-method.aux" "mpslgp-method.bbl" "mpslgp-method" 1794712282.08312 0
+["bibtex mpslgp-method"] 1795137309.35119 "mpslgp-method.aux" "mpslgp-method.bbl" "mpslgp-method" 1795137311.81329 0
   "./reference.bib" 1794710379 15752 08884ca444db0ec7df82aed71e53d967 ""
   "c:/texlive/2026/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1778550072 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "mpslgp-method.aux" 1794712280 21845 358d9cf3f39ebddcf49f47c9a01d07b9 "pdflatex"
+  "mpslgp-method.aux" 1795137310 23522 f128c23e461e76c4b3092fa78d3c9154 "pdflatex"
   (generated)
   "mpslgp-method.bbl"
   "mpslgp-method.blg"
   (rewritten before read)
-["pdflatex"] 1794712279.60169 "mpslgp-method.tex" "mpslgp-method.pdf" "mpslgp-method" 1794712282.08404 0
+["pdflatex"] 1795137309.73954 "mpslgp-method.tex" "mpslgp-method.pdf" "mpslgp-method" 1795137311.81391 0
   "c:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1778550570 2375 baa924870cfb487815765f9094cf3728 ""
   "c:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc" 1778550570 3486 c7eadf5dcc57b3b2d11736679f6636ba ""
   "c:/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1778550570 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
@@ -116,7 +116,7 @@
   "c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithm.sty" 1778547722 3249 15763257e50278eef5db1952ccde229c ""
   "c:/texlive/2026/texmf-dist/tex/latex/algorithms/algorithmic.sty" 1778547722 9318 793e9d5a71e74e730d97f6bf5d7e2bca ""
   "c:/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty" 1778547748 5949 3f3fd50a8cc94c3d4cbf4fc66cd3df1c ""
-  "c:/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty" 1778547748 13829 94730e64147574077f8ecfea9bb69af4 ""
+  "c:/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty" 1794712611 13829 94730e64147574077f8ecfea9bb69af4 ""
   "c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd" 1778547748 961 6518c6525a34feb5e8250ffa91731cff ""
   "c:/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd" 1778547748 961 d02606146ba5601b5645f987c92e6193 ""
   "c:/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty" 1778547752 2222 27db7d52163edae53881b71ff62e754e ""
@@ -177,14 +177,16 @@
   "c:/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt" 1778553439 3648453 db3f98ad1868042003bc542959491ea7 ""
   "c:/texlive/2026/texmf.cnf" 1778553357 713 e69b156964470283e0530f5060668171 ""
   "figures/MPSLGP_Editable_Figures.pdf" 1793672525 283723 80135c46eb944caaf4b07e7bd89a0127 ""
-  "mpslgp-method.aux" 1794712280 21845 358d9cf3f39ebddcf49f47c9a01d07b9 "pdflatex"
-  "mpslgp-method.bbl" 1794712279 11742 0761912eabac5f849c1775abb5953267 "bibtex mpslgp-method"
-  "mpslgp-method.out" 1794712280 7034 8fd92e85707b793a23e7d73444720c39 "pdflatex"
-  "mpslgp-method.tex" 1794712266 80921 2d60b82070333124601fb3b6b9706ab2 ""
+  "mpslgp-method.aux" 1795137310 23522 f128c23e461e76c4b3092fa78d3c9154 "pdflatex"
+  "mpslgp-method.bbl" 1795137309 11742 0761912eabac5f849c1775abb5953267 "bibtex mpslgp-method"
+  "mpslgp-method.out" 1795137310 7034 8fd92e85707b793a23e7d73444720c39 "pdflatex"
+  "mpslgp-method.tex" 1795137270 83060 19f11d09abe1c84608b0dbe4173eca8f ""
   "results/latest-20261106/ablation-full-no-transfer/latest-preference-response.pdf" 1794114014 59728 bc396e8b4a55bb4e19ed02041fbfc5a7 ""
   "results/latest-20261106/mpslgp-empirical-attainment.pdf" 1794114059 40596 4a9026d7f8632ac7edb29d67ee80cb77 ""
   "results/latest-20261106/table-vi-quality.pdf" 1794386037 48213 400dd1a647e6f1cc32303365bf33ef36 ""
   "results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf" 1794279350 85635 cde974282bf1e32d2f21c7a9a94efefc ""
+  "results/same-population-budget-20261120/table-rows.tex" 1795136686 4045 8869e9835dd7fcd53a45475ad1d24638 ""
+  "results/same-population-budget-20261120/table.tex" 1795137270 1348 156918b7f0d30d00e38f7552df338a7e ""
   (generated)
   "mpslgp-method.aux"
   "mpslgp-method.log"
