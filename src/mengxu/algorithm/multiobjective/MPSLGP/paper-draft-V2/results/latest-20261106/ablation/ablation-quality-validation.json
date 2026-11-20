@@ -1,0 +1,39 @@
+{
+  "PlotPoints": 162,
+  "Targets": 18,
+  "Metrics": [
+    "HV",
+    "IGD",
+    "GD"
+  ],
+  "LegendOrder": [
+    "No-transfer",
+    "Fixed-transfer",
+    "Full"
+  ],
+  "ErrorBars": "sample standard deviation over30 training seeds",
+  "AxisLimits": {
+    "HV": [
+      0.7496405558040309,
+      1.0262120481139654
+    ],
+    "IGD": [
+      -0.040026517904154194,
+      0.16792863343251904
+    ],
+    "GD": [
+      -0.1759816936978192,
+      0.2773397053738602
+    ]
+  },
+  "TableVIProtectedSHA256": {
+    "table.tex": "eb7d35ddb02f55eac2fe44abcd7cc60478c596a54a15dfbb74c05d3f1349dd39",
+    "table-rows.tex": "41ed95de3f16fc0937242b5ecc792ef8f2e020f3763fbd48775c18c3ba080a09",
+    "per-run.csv": "738de9c0982fa99bc1293126a7eb0b21d1996ebc9d2d4dc401adb9f557122884",
+    "mean-std.csv": "dffe4b8455d6a6ace4dc8e94691a5e73e34a4b583daad6226d57ab1aee63fe6d",
+    "paired-tests.csv": "1f5ff336970cd9443e2bb439e48b066087cf24aa11fd77da535a0d5c4baa6907",
+    "protocol.json": "c442f65c34c6e3eadb7e725318b8018f7659d08c3f55d4d1ddd5d4472ffd2cb8"
+  },
+  "PDFSHA256": "b67ece4e2e8ebf031fdc159e5113440c507fc3550978acb0d26c74d3cf0fcab1",
+  "PNGSHA256": "ab21b2fe52ddbc0f7c087f8902ca9fb8c5ec9d1f724a95bda17a360eed503e28"
+}

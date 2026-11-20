@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Recorded training time for the same task groups: mean(sample standard deviation), in minutes, over 30 seeds. Times cover logged generations 0--49. MPSLGP is counted once per group; NSGPII and PSLGP sum the independent task times for the same seed. Hardware and concurrency differ across batches, so these are not controlled speedup estimates.}}
+\label{tab:latest-training-time}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\input{results/latest-20261106/training-time/table-rows.tex}
+\begin{tabular}{@{}lc*{3}{c}@{}}
+\toprule
+Group & Scenarios & NSGPII & PSLGP & MPSLGP \\
+\midrule
+\TrainingTimeRows
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,32 @@
+{
+  "source_sha256": {
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\per-run.csv": "67e2494dd44ff6f0dae19a98250c9c40aba144265e711130356ee5d2ce8bb6bf",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\mean-std.csv": "8eaab47ca8070ea93a46fe294eacde539900e3d39db39d18f71c256d222a8893",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\paired-tests.csv": "75752d3ebcfa4768fe77ffda4259f46de2c87671c4baba856e5e33ef15d81d89",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\paired-gains.csv": "5d1d83d171bbee0bc01b4ee50115e3a44868f25b8a9364f04ec3b72e54a477bb",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\protocol.properties": "cf5e218e2acff2059e5362764ba2247d6deee1d20134b4f481b85bb69e3a762f",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\input-manifest.csv": "bf84ba8782f5979047dcad2aa80628b010113c5e87e68c26dfa2a6e7a5907101",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\full-summary\\mean-std.csv": "f8cadd92a3ada5b200cd9e42d93e3a8f1d618fdee81ccb41fe8f1100d814535e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\published-pslgp-context.csv": "8d99874d9cda23fdeeb4e173a5ab5180b16c0bb0eca5efadd5a0329ec0f7ce09",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103\\build_result_figures.py": "f4b45b3e87dd9fc93728e6b065ba26b8b999d23499a1a081bfec1a0feac6e468"
+  },
+  "generated_sha256": {
+    "ablation-effect-map.pdf": "c8391916f5c9aaf415f8cdb319e8e3ffc357abab49b97b5a22860b501aab3168",
+    "ablation-effect-map.png": "8a28e4ae8c56d502c3e0eabc32578cd3b465379fc1744521ca3fcaba727d2b91",
+    "ablation-joint-quality.pdf": "538b5ec452a83e4e408babeae8a4cbfaaef6d606f29a94605ddf93e078846361",
+    "ablation-joint-quality.png": "a464b7a4ca40802f142c45811a182bbd45bbe9e00fc7c955212d02d459ad9a0c",
+    "analysis-summary.json": "03a7c736d6e4aa9f56bc38297972eae13c8522339371d8277edfee9546911c90",
+    "analysis.md": "902f3fc06aa4cac92d045529d01b6e86ec02e2ddb9ee38bc594ad96516493061",
+    "figure-provenance.json": "6dfd4a16cc750f26ddcb040e0a5914a5e91b6d646e262c1a32b84e1a4cf37706",
+    "latest-empirical-attainment.pdf": "6bd77dfb245c2fab1bc78787f8def3b4eff8339a797532a2ffcf50541c019a35",
+    "latest-empirical-attainment.png": "435a0426aae5ae866309f368dabccadad96b794df45ba8f912cebf204eb208d7",
+    "latest-preference-response.pdf": "3d3061c78fc25a236e5785babb5540563819545f74a72a31f0f366a4b1b36f9c",
+    "latest-preference-response.png": "a5a9022c4038d715684a27f43a1a97f2844be439ffa225b5d51fc9e6b1ab0120",
+    "main-full-vs-pslgp.pdf": "bd245d11f09383553e64e396b8ccfe608391d72e7c632018321d9bb508616442",
+    "main-full-vs-pslgp.png": "67170111dc0d05e77518925320dc41c23cab64eeaa372a15b51773bb0d31a2e2",
+    "runtime-and-complexity.pdf": "38a3fa4a9c50c949543a70acf7f852147279dbbc8b6c2920b2404b4fa86def4f",
+    "runtime-and-complexity.png": "495552c01c9164d49aba2c65ae4e5c595b349ad69cd224d57f3712d1b3e7bb70",
+    "validity-and-response.pdf": "c02ace04e63ff583c103906b55c0194b2e27bc8ac01edf178bd6816479c6c71f",
+    "validity-and-response.png": "5681b5745372771b3a67dcac376968aade686c8e8d6a142bbcfc4e707cf40fe2"
+  }
+}

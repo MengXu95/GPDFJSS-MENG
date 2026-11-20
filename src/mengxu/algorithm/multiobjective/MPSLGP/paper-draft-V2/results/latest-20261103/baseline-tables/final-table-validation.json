@@ -1,0 +1,27 @@
+{
+  "external_and_full_sources_verified": 1443,
+  "completed_mpslgp_inputs_verified": 11880,
+  "main_cells_verified": 144,
+  "ablation_cells_verified": 108,
+  "methods": [
+    "Full",
+    "PSLGP",
+    "NSGPII",
+    "MOGP/D"
+  ],
+  "metrics": [
+    "HV",
+    "IGD"
+  ],
+  "paired_tests": 72,
+  "protected_original_analysis_outputs": 21,
+  "main_raw_runs": 1440,
+  "pdf_pages": 17,
+  "table_pages": [
+    12,
+    13
+  ],
+  "old_main_and_ablation_figures_in_active_results": false,
+  "manuscript_sha256": "0f5b6a3f0577d3c48303a74056d995a183d2da1f860aa9f7f96501be4c231420",
+  "pdf_sha256": "7355d41d4cef0af614d09452a2450e958895f106b06d1c63611a94fcb929d0ef"
+}

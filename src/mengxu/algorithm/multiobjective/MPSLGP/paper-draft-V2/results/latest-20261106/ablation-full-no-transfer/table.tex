@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\textcolor{red}{Transfer-ablation HV, IGD and GD results: mean(standard deviation) calculated over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha=0.05$. Bold marks the best unrounded mean. Invalid outcomes are excluded and all seeds are retained.}}
+\label{tab:latest-ablation-quality}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\input{results/latest-20261106/ablation-full-no-transfer/table-rows.tex}
+\begin{tabular}{@{}lc*{6}{c}@{}}
+\toprule
+ & & \multicolumn{2}{c}{HV $\uparrow$} & \multicolumn{2}{c}{IGD $\downarrow$} & \multicolumn{2}{c}{GD $\downarrow$} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Group & Scenario & No-transfer & Full & No-transfer & Full & No-transfer & Full \\
+\midrule
+\UnifiedAblationRows
+\bottomrule
+\end{tabular}
+\end{table*}

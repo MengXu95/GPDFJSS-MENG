@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Four-method HV and IGD comparison with retested PSLGP generation 49: mean(sample standard deviation) over 30 seeds per target, shown to three decimal places. All four methods use common scenario-specific bounds and empirical reference fronts rebuilt from their raw outcomes; published indicator summaries are not copied. MPSLGP and PSLGP use actual generation 49, while NSGPII and MOGP/D retain generation-50 population Pareto fronts. PSLGP denotes PSLGP-I and uses the recorded generation-49 Best Individual, not the previous generation-50 Top-N rank 0. Two invalid PSLGP preference outcomes are excluded conditionally; all seeds remain. Higher HV and lower IGD are better; bold marks the best unrounded mean, not statistical significance.}}
+\label{tab:latest-main-quality}
+\footnotesize
+\setlength{\tabcolsep}{1.5pt}
+\input{results/latest-20261104/table-rows.tex}
+\begin{tabular}{@{}lc*{8}{c}@{}}
+\toprule
+ & & \multicolumn{4}{c}{HV $\uparrow$} & \multicolumn{4}{c}{IGD $\downarrow$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-10}
+Group & Scenario & Full MPSLGP & PSLGP & NSGPII & MOGP/D & Full MPSLGP & PSLGP & NSGPII & MOGP/D \\
+\midrule
+\PSLGPFortyNineRows
+\bottomrule
+\end{tabular}
+\end{table*}

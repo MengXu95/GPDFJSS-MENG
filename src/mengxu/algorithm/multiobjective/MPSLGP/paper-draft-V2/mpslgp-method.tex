@@ -1,0 +1,754 @@
+% IEEE Transactions on Artificial Intelligence manuscript template.
+% TAI uses the standard IEEE Transactions journal layout provided by IEEEtran.
+\documentclass[10pt,journal]{IEEEtran}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{placeins}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{innovation}{RGB}{0,0,0}
+\definecolor{safeguard}{RGB}{0,0,0}
+\newcommand{\innovation}[1]{\textcolor{innovation}{\textbf{#1}}}
+\newcommand{\safeguard}[1]{\textcolor{safeguard}{\textbf{#1}}}
+\newcommand{\revision}[1]{\textcolor{black}{#1}}
+\newcommand{\ablationrevision}[1]{\textcolor{black}{#1}}
+\definecolor{resultrevision}{RGB}{0,0,0}
+\newcommand{\resultrevision}[1]{\textcolor{resultrevision}{#1}}
+
+% \title{MPSLGP: Multitask Pareto Set Learning Genetic Programming for Dynamic Flexible Job Shop Scheduling}
+\title{Multitask Optimization of Preference-conditioned Heuristics through Genetic Programming for Dynamic Scheduling}
+
+
+% Replace this draft author block with the final author names, IEEE membership,
+% affiliations, funding information, and corresponding-author details.
+\author{Anonymous Authors%
+\thanks{Author and affiliation details are omitted for anonymous review.}%
+}
+
+\begin{document}
+\raggedbottom
+\markboth{IEEE Transactions on Artificial Intelligence,~Vol.~XX, No.~XX, Month~2026}%
+{Anonymous Authors: MPSLGP for Dynamic Flexible Job Shop Scheduling}
+\maketitle
+
+\begin{abstract}
+Pareto set learning genetic programming learns sequencing and routing rules conditioned on objective preferences. Related scheduling tasks can share useful rule structures, but the value of a transferred subtree depends on the receiving task and the requested trade-off. We propose multitask Pareto set learning genetic programming (MPSLGP) for dynamic flexible job shop scheduling. A shared, task-labelled population exchanges subtrees while maintaining task-specific simulations, surrogate samples and objective references. A preference-region-aware gate controls donor selection and transfer frequency through directed task-pair utilities. These utilities are updated from offspring survival and improvement relative to a same-task, same-generation baseline. Node-contribution-based task inheritance aligns feedback with the child's evaluation task, using existing simulation outcomes. Experiments on a number of scheduling scenarios show approximation gains over a no-transfer control and reveal shared preference-aware modules alongside task-specific tree structures. MPSLGP's mean group-level training time is 63.5--86.3\% lower than independently trained PSLGP across most of task groups, while PSLGP achieves stronger overall approximation quality. The results identify joint training as a lower-cost approach to learning multiple preference-conditioned heuristics, with a quality--cost trade-off shaped by the shared population budget.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Genetic programming, multitask learning, dynamic flexible job shop scheduling, knowledge transfer, Pareto set learning
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{D}{ynamic} flexible job shop scheduling (DFJSS) is challenging due to dynamic events such as job arrivals over time and the availability of multiple machines for processing each operation \cite{xu2025learn, zhao2025deep}. Consequently, a scheduling heuristic must coordinate two complementary rules: the \emph{sequencing rule}, which determines the next operation to process at a given machine, and the \emph{routing rule}, which selects a machine for each operation \cite{xu2026evospeak}. Genetic programming (GP) can evolve both rules from shop-floor information \cite{xu2023genetic}. In the multi-objective setting, the heuristic must additionally balance competing criteria, such as flowtime and tardiness, as the decision-maker's preferences vary \cite{li2025multi}.
+
+Pareto set learning GP (PSLGP) addresses this need by learning one preference-conditioned scheduling heuristic~\cite{xu2026pslgp}. Its sequencing and routing trees receive the shop state and a bi-objective preference vector, allowing the same heuristic to produce different trade-offs at deployment in real-time. Preference changes alter the desired trade-off within a task; task changes alter the workload distribution, objective pair or other operating conditions. PSLGP learns each task independently, although related tasks may share useful structures. For example, a workload-sensitive routing expression may be useful in two environments that require different sequencing behaviour. Applying PSLGP separately repeats the search for such fragments (subtrees).
+
+Cross-task exchange must account for preference-dependent transfer value. A subtree may improve flowtime-oriented decisions while degrading tardiness-oriented decisions, and its usefulness can differ between the two directions of a task pair. A global transfer rate or whole-task utility obscures this variation. Effective transfer therefore requires selecting a donor for a particular receiving task and preference context, with local mating available when cross-task exchange is less useful. Reliable transfer feedback is also needed. PSLGP rotates the main preference and training instance, making fitness changes across generations difficult to attribute to cross-task exchange. Brood recombination \cite{liang2026evoamc} and preselection further separates mating requests from the offspring retained for simulation. We therefore assess transfer through actual children under matched task, preference and training conditions, reusing the evaluations already available in evolution.
+
+We address these challenges with multitask PSLGP (MPSLGP), which jointly learns one preference-conditioned scheduling heuristic for each task. Building on PSLGP's representation, cross-preference estimation and brood recombination and preselection~\cite{xu2026pslgp}, MPSLGP enables structural exchange through a shared, task-labelled population while maintaining task-specific evaluation and surrogate samples. A preference-region-aware controller selects between local mating and cross-task exchange using directed task-pair utilities. These utilities are updated from offspring survival and improvement under matched evaluation conditions, with node contributions determining each child's receiving task. This framework combines learning across preferences within each task with selective knowledge sharing between tasks. The main contributions are:
+\begin{itemize}
+    \item \emph{Preference-region-aware transfer control.}
+    We maintain a separate utility for each directed task pair and preference region. A budgeted gate uses these utilities to regulate cross-task mating frequency and donor selection, allowing transfer decisions to adapt to both the receiving task and the requested trade-off.
+    \item \emph{Offspring-based transfer feedback.}
+    We assess transfer through the survival of cross-task offspring and their improvement over a same-task, same-generation local baseline. Node-contribution-based task inheritance aligns feedback with the child's evaluation task. The utility update reuses existing simulation outcomes without additional transfer-assessment evaluations.
+    \item \emph{Task-preserving cooperative Pareto set learning.}
+    We develop a shared-population framework that exchanges rule subtrees while retaining task-specific objective observations, surrogate neighbours, Pareto ranks and normalisation references. Balanced retention maintains search effort across tasks, supporting the joint evolution of distinct preference-conditioned heuristics under a common population budget.
+    \item \emph{Experimental evaluation and structural analysis.}
+    Experiments on ten DFJSS scenarios show approximation gains over a no-transfer control and 63.5--86.3\% lower recorded group-level training time than independently trained PSLGP. The comparison characterises the quality--cost trade-off of joint learning, while analyses of evolved trees reveal shared preference-aware fragments alongside task-specific structures.
+\end{itemize}
+
+The remainder of this paper is organized as follows. Section~\ref{sec:background} introduces the problem formulation and reviews related work. Section~\ref{sec:method} details the proposed MPSLGP method, followed by the experimental design in Section~\ref{sec:experiment-design}. Section~\ref{sec:results} presents and analyzes the experimental results, and finally, Section~\ref{sec:conclusions} concludes the paper.
+
+\section{Background}
+\label{sec:background}
+\subsection{Single-task Multi-objective DFJSS}
+Following PSLGP~\cite{xu2026pslgp}, a DFJSS problem consists of jobs $\mathcal{J}=\{J_1,\ldots,J_n\}$ arriving dynamically at a shop floor with machines $\mathcal{M}=\{M_1,\ldots,M_m\}$. Job $J_i$ has an arrival time $r_i$, due date $d_i$, weight $\omega_i$, and an ordered sequence of operations $(O_{i,1},\ldots,O_{i,n_i})$. Operation $O_{i,j}$ has workload $\pi_{i,j}$ and can be processed on an eligible machine $M_k\in\mathcal{M}_{i,j}$. Its processing time is $t_{i,j,k}=\pi_{i,j}/\gamma_k$, where $\gamma_k$ is the machine's processing rate. Moving a job between machines $M_k$ and $M_\ell$ incurs transportation time $\tau_{k,\ell}$. 
+
+A feasible schedule respects job release times, operation precedence and transportation requirements \cite{yi2025dynamic, chen2026reinforcement}. Each operation is assigned to one eligible machine, each machine processes at most one operation at a time, and processing is non-preemptive. Decisions are made online as jobs arrive and machines become available. Routing selects an eligible machine for a ready operation, while sequencing selects the next operation from an idle machine's waiting queue \cite{luo2025fully}. Let $c_i$ denote the completion time of job $J_i$. The four objectives considered in this paper are:
+\begin{equation}
+\begin{aligned}
+F_{\max}  &= \max_{J_i\in\mathcal{J}}(c_i-r_i),\\
+T_{\max}  &= \max_{J_i\in\mathcal{J}}\max(0,c_i-d_i),\\
+WF_{\max} &= \max_{J_i\in\mathcal{J}}\omega_i(c_i-r_i),\\
+WT_{\max} &= \max_{J_i\in\mathcal{J}}\omega_i\max(0,c_i-d_i).
+\end{aligned}
+\label{eq:dfjss-objectives}
+\end{equation}
+A single-task multi-objective DFJSS problem specifies an operating environment and an ordered pair $(f_1,f_2)$ drawn from these objectives. This study considers $(F_{\max},WT_{\max})$ and $(WF_{\max},T_{\max})$.
+
+Because future arrivals are unknown, the goal is to learn an online scheduling heuristic rather than a schedule for one fixed instance. Let $\mathcal{H}$ be the space of feasible scheduling heuristics, $\xi\sim\mathcal{D}$ a scheduling instance drawn from the task distribution, and $S(h;\xi)$ the schedule generated by heuristic $h$. The learning problem is formulated as:
+\begin{equation}
+\min_{h\in\mathcal{H}}\;
+\mathbf{F}(h)
+=
+\mathbb{E}_{\xi\sim\mathcal{D}}
+\left[
+\begin{pmatrix}
+f_1(S(h;\xi))\\
+f_2(S(h;\xi))
+\end{pmatrix}
+\right].
+\label{eq:single-task-modfjss}
+\end{equation}
+Here, minimisation is understood in the Pareto sense: an objective vector is nondominated if no attainable alternative improves one objective without worsening the other \cite{zychowski2026multiobjective}.
+
+PSLGP learns one preference-conditioned heuristic $h(\mathbf{s},\boldsymbol{\lambda})$, where $\mathbf{s}$ is the current shop state and
+$\boldsymbol{\lambda}\in\Lambda=\{(\lambda_1,\lambda_2)\mid\lambda_1,\lambda_2\geq0,\ \lambda_1+\lambda_2=1\}$.
+For a fixed preference, its expected objective vector is denoted by $\mathbf{F}(h,\boldsymbol{\lambda})$. Varying $\boldsymbol{\lambda}$ changes the decisions produced by the same sequencing--routing tree pair. The learning goal is for the resulting objective vectors to approximate the task's whole Pareto front.
+
+\subsection{Multi-task DFJSS Problems}
+The multitask setting extends this single-task problem to a collection $\mathcal{T}=\{1,\ldots,T\}$ \cite{chen2025optimizing}. Each task $t$ specifies a scheduling distribution $\mathcal{D}_t$ and an ordered pair of minimisation objectives $(f_{t,1},f_{t,2})$. Tasks may differ in utilisation, workload distribution or objective pair. For a preference-conditioned heuristic $h$ evaluated on task $t$, define
+\begin{equation}
+\begin{aligned}
+\mathbf{F}_t(h,\boldsymbol{\lambda})
+&=
+\left(
+F_{t,1}(h,\boldsymbol{\lambda}),
+F_{t,2}(h,\boldsymbol{\lambda})
+\right),\\
+F_{t,q}(h,\boldsymbol{\lambda})
+&=
+\mathbb{E}_{\xi\sim\mathcal{D}_t}
+\left[f_{t,q}(S(h,\boldsymbol{\lambda};\xi))\right],
+\quad q\in\{1,2\}.
+\end{aligned}
+\label{eq:multitask-dfjss}
+\end{equation}
+The preference coordinates express emphasis on the first and second objectives of the current task. Thus, the same preference vector can refer to different objective measures on different tasks.
+
+The learning goal is to obtain a collection of task-specific heuristics $(h_1,\ldots,h_T)$ jointly. For each task $t$, varying the preference supplied to $h_t$ should generate trade-offs that approximate its Pareto front. Cooperative learning shares useful rule structures across tasks, while each heuristic is evaluated using its own task distribution and objectives. MPSLGP therefore combines preference adaptation within each task with structural knowledge sharing between tasks.
+
+
+\subsection{Related Work}
+\subsubsection{Exact and (Meta-)Heuristic Methods}
+Scheduling methods optimise explicit schedules or apply decision rules as shop events occur. Mathematical programming models encode machine assignments, operation sequences and feasibility constraints \cite{yao2024novel, roshanaei2013mathematical}. Fattahi \emph{et al.}~\cite{fattahi2007mathematical} obtain optimal solutions for small flexible job shop instances and develop heuristic approaches for larger problems. In dynamic environments, rescheduling updates a schedule as new information or disruptions arise, following frameworks such as that of Vieira \emph{et al.}~\cite{vieira2003rescheduling, wang2026self}.
+
+Heuristics or dispatching rules make local routing and sequencing decisions from current shop floor information \cite{baker1983job}, whereas meta-heuristics search in solution space and explore alternative assignments and sequences under a computational budget \cite{lei2018two}. Fuladi and Kim~\cite{fuladi2024dynamic}, for instance, combine a genetic algorithm \cite{mirjalili2018genetic}, simulated annealing \cite{van1987simulated}, and variable neighbourhood search \cite{hansen2010variable} within a rescheduling method for job arrivals and machine breakdowns. Such methods offer alternatives to exact optimisation for larger instances, but updating an explicit schedule can require renewed search after events. Essentially, this approach decomposes the dynamic problem into multiple smaller static sub-problems via a time-window mechanism \cite{su2025decentralized, maenhout2024dynamic}. This motivates learning reusable decision rules that respond to changing shop states without repeating schedule optimisation at every decision point.
+
+\subsubsection{Learning-Based Methods}
+GP and reinforcement learning (RL) learn scheduling heuristics/policies through different representations and search mechanisms~\cite{xu2025learn}. GP-based hyper-heuristics evolve symbolic priority expressions through selection, crossover and mutation, with scheduling simulations providing fitness evaluations~\cite{koza1994genetic,guo2024improved}. Zhang \emph{et al.}~\cite{zhang2024survey} review these methods and their integration with machine learning techniques. For DFJSS, Zhou \emph{et al.}~\cite{zhou2020automatic} combine surrogate evaluation with cooperative coevolution to learn routing and sequencing rules, accounting for their interaction during heuristic search.
+
+RL learns scheduling policies or action-value functions from rewards obtained through interaction. Luo~\cite{luo2020dynamic} uses a deep Q-network to select among six composite dispatching rules for flexible job shops with new job arrivals, targeting total tardiness. Song \emph{et al.}~\cite{song2023flexible} combine heterogeneous graph representations with deep RL to learn composite operation-selection and machine assignment decisions for flexible job shop scheduling. Li \emph{et al.}~\cite{li2025multi} develop a multi-head-network-based deep RL approach for multiobjective DFJSS. These studies illustrate different ways of learning scheduling decisions, from selecting predefined rules to learning operation--machine assignments.
+
+Our interest in GP follows from its explicit rule representation. Symbolic trees expose how scheduling features affect decisions, and their subtrees provide structural units that can be inspected and exchanged. This representation supports the cross-task transfer of decision logic while retaining separate scheduling heuristics.
+
+\subsubsection{Multitask GP and Preference-Conditioned Learning}
+Evolutionary multitasking shares search information across related scheduling tasks \cite{gupta2015multifactorial}. Zhang \emph{et al.}~\cite{zhang2021surrogate} develop surrogate-assisted multitask GP for DFJSS, using task-specific phenotypic models to support evaluation and knowledge transfer. For multitask multiobjective DFJSS, Zhang \emph{et al.}~\cite{zhang2023multitask} propose multipopulation GP with task-oriented knowledge sharing to maintain the quality and diversity of each task's heuristics. These methods exploit relationships between tasks while preserving task-specific search information.
+
+Conditioned representations address a related question: how a single learned heuristic should respond to changing requirements. Task-conditioned GP~\cite{xu2026transgp} incorporates task information to accommodate different scheduling environments. Preference-conditioned GP instead adapts decisions to different objective trade-offs within an environment. PSLGP~\cite{xu2026pslgp} learns one sequencing--routing tree pair that receives both shop-state features and objective preferences. It evaluates the same heuristic across preferences, using surrogate estimation to limit simulation cost, so that one heuristic can generate a range of trade-offs.
+
+Existing multitask GP methods share knowledge between tasks, whereas PSLGP learns preference adaptation within a single task. Their combination raises a further question: which rule fragments are useful to a receiving task under a particular objective preference? MPSLGP addresses this question through directed, preference-region-aware transfer utilities updated from evaluated offspring, jointly learning one preference-conditioned heuristic for each task.
+
+\section{Proposed Method: MPSLGP}
+\label{sec:method}
+\subsection{Overall Framework}
+MPSLGP learns task-specific sequencing--routing tree pairs in a shared population. Each tree pair receives shop-state features and objective preferences. Within each task, learning follows PSLGP's cross-preference fitness aggregation, phenotype-based K-nearest-neighbour (KNN) surrogate \cite{hildebrandt2015using} and brood recombination and preselection~\cite{xu2026pslgp}. Individuals carry task labels that determine their simulation, surrogate and objective-reference contexts. Balanced retention maintains approximately equal task shares. Cross-task crossover exchanges a subtree in one selected tree while preserving the other tree from the primary parent. Directed task-pair utilities are maintained separately for each preference region. They determine the probability of cross-task mating and the choice of donor. Offspring survival and improvement over a same-task, same-generation local baseline update these utilities. Node contributions determine each child's inherited task and the direction of its feedback. Fig.~\ref{fig:overall-framework} shows how they fit into training, and Algorithm~\ref{alg:mpslgp} gives the transfer steps.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[page=1,width=\textwidth]{figures/MPSLGP_Editable_Figures.pdf}
+\caption{Overall framework of MPSLGP. The upper row shows single-task PSLGP learning across preferences; the lower row adds adaptive transfer and feedback from evaluated offspring. Balanced brood recombination and preselection retains $N$ individuals for simulation, and the resulting observations update transfer utilities before the next breeding cycle.}
+\label{fig:overall-framework}
+\end{figure*}
+
+\subsection{Preference-Conditioned Representation and Learning}
+MPSLGP retains the preference-conditioned representation and learning process of PSLGP~\cite{xu2026pslgp}. All tasks share the two-tree representation layout, function set, and state and preference terminals, giving crossover a common representation for exchanging subtrees. Task identity is newly defined in MPSLGP and determines where an individual is evaluated; preference determines how its two trees respond within that task. An individual is:
+\begin{equation}
+    x=\left(r^{\mathrm{seq}},r^{\mathrm{route}},z\right),
+\end{equation}
+where $r^{\mathrm{seq}}$ is the sequencing tree, $r^{\mathrm{route}}$ denotes the routing tree, and $z\in\mathcal{T}$ is the task index used during multitask evolution. The two trees define one preference-conditioned scheduling heuristic
+\begin{equation}
+    h_x\left(\mathbf{s},\boldsymbol{\lambda}\right)
+    =\left(r^{\mathrm{seq}}(\mathbf{s},\boldsymbol{\lambda}),
+    r^{\mathrm{route}}(\mathbf{s},\boldsymbol{\lambda})\right),
+    \label{eq:conditioned-heuristic}
+\end{equation}
+where $\mathbf{s}$ contains the current shop information and $\boldsymbol{\lambda}$ is the bi-objective preference. The preference components enter both trees through $w_1$ and $w_2$, allowing one heuristic to produce different decisions across the preference space. Task $z$ determines the individual's evaluation context. Fig.~\ref{fig:individual-representation} illustrates the task label, shop-state features and preference inputs.
+
+% where $\mathbf{s}$ contains the current shop information and $\boldsymbol{\lambda}$ is the bi-objective preference. The preference components enter both trees through \texttt{Pone} and \texttt{Ptwo}, allowing one heuristic to produce different decisions across the preference space. Task $z$ determines the individual's evaluation context. Figure~\ref{fig:individual-representation} illustrates the task label, shop-state features and preference inputs.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[page=3,width=\textwidth]{figures/MPSLGP_Editable_Figures.pdf}
+\caption{Preference-conditioned individual representation and deployment. Each individual combines a task label with sequencing and routing trees that receive shop state and preference weights $w_1,w_2$, the components of $\boldsymbol{\lambda}$. The illustrative expressions and outcomes show how varying the weights changes decisions within a fixed tree pair.}
+\label{fig:individual-representation}
+\end{figure*}
+
+Let
+\begin{equation}
+    \mathcal{M}=\left(\boldsymbol{\lambda}_{\mathrm{main}}^0,
+    \ldots,\boldsymbol{\lambda}_{\mathrm{main}}^{G-1}\right)
+\end{equation}
+be the schedule of main bi-objective preferences over $G$ generations. In generation $g$, the learner constructs the ordered evaluation list
+\begin{equation}
+    \mathcal{L}^{g}=\left(\boldsymbol{\lambda}_{\mathrm{main}}^g,
+    \bar{\boldsymbol{\lambda}}_1,\ldots,
+    \bar{\boldsymbol{\lambda}}_{C-1}\right),
+    \label{eq:preference-list}
+\end{equation}
+where the auxiliary preferences $\bar{\boldsymbol{\lambda}}_j$ form a uniform grid $\bar{\Lambda}$ over the bi-objective interval. The main preference may coincide with a grid point. Each individual is simulated under the first entry, and its auxiliary objective vectors are estimated by a KNN surrogate in phenotype space. The MPSLGP learner aggregates these vectors using hypervolume (HV) \cite{bader2011hype}, inverted generational distance (IGD) \cite{tian2016multi} or generational distance (GD) \cite{riquelme2015performance}, together with preference diversity. Multi-criteria selection combines the main-preference Pareto rank, aggregation indicator, scalar performance and diversity. Brood recombination generates an enlarged candidate pool, from which surrogate preselection retains individuals for simulation~\cite{xu2026pslgp}. MPSLGP applies this process separately within each task.
+
+During training, the main preference follows $\mathcal{M}$ and the same heuristic is examined over $\mathcal{L}^g$. For two objectives, $\boldsymbol{\lambda}=(\lambda_1,1-\lambda_1)$ enters the trees through \eqref{eq:conditioned-heuristic} and defines the scalar performance measure. Transfer feedback uses the observed main-preference objectives:
+\begin{equation}
+    \phi_t^g(x)=S\left(\widetilde{\mathbf{F}}_t^g(x),
+    \boldsymbol{\lambda}_{\mathrm{main}}^g\right),
+    \label{eq:scalar}
+\end{equation}
+where $\widetilde{\mathbf{F}}_t^g(x)$ is the observed objective vector of heuristic $h_x$ under the main preference, normalised with task-$t$ references for generation $g$. A lower value is better. This value is distinct from the cross-preference indicator and mean scalar score used by PSLGP selection, which include surrogate estimates at auxiliary preferences.
+
+\subsection{Task-Local Evaluation and Preselection}
+Breeding shares tree structures across tasks; evaluation and surrogate estimation use the individual's assigned task. This preserves task-specific fitness information under different loads and objective pairs.
+
+\subsubsection{Task Assignment and Accurate Evaluation}
+Initial task labels are assigned in balanced round-robin order and inherited through reproduction. Each task has a separate evaluation problem containing its objectives, utilisation level and simulation seed. Training instances are rotated across generations, a widely adopted strategy in this field to improve the generalization capability of the evolved heuristics \cite{xu2023genetic}. In generation $g$, retained individuals are evaluated accurately on their assigned task under $\boldsymbol{\lambda}_{\mathrm{main}}^g$. Task-specific normalisation keeps these observations on the scale of the task being solved.
+
+\subsubsection{Task-Local Cross-Preference Estimation}
+A phenotype records the sequencing and routing decisions made on a subset of fixed decision situations. For each individual, MPSLGP evaluates phenotypes over $\mathcal{L}^g$, which is the ordered list of objective preferences. Its objective vector at every auxiliary-list position is estimated from KNN samples carrying the same task index. Preference diversity describes variation in the same two trees' behaviour across $\mathcal{L}^g$. Task-specific ranks, indicators, and scalar values are supplied to the inherited multi-criteria comparator. Brood recombination and preselection follow PSLGP. The candidate pool exceeds the target population size, and candidates are estimated from the previous generation's same-task surrogate pool. Phenotypic duplicate clearing compares individuals within each task. After surrogate ranking and clearing, balanced survival divides the shared population of size $N$ approximately equally among tasks, subject to candidate availability.
+
+%%%%%%%%%%%%%%revised here%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Task-Local References}
+MPSLGP keeps task-specific ideal points, nadir points, objective ranges, and normalisation denominators. Pareto ranks and the reference fronts used by HV, IGD, and GD are computed within each task's objective space.
+
+\subsection{Adaptive Knowledge Transfer}
+The transfer controller estimates donor usefulness for a receiving task and preference region. Fig.~\ref{fig:adaptive-transfer} summarises region identification, mating selection, task inheritance and utility updates from offspring outcomes. Fig.~\ref{fig:regional-transfer} shows the transfer decision and feedback loop. 
+
+\begin{figure*}[t]
+\centering
+\includegraphics[page=2,width=\textwidth]{figures/MPSLGP_Editable_Figures.pdf}
+\caption{Preference-region-aware transfer and offspring feedback. The primary parent's task and upcoming preference select the utility context; a budgeted gate chooses local or cross-task mating. Feedback follows the child's inherited task and uses real evaluated outcomes. The five displayed preference cells are numbered $1$--$5$ for presentation and correspond to indices $k=0,\ldots,4$ in the equations.}
+\label{fig:adaptive-transfer}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[page=4,width=\textwidth]{figures/MPSLGP_Editable_Figures.pdf}
+\caption{Preference-region-aware task transfer in MPSLGP.
+(a) The main preference determines the transfer region $k$. The learned utility $U(r,d,k)$ estimates the usefulness of donor task $d$ to receiving task $r$ in region $k$, while $U_0$ is the fixed utility reference for local mating.
+(b)--(c) $S_1$ and $S_2$ represent task-specific exploration in the GP heuristic space $\mathcal{X}$, with overlap $S_1\cap S_2$.
+In (b), $U(1,2,3)>U_0$ gives task~2 a larger softmax weight than the local-mating reference for task~1 in region~3; in (c), $U(1,2,1)<U_0$ favours the local reference in region~1. These comparisons modulate the budgeted mating probabilities rather than determine the mating choice. The illustrated child inherits task~1.
+(d) Offspring survival and improvement over a matched local baseline update the utility indexed by the inherited receiving task, donor task and preference region.}
+\label{fig:regional-transfer}
+\end{figure*}
+
+\subsubsection{Preference Regions}
+The value of transfer may change along the Pareto front. A donor that helps a flowtime preference may not help a tardiness preference. MPSLGP divides the preference space into $K$ regions. For two objectives, the region of the current preference vector is
+\begin{equation}
+    k=\min\left(K-1,\left\lfloor K\lambda_{\mathrm{main},1}^{g}\right\rfloor\right).
+\end{equation}
+A utility $U_{r,d,k}$ is stored for each receiving task $r$, donor task $d$ and region $k$. The two directions of a task pair are updated separately. Breeding in generation $g$ uses the region of the upcoming main preference $\boldsymbol{\lambda}_{\mathrm{main}}^{g+1}$, and feedback follows the child's inherited task.
+
+\subsubsection{No-Transfer Gate and Donor Selection}
+The primary parent's task $r_0$ determines the utility context. Donor tasks compete with a local-mating reference $U_0$. For softmax temperature $\tau>0$ and transfer budget $B\in[0,1]$, the donor probability is
+\begin{equation}
+ p_{r_0,d,k}=B\frac{\exp(U_{r_0,d,k}/\tau)}
+ {\exp(U_0/\tau)+\sum_{j\ne r_0}\exp(U_{r_0,j,k}/\tau)}.
+ \label{eq:probability}
+\end{equation}
+The total cross-task mating probability is $\sum_{d\ne r_0}p_{r_0,d,k}\leq B$. The remaining probability selects the same-task mating. Conditional on cross-task mating, a donor is sampled from the normalised donor probabilities, and the MPSLGP comparator selects a parent within that task.
+
+The local-mating reference regulates transfer frequency even when a receiving task has a single donor. With more tasks, the same gate also allocates probability among donors. An initial local-mating phase precedes transfer, and donor-count scaling sets $B=B_{\max}/(T-1)$.
+
+\subsubsection{Crossover and Task Inheritance}
+The crossover operator selects one of the individual's two trees for subtree exchange and keeps the other from the primary parent, limiting the scope of each structural exchange. The operator counts the GP nodes contributed by both parents to each child. Let $c_p$ and $c_d$ be the node contributions of the primary and secondary parents. The secondary contribution share is
+\begin{equation}
+    q_d=\frac{c_d}{c_p+c_d}.
+\end{equation}
+The counts include nodes in both trees, including the unselected tree. The child normally inherits the primary parent's task. If contribution-aware inheritance is enabled and $q_d$ reaches a threshold $\theta$, the child inherits the secondary parent's task. This final inherited task becomes the receiving task $r$ for credit assignment, and the other contributing parent's task becomes the donor task. Thus, $r$ may differ from the primary-parent task $r_0$ used by the gate. Node contributions define the child's evaluation task and feedback direction from its structural ancestry.
+
+A transfer event requires different parental task indices and positive node contributions from both parents. Each resulting child receives a persistent event identifier, allowing its outcome to be counted once during feedback.
+
+\subsection{Offspring-Based Transfer Feedback}
+Transfer utility is updated after offspring evaluation. For context $(r,d,k)$, let $n$ be the number of generated transfer offspring and $s$ the number retained with valid, evaluated and uncleared fitness. The denominator includes offspring discarded during preselection or found infeasible.
+
+For receiving task $r$, the baseline $b_r^g$ is the best scalar value among valid individuals with no pending transfer event in the current generation. A descendant of an earlier transfer can therefore serve as a local baseline once it is no longer part of the current transfer team. For a surviving transfer offspring $i$, let $f_i=\phi_r^g(x_i)$ be its real main-preference scalar value. Its relative improvement is
+\begin{equation}
+ I_i=\operatorname{clip}\left(
+ \frac{b_r^g-f_i}{\max(|b_r^g|,\epsilon)},-1,1\right),
+ \label{eq:improvement}
+\end{equation}
+where $\epsilon$ is a small positive number. Both scores use the same task, main preference, training instance and task-specific normalisation, giving a matched comparison of evaluated outcomes.
+
+Let $n_{\mathrm{non}}$ be the number of surviving transfer offspring that do not improve on $b_r^g$. The group contribution is
+\begin{equation}
+ C_{r,d,k}=
+ \frac{w_I\sum_{i=1}^{s}I_i+w_S s-w_P(n-s+n_{\mathrm{non}})}{n},
+ \label{eq:contribution}
+\end{equation}
+where $w_I$, $w_S$, and $w_P$ control improvement, survival, and negative-transfer penalty. Utility is updated by
+\begin{equation}
+ U_{r,d,k}\leftarrow(1-\eta)U_{r,d,k}+\eta C_{r,d,k},
+ \label{eq:update}
+\end{equation}
+where $\eta$ is the learning rate. A utility is updated only when $n>0$. If no local baseline is available, the improvement sum and $n_{\mathrm{non}}$ are omitted. The survival term and the penalty for the $n-s$ unsuccessful offspring are still used.
+
+The denominator $n$ charges each donor for all its generated offspring, including those discarded from the brood pool. The update reuses existing simulation outcomes to measure usefulness under the current preference and selection process, while cross-preference aggregation assesses the whole conditioned heuristic.
+
+\subsection{Transfer-Control Procedure}
+Algorithm~\ref{alg:mpslgp} presents the transfer cycle. Utilities are initialised to zero, and transfer begins after an initial local-mating phase. The gate uses the upcoming main preference; task-local preselection, simulation and clearing precede the feedback update.
+
+\begin{algorithm}[t]
+\caption{MPSLGP transfer and feedback}
+\label{alg:mpslgp}
+\footnotesize
+\begin{algorithmic}[1]
+\REQUIRE Evaluated population, main preference, utilities $U$
+\STATE Locate preference region $k$ for offspring evaluation
+\FOR{each crossover request}
+    \STATE Select parent on task $r_0$; gate mating by \eqref{eq:probability}
+    \STATE Crossover; inherit task $r$ by node contribution
+    \STATE Record each actual cross-task child's ID and $(r,d,k)$
+\ENDFOR
+\STATE Run task-local MPSLGP preselection and evaluation
+\FOR{each recorded group $(r,d,k)$ with $n>0$}
+    \STATE Compare survivors with the matched local baseline
+    \STATE Update $U_{r,d,k}$ using offspring feedback \eqref{eq:improvement}--\eqref{eq:update}
+\ENDFOR
+\RETURN Evaluated population and updated $U$
+\end{algorithmic}
+\end{algorithm}
+
+Transfer utility and cross-preference fitness provide complementary learning signals. The former evaluates donor usefulness under the current task and preference context; the latter ranks the complete conditioned heuristic across preferences.
+
+\section{Experiment Design}
+\label{sec:experiment-design}
+The experiments use the ten DFJSS scenarios from~\cite{xu2026pslgp}, organised into eight multitask groups. MPSLGP and its no-transfer control are each trained for 30 runs. Both use IGD-based cross-preference fitness aggregation, following the best-performing PSLGP variant in the original study. The main comparison includes MPSLGP, PSLGP \cite{xu2026pslgp} and NSGPII \cite{zhang2019evolving}. MPSLGP and PSLGP each provide one fixed preference-conditioned heuristic evaluated across 200 preference vectors, whereas NSGPII provides the nondominated heuristic set from its final population. An ablation study compares MPSLGP with its no-transfer variant to assess the contribution of the proposed transfer strategy. Quality measures are reported as means and standard deviations over 30 runs. For each group--scenario target and indicator, statistical differences are assessed using an exact two-sided paired Wilcoxon signed-rank test at a significance level of $\alpha=0.05$ \cite{zimmerman1993relative}.
+% MPSLGP is denoted Full in the transfer ablation study.
+
+\subsection{Dataset}
+We use the ten DFJSS scenarios from the PSLGP study~\cite{xu2026pslgp}, summarised in Table~\ref{tab:pslgp-scenarios}. Scenarios 1--5 minimise max-flowtime $F_{\max}$ and max-weighted-tardiness $WT_{\max}$; scenarios 6--10 minimise max-weighted-flowtime $WF_{\max}$ and max-tardiness $T_{\max}$. Both objective pairs are tested at utilisation levels 0.70, 0.75, 0.80, 0.85, and 0.90.
+
+\begin{table}[t]
+\centering
+\caption{The ten DFJSS scenarios used in PSLGP~\cite{xu2026pslgp}}
+\label{tab:pslgp-scenarios}
+\footnotesize
+\begin{tabular}{cllc}
+\toprule
+Scenario & Objective 1 & Objective 2 & Utilisation \\
+\midrule
+1 & $F_{\max}$ & $WT_{\max}$ & 0.70 \\
+2 & $F_{\max}$ & $WT_{\max}$ & 0.75 \\
+3 & $F_{\max}$ & $WT_{\max}$ & 0.80 \\
+4 & $F_{\max}$ & $WT_{\max}$ & 0.85 \\
+5 & $F_{\max}$ & $WT_{\max}$ & 0.90 \\
+\midrule
+6 & $WF_{\max}$ & $T_{\max}$ & 0.70 \\
+7 & $WF_{\max}$ & $T_{\max}$ & 0.75 \\
+8 & $WF_{\max}$ & $T_{\max}$ & 0.80 \\
+9 & $WF_{\max}$ & $T_{\max}$ & 0.85 \\
+10 & $WF_{\max}$ & $T_{\max}$ & 0.90 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The DFJSS simulation (instance) settings in Table~\ref{tab:simulation-settings} also follow PSLGP~\cite{xu2026pslgp}. Each replication records 5,000 jobs after 1,000 warm-up jobs. One training replication is used per individual at the main preference, and the DFJSS instance rotates between generations.
+
+\begin{table}[t]
+\centering
+\caption{Simulation settings reported for PSLGP~\cite{xu2026pslgp}}
+\label{tab:simulation-settings}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.45\columnwidth}>{\raggedright\arraybackslash}p{0.50\columnwidth}@{}}
+\toprule
+Setting & Value \\
+\midrule
+Machines & 10 heterogeneous machines \\
+Machine processing rate & Randomly assigned in $[10,15]$ \\
+Warm-up / measured jobs & 1,000 / 5,000 \\
+Job arrivals & Poisson process \\
+Operations per job & Discrete uniform, 2--10 \\
+Workload per operation & Discrete uniform, 100--1,000 \\
+Transportation time & Discrete uniform, 7--100 \\
+Job weights & 1, 2, 4 with probabilities 0.2, 0.6, 0.2 \\
+Due-date factor & 1.5 \\
+Training replications & 1; seed changes each generation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:scenario-plan} groups the scenarios by their relationships: tasks in R1--R5 share an objective pair, whereas H1--H3 mix objective pairs and workloads. Results identify both the group and target scenario so that the effect of grouping can be examined for repeated targets.
+
+\begin{table}[t]
+\centering
+\caption{\revision{Multitask groups of the scenarios in Table~\ref{tab:pslgp-scenarios}}}
+\label{tab:scenario-plan}
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+Group & Task 1 & Task 2 & Task 3 \\
+\midrule
+R1 & 1 & 2 & -- \\
+R2 & 3 & 4 & -- \\
+R3 & 6 & 7 & -- \\
+R4 & 1 & 3 & 5 \\
+R5 & 8 & 9 & -- \\
+\midrule
+H1 & 1 & 10 & -- \\
+H2 & 5 & 6 & -- \\
+H3 & 1 & 5 & 8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+After training, the learned heuristics are evaluated on 30 distinct DFJSS instances to assess their scheduling performance.
+
+\subsection{Parameter Setting}
+Table~\ref{tab:common-parameters} lists the GP-based methods settings and population allocation. 
+The terminal set includes \texttt{NIQ}, \texttt{WIQ}, \texttt{MWT}, \texttt{PT}, \texttt{NPT}, \texttt{OWT}, \texttt{WKR}, \texttt{NOR}, \texttt{rDD}, \texttt{SL}, \texttt{W}, \texttt{TIS}, and \texttt{TRANT}. The function set includes $+$, $-$, $\times$, protected division, $\max$, and $\min$; division is protected and returns 1 when its denominator is zero. Both PSLGP and MPSLGP receive the preference terminals \texttt{$w_1$} and \texttt{$w_2$}.
+
+\begin{table*}[t]
+\centering
+\caption{Parameter setting for GP-based methods.}
+\label{tab:common-parameters}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.38\textwidth}>{\raggedright\arraybackslash}p{0.58\textwidth}@{}}
+\toprule
+Parameter & Setting \\
+\midrule
+Population allocation & MPSLGP: 1,000 per group; PSLGP and NSGPII: 1,000 per task \\
+Number of evaluated generations & MPSLGP and NSGPII: 50; PSLGP: 51; all test outputs selected at generation 49 \\
+Population initialisation & Ramped half-and-half \\
+Initial minimum / maximum depth & 2 / 6 \\
+Maximum tree depth & 8 \\
+Elite allowance (PSLGP/MPSLGP) & 10 \\
+Crossover / mutation / reproduction & PSLGP/MPSLGP: 0.80 / 0.15 / 0.05; NSGPII: 0.85 / 0.15 / 0 \\
+Terminal / nonterminal node selection & 0.10 / 0.90 \\
+Parent selection & Tournament selection, size 7 \\
+\midrule
+Brood candidate pool & Five times the retained population \\
+Clearing radius / niche capacity & 0 / 1 \\
+Phenotypic characterisation & 20 sequencing and 20 routing situations; 7 candidates per situation \\
+Surrogate prediction & Nearest phenotype by Euclidean distance \\
+Scalar-score normalisation & Manual-rule normalisation \\
+Training preference list & 101 entries: 1 main preference and 100 auxiliary preferences \\
+Main preference and training instance & Rotated between generations \\
+\midrule
+Training runs & 30 seeds per MPSLGP group or independent baseline task \\
+Test preferences (PSLGP/MPSLGP) & 200 uniformly spaced vectors, including both endpoints \\
+Test simulation replications & 30 per target scenario \\
+Test simulation seed & 968356, disjoint from training \\
+Reported quality measures & HV, IGD and GD \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+MPSLGP divides its 1,000 individuals approximately equally among tasks: 500/500 for two-task groups and 334/333/333 for three-task groups, with integer remainders rotated across seeds. Its brood recombination pool has size $5N$ and the elite allowance is 10. Each independent baseline task uses 1,000 individuals. PSLGP uses IGD-based fitness aggregation, since it ss the strongest overall PSLGP variant in the reference study~\cite{xu2026pslgp}. MPSLGP uses the same aggregation strategy. The transfer settings are listed in Table~\ref{tab:transfer-parameters}. Donor-count scaling gives an effective budget of 0.8 for two tasks and 0.4 for three tasks. Conditioned heuristics are tested at $\boldsymbol{\lambda}_i=(i/199,1-i/199)$ for $i=0,\ldots,199$. Training uses the 101-entry preference list in Table~\ref{tab:common-parameters}. 
+
+% The preference terminals supply $100\lambda_1$ and $100\lambda_2$ to reduce the numerical scale mismatch between preference inputs and raw scheduling attributes, such as processing times, waiting times and workloads. Without scaling, preferences in $[0,1]$ can be numerically negligible in additive expressions or masked by larger operands in minimum and maximum operations. The fixed scaling makes preference--state interactions more readily expressible by GP while preserving the relative objective weights. The same encoding is used during training and testing.
+
+\begin{table}[t]
+\centering
+\caption{MPSLGP adaptive-transfer settings}
+\label{tab:transfer-parameters}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.57\columnwidth}>{\raggedright\arraybackslash}p{0.38\columnwidth}@{}}
+\toprule
+Parameter & \revision{Value} \\
+\midrule
+Preference regions $K$ & 5 \\
+Transfer start generation & 15 \\
+Initial directed utilities & $U_{r,d,k}=0$ \\
+Maximum transfer budget $B_{\max}$ & 0.8 \\
+Donor-count scaling & $B=B_{\max}/(T-1)$ \\
+Minimum donor probability & 0 \\
+Learning rate $\eta$ & 0.1 \\
+Softmax temperature $\tau$ & 1.0 \\
+No-transfer reference $U_0$ & 0.10 \\
+Feedback weights $(w_I,w_S,w_P)$ & $(1.0,0.1,0.10)$ \\
+Contribution-aware inheritance & Enabled \\
+Inheritance threshold $\theta$ & 0.65 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison Metrics}
+Objectives are min--max normalised using common bounds for each scenario. The main comparison pools outcomes from MPSLGP, PSLGP and NSGPII; the ablation pools Full and no-transfer. Each comparison uses the same bounds and empirical reference front across its methods, groups and seeds. Let $A$ contain a run's valid normalised outcomes, $F=\operatorname{ND}(A)$ its distinct nondominated subset, and $P$ the distinct nondominated union for the scenario. For MPSLGP and PSLGP, $A$ contains the responses of one conditioned heuristic; for NSGPII, it contains the outcomes of the final population Pareto-front heuristics. The indicators are:
+\begin{equation}
+\begin{aligned}
+\widetilde{\mathrm{HV}}(A)&=\mathrm{HV}(F;(1.1,1.1))/1.21,\\
+\widetilde{\mathrm{IGD}}(A)&=\frac{1}{|P|}\sum_{\mathbf p\in P}\min_{\mathbf a\in A}\|\mathbf p-\mathbf a\|_2,\\
+\widetilde{\mathrm{GD}}(A)&=\frac{1}{|A|}\sum_{\mathbf a\in A}\min_{\mathbf p\in P}\|\mathbf a-\mathbf p\|_2.
+\end{aligned}
+\label{eq:descriptive-test-metrics}
+\end{equation}
+The distance indicators use arithmetic means, following PSLGP~\cite{xu2026pslgp}. IGD measures coverage of the empirical reference front, whereas GD measures the proximity of the run's outcomes to that front. GD retains all valid outcomes and their multiplicities. Higher HV and lower IGD and GD indicate better approximation.
+
+
+
+% \input{results/latest-20261103/comparison-design.tex}
+% \FloatBarrier
+% \input{results/latest-20261103/results-section.tex}
+% \FloatBarrier
+
+% \input{results/latest-20261106/training-time/table.tex}
+
+% \subsection{Comparison Design}
+% The main comparison includes MPSLGP, PSLGP and NSGPII. MPSLGP and PSLGP each supply one fixed conditioned heuristic learned across 200 preferences; NSGPII supplies its complete Pareto front from the final population and final generation. In addition, the ablation study is conducted to verify the effectiveness of the proposed transfer strategy. Quality measures are reported as means and standard deviations over 30 runs. Then, for each indicator, the Wilcoxon rank test is conducted with the significant level $0.05$.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Test Performance}
+Table~\ref{tab:latest-main-quality} reports means and standard deviations over all 30 runs for the 18 group--scenario cases. Independent baseline results are reused when a scenario appears in multiple groups. At each baseline entry, $\uparrow$, $\downarrow$ and $=$ indicate a significant advantage, disadvantage and nonsignificant difference for MPSLGP, respectively, according to the paired Wilcoxon test described in the experiment design. Bold entries identify the best unrounded means.
+
+Compared with NSGPII, MPSLGP achieves better mean HV, IGD and GD on 2, 5 and 16 of the 18 cases, respectively. Its strongest mean-level pattern is therefore in GD, indicating that its outcomes tend to lie closer to the empirical reference front. The HV advantages occur at H2/scenario~6 and H3/scenario~1, while the IGD advantages occur at R1/scenario~1, R3/scenario~6, R4/scenario~1, H2/scenario~6 and H3/scenario~1. For example, on H2/scenario~6, MPSLGP obtains HV 0.836 (0.045) and IGD 0.114 (0.037), compared with NSGPII's 0.834 (0.035) and 0.122 (0.027). On R2/scenario~4, NSGPII performs better, with HV 0.871 (0.025) and IGD 0.092 (0.022), compared with MPSLGP's 0.786 (0.067) and 0.143 (0.058). The paired comparisons provide a complementary view. Against NSGPII, MPSLGP records 0/9/9 better/worse/nonsignificant outcomes for HV, 1/6/11 for IGD and 8/0/10 for GD. The significant IGD advantage occurs at R3/scenario~7, where the favourable paired ranks support MPSLGP despite its slightly higher arithmetic mean. This distinction explains why the paired-test outcome differs from the mean ranking on that target. The eight significant GD advantages further support MPSLGP's ability to produce outcomes close to the reference front, although its HV and IGD results show less consistent coverage. PSLGP has more better means than MPSLGP on all three indicators. The paired better/worse/nonsignificant counts for MPSLGP are 0/10/8 for both HV and IGD, and 0/9/9 for GD. On R1/scenario~1, for example, GD is 0.011 (0.006) for PSLGP, compared with 0.014 (0.005) for MPSLGP and 0.017 (0.006) for NSGPII. Thus, MPSLGP improves on NSGPII's reference-front proximity on several cases, while independently trained PSLGP provides stronger overall approximation quality. Fig.~\ref{fig:latest-main-quality} shows the same means and standard deviations as Table~\ref{tab:latest-main-quality}. The wider MPSLGP dispersion on several targets is apparent, complementing the paired comparisons.
+
+These results reveal a quality--cost trade-off in joint heuristic learning. MPSLGP shares 1,000 individuals across two or three tasks, whereas each independent method allocates 1,000 individuals to every task. Its approximation results are obtained under this smaller group-level population budget. The training-time analysis below quantifies the corresponding cost of learning a set of task-specific heuristics.
+
+\begin{table*}[t]
+\centering
+\caption{The mean(std) results of HV, IGD and GD comparison of all methods over all 30 runs. Methods share scenario-specific bounds and reference fronts. At baseline entries, $(\uparrow)$, $(\downarrow)$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the Wilcoxon test at $\alpha=0.05$.}
+\label{tab:latest-main-quality}
+\fontsize{6.5}{8}\selectfont
+\setlength{\tabcolsep}{0.6pt}
+\newcommand{\ThreeGenerationFortyNineRows}{%
+R1 & 1 & 0.969(0.007)$(=)$ & \textbf{0.970(0.014)}$(=)$ & 0.967(0.013) & 0.019(0.004)$(=)$ & \textbf{0.017(0.011)}$(=)$ & 0.019(0.008) & 0.017(0.006)$(\uparrow)$ & \textbf{0.011(0.006)}$(\downarrow)$ & 0.014(0.005) \\
+R1 & 2 & 0.964(0.007)$(\downarrow)$ & \textbf{0.964(0.012)}$(=)$ & 0.959(0.008) & 0.021(0.004)$(=)$ & \textbf{0.019(0.007)}$(\downarrow)$ & 0.024(0.006) & 0.023(0.011)$(=)$ & \textbf{0.013(0.004)}$(\downarrow)$ & 0.024(0.015) \\
+R2 & 3 & \textbf{0.973(0.006)}$(\downarrow)$ & 0.969(0.009)$(=)$ & 0.966(0.012) & \textbf{0.017(0.003)}$(=)$ & 0.017(0.007)$(=)$ & 0.019(0.008) & 0.020(0.005)$(\uparrow)$ & \textbf{0.013(0.007)}$(=)$ & 0.015(0.010) \\
+R2 & 4 & \textbf{0.871(0.025)}$(\downarrow)$ & 0.845(0.053)$(\downarrow)$ & 0.786(0.067) & \textbf{0.092(0.022)}$(\downarrow)$ & 0.100(0.043)$(\downarrow)$ & 0.143(0.058) & 0.104(0.026)$(=)$ & \textbf{0.073(0.029)}$(\downarrow)$ & 0.101(0.032) \\
+R3 & 6 & 0.834(0.035)$(=)$ & \textbf{0.862(0.040)}$(\downarrow)$ & 0.829(0.053) & 0.122(0.027)$(=)$ & \textbf{0.094(0.025)}$(\downarrow)$ & 0.120(0.035) & 0.108(0.023)$(=)$ & \textbf{0.094(0.069)}$(=)$ & 0.096(0.039) \\
+R3 & 7 & 0.950(0.011)$(=)$ & \textbf{0.951(0.013)}$(=)$ & 0.940(0.033) & 0.033(0.007)$(\uparrow)$ & \textbf{0.024(0.008)}$(\downarrow)$ & 0.033(0.033) & 0.045(0.037)$(\uparrow)$ & \textbf{0.025(0.010)}$(=)$ & 0.032(0.034) \\
+R4 & 1 & 0.969(0.007)$(=)$ & \textbf{0.970(0.014)}$(=)$ & 0.967(0.012) & 0.019(0.004)$(=)$ & \textbf{0.017(0.011)}$(=)$ & 0.019(0.008) & 0.017(0.006)$(\uparrow)$ & \textbf{0.011(0.006)}$(\downarrow)$ & 0.015(0.005) \\
+R4 & 3 & \textbf{0.973(0.006)}$(\downarrow)$ & 0.969(0.009)$(\downarrow)$ & 0.962(0.011) & \textbf{0.017(0.003)}$(\downarrow)$ & 0.017(0.007)$(\downarrow)$ & 0.020(0.008) & 0.020(0.005)$(=)$ & \textbf{0.013(0.007)}$(\downarrow)$ & 0.018(0.007) \\
+R4 & 5 & \textbf{0.967(0.011)}$(\downarrow)$ & 0.949(0.013)$(\downarrow)$ & 0.935(0.017) & \textbf{0.024(0.006)}$(\downarrow)$ & 0.028(0.008)$(\downarrow)$ & 0.037(0.014) & 0.030(0.012)$(=)$ & \textbf{0.017(0.009)}$(\downarrow)$ & 0.027(0.013) \\
+R5 & 8 & 0.826(0.058)$(=)$ & \textbf{0.851(0.051)}$(\downarrow)$ & 0.812(0.077) & 0.113(0.048)$(=)$ & \textbf{0.081(0.038)}$(=)$ & 0.116(0.068) & 0.105(0.043)$(\uparrow)$ & \textbf{0.056(0.026)}$(=)$ & 0.066(0.042) \\
+R5 & 9 & \textbf{0.958(0.013)}$(\downarrow)$ & 0.943(0.023)$(\downarrow)$ & 0.928(0.016) & \textbf{0.035(0.008)}$(\downarrow)$ & 0.042(0.018)$(\downarrow)$ & 0.049(0.010) & 0.036(0.022)$(=)$ & \textbf{0.025(0.018)}$(=)$ & 0.034(0.019) \\
+H1 & 1 & 0.969(0.007)$(=)$ & \textbf{0.970(0.014)}$(=)$ & 0.969(0.013) & 0.019(0.004)$(=)$ & \textbf{0.017(0.011)}$(=)$ & 0.021(0.016) & 0.017(0.006)$(=)$ & \textbf{0.011(0.006)}$(\downarrow)$ & 0.018(0.024) \\
+H1 & 10 & \textbf{0.822(0.037)}$(\downarrow)$ & 0.784(0.082)$(=)$ & 0.768(0.085) & \textbf{0.100(0.034)}$(=)$ & 0.104(0.062)$(=)$ & 0.118(0.062) & 0.129(0.060)$(\uparrow)$ & \textbf{0.074(0.041)}$(=)$ & 0.085(0.038) \\
+H2 & 5 & \textbf{0.967(0.011)}$(\downarrow)$ & 0.949(0.013)$(\downarrow)$ & 0.939(0.014) & \textbf{0.024(0.006)}$(\downarrow)$ & 0.028(0.008)$(\downarrow)$ & 0.034(0.010) & 0.030(0.012)$(\uparrow)$ & \textbf{0.017(0.009)}$(=)$ & 0.018(0.008) \\
+H2 & 6 & 0.834(0.035)$(=)$ & \textbf{0.862(0.040)}$(\downarrow)$ & 0.836(0.045) & 0.122(0.027)$(=)$ & \textbf{0.094(0.025)}$(=)$ & 0.114(0.037) & 0.108(0.023)$(=)$ & \textbf{0.094(0.069)}$(=)$ & 0.096(0.029) \\
+H3 & 1 & 0.969(0.007)$(=)$ & \textbf{0.970(0.014)}$(=)$ & 0.969(0.010) & 0.019(0.004)$(=)$ & \textbf{0.017(0.011)}$(=)$ & 0.017(0.005) & 0.017(0.006)$(=)$ & \textbf{0.011(0.006)}$(\downarrow)$ & 0.015(0.005) \\
+H3 & 5 & \textbf{0.967(0.011)}$(\downarrow)$ & 0.949(0.013)$(\downarrow)$ & 0.930(0.017) & \textbf{0.024(0.006)}$(\downarrow)$ & 0.028(0.008)$(\downarrow)$ & 0.040(0.015) & 0.030(0.012)$(=)$ & \textbf{0.017(0.009)}$(\downarrow)$ & 0.028(0.014) \\
+H3 & 8 & 0.826(0.058)$(=)$ & \textbf{0.851(0.051)}$(\downarrow)$ & 0.792(0.071) & 0.113(0.048)$(=)$ & \textbf{0.081(0.038)}$(\downarrow)$ & 0.130(0.070) & 0.105(0.043)$(\uparrow)$ & \textbf{0.056(0.026)}$(=)$ & 0.074(0.042) \\
+}
+\begin{tabular}{@{}lc*{9}{c}@{}}
+\toprule
+ & & \multicolumn{3}{c}{HV (higher is better)} & \multicolumn{3}{c}{IGD (lower is better)} & \multicolumn{3}{c}{GD (lower is better)} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+Group & Scenario & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP \\
+\midrule
+\ThreeGenerationFortyNineRows
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/table-vi-quality.pdf}
+\caption{The test performance corresponding to Table~\ref{tab:latest-main-quality}. Points and horizontal bars denote means and standard deviations over all 30 training runs.}
+\label{fig:latest-main-quality}
+\end{figure*}
+
+\subsection{Comparison Under Matched Population Budgets}
+\label{sec:matched-population-budget}
+The preceding comparison gives each independently trained baseline a population of 1,000, whereas MPSLGP shares that population across a task group. A complementary experiment is designed to compare joint and independent learning under the same group-level population allocation and number of evaluated generations. For a group of $T$ tasks, each independent PSLGP or NSGPII run receives $\lfloor 1000/T\rfloor$ individuals, and the remaining individuals are assigned in cyclic task order beginning at task $r\bmod T$, where $r\in\{0,\ldots,29\}$ is the training seed. Two-task groups therefore use 500/500; three-task groups use a permutation of 334/333/333. The allocations sum to 1,000 for every group and seed and match MPSLGP's configured task quotas. Each independent run evaluates generations 0--49 without early success termination. This control matches population allocation and generation count; native brood, surrogate and selection procedures remain method-specific, so equal wall time or identical total simulation counts are not assumed.
+
+The experiment reuses the existing MPSLGP generation-49 heuristics and their held-out objective outcomes. Only the two independent baselines require new training and testing, with 30 seeds for each of the 18 group--scenario targets, giving 540 training runs per baseline. Baseline records retain the group, task, scenario and seed identifiers, including when a scenario also appears in another group. PSLGP uses its native IGD-based learning procedure and supplies the first training-ranked individual from the final-generation Top-N list. This fixed sequencing--routing heuristic is evaluated across the same 200 preferences as MPSLGP. NSGPII supplies all heuristics on the final population Pareto front. Both baselines use the same scenario definitions, rotating training instances and held-out test seed with 30 replications as the preceding comparison; neither selects heuristics using test performance.
+
+The matched-budget comparison will recompute common scenario-specific normalisation bounds and empirical reference fronts using only the reused MPSLGP outcomes and the newly obtained matched-budget baseline outcomes. HV, IGD and GD will be summarised as means and standard deviations over the 30 seeds for each target, with paired Wilcoxon signed-rank tests at $\alpha=0.05$. Group-level training time will also be recorded by counting joint MPSLGP training once and summing the independent task times. The comparison tests whether joint structural learning improves approximation quality when independent search receives the same configured population shares. The new baseline experiments are pending; no matched-budget performance conclusions are drawn here.
+
+
+\subsection{Training Time}
+Table~\ref{tab:latest-training-time} compares the training cost of obtaining a set of task-specific heuristics for each group. For every seed, MPSLGP's joint training time is counted once, whereas the independent methods' training times are summed across the tasks in that group. All methods are measured over 50 generations, using the sum of logged elapsed times converted to minutes. Means and standard deviations are calculated from the 30 group-level totals. MPSLGP's mean group time ranges from 80.01 to 145.61 minutes, compared with 390.10--587.31 for PSLGP and 128.23--205.30 for NSGPII. MPSLGP requires 63.5--86.3\% less time than PSLGP in all eight groups and 32.0--60.8\% less than NSGPII in seven groups. For example, in the three-task group R4, MPSLGP takes 80.01 (4.73) minutes, compared with 583.72 (39.82) for PSLGP and 203.98 (16.82) for NSGPII. The shared-population design reduces the configured search size for a group from 2,000 or 3,000 individuals to 1,000, with each individual evaluated on its assigned task. Cross-task exchange enables rule structures to be reused within this smaller total budget while retaining separate conditioned heuristics. The recorded time reductions demonstrate the practical cost advantage of joint learning when several scheduling environments require their own heuristics. Together with the quality results, they characterise MPSLGP as a lower-cost alternative with an approximation-quality trade-off.
+
+\begin{table}[t]
+\centering
+\caption{Training time for the same task groups: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group.}
+\label{tab:latest-training-time}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\newcommand{\TrainingTimeRows}{%
+R1 & 1, 2 & 135.97(13.26) & 399.13(30.84) & 145.61(118.08) \\
+R2 & 3, 4 & 130.14(10.46) & 398.91(33.83) & 88.54(13.54) \\
+R3 & 6, 7 & 157.00(18.56) & 390.61(36.14) & 87.38(6.52) \\
+R4 & 1, 3, 5 & 203.98(16.82) & 583.72(39.82) & 80.01(4.73) \\
+R5 & 8, 9 & 128.23(10.86) & 393.92(29.34) & 82.53(5.04) \\
+H1 & 1, 10 & 139.78(14.39) & 390.10(31.59) & 83.32(5.60) \\
+H2 & 5, 6 & 147.42(18.88) & 392.53(27.73) & 83.56(5.67) \\
+H3 & 1, 5, 8 & 205.30(19.97) & 587.31(43.19) & 80.76(4.85) \\
+}
+\begin{tabular}{@{}lc*{3}{c}@{}}
+\toprule
+Group & Scenarios & NSGPII & PSLGP & MPSLGP \\
+\midrule
+\TrainingTimeRows
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation Study}
+Table~\ref{tab:latest-ablation-quality} compares the complete MPSLGP method, denoted Full, with its no-transfer variant across the same 18 group--scenario cases. Both variants use common ablation-specific reference fronts. Full achieves better mean HV, IGD and GD on 15, 14 and 16 targets, respectively. On R4/scenario~3, for example, Full obtains HV 0.964 (0.011), IGD 0.023 (0.006) and GD 0.016 (0.005), compared with no-transfer's 0.956 (0.012), 0.027 (0.009) and 0.021 (0.006). All three mean comparisons favour Full. The paired tests yield 2/0/16 better/worse/nonsignificant outcomes for HV, 3/0/15 for IGD and 5/0/13 for GD. Thus, Full achieves significant improvements on several targets, with no significant disadvantages under the per-comparison test. The strongest pattern occurs in GD, indicating that transfer helps produce outcomes closer to the empirical reference front. These results support the contribution of the proposed transfer mechanism to approximation quality.
+
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha=0.05$. Bold marks the best unrounded mean.}
+\label{tab:latest-ablation-quality}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\newcommand{\UnifiedAblationRows}{%
+R1 & 1 & 0.900(0.028)$(=)$ & \textbf{0.906(0.030)} & 0.058(0.019)$(=)$ & \textbf{0.052(0.020)} & 0.060(0.018)$(=)$ & \textbf{0.054(0.020)} \\
+R1 & 2 & 0.975(0.012)$(=)$ & \textbf{0.978(0.006)} & 0.024(0.013)$(=)$ & \textbf{0.020(0.004)} & 0.014(0.010)$(=)$ & \textbf{0.013(0.009)} \\
+R2 & 3 & 0.965(0.009)$(=)$ & \textbf{0.968(0.012)} & 0.023(0.005)$(=)$ & \textbf{0.022(0.006)} & 0.014(0.005)$(=)$ & \textbf{0.014(0.009)} \\
+R2 & 4 & \textbf{0.922(0.024)}$(=)$ & 0.920(0.023) & \textbf{0.050(0.016)}$(=)$ & 0.055(0.014) & 0.035(0.026)$(=)$ & \textbf{0.027(0.012)} \\
+R3 & 6 & \textbf{0.803(0.066)}$(=)$ & 0.802(0.075) & \textbf{0.121(0.041)}$(=)$ & 0.127(0.055) & \textbf{0.116(0.052)}$(=)$ & 0.123(0.048) \\
+R3 & 7 & 0.985(0.004)$(=)$ & \textbf{0.986(0.006)} & \textbf{0.007(0.003)}$(=)$ & 0.007(0.006) & 0.044(0.196)$(=)$ & \textbf{0.007(0.006)} \\
+R4 & 1 & 0.885(0.040)$(\uparrow)$ & \textbf{0.905(0.028)} & 0.073(0.041)$(\uparrow)$ & \textbf{0.054(0.019)} & 0.113(0.178)$(\uparrow)$ & \textbf{0.057(0.017)} \\
+R4 & 3 & 0.956(0.012)$(\uparrow)$ & \textbf{0.964(0.011)} & 0.027(0.009)$(\uparrow)$ & \textbf{0.023(0.006)} & 0.021(0.006)$(\uparrow)$ & \textbf{0.016(0.005)} \\
+R4 & 5 & 0.973(0.007)$(=)$ & \textbf{0.975(0.007)} & 0.016(0.004)$(=)$ & \textbf{0.015(0.007)} & 0.014(0.006)$(=)$ & \textbf{0.011(0.005)} \\
+R5 & 8 & 0.872(0.029)$(=)$ & \textbf{0.884(0.044)} & 0.074(0.023)$(=)$ & \textbf{0.066(0.034)} & 0.063(0.026)$(\uparrow)$ & \textbf{0.050(0.025)} \\
+R5 & 9 & \textbf{0.945(0.016)}$(=)$ & 0.944(0.014) & 0.031(0.010)$(=)$ & \textbf{0.031(0.008)} & 0.029(0.013)$(=)$ & \textbf{0.026(0.015)} \\
+H1 & 1 & 0.902(0.029)$(=)$ & \textbf{0.905(0.040)} & \textbf{0.058(0.021)}$(=)$ & 0.059(0.035) & \textbf{0.060(0.018)}$(=)$ & 0.073(0.104) \\
+H1 & 10 & 0.910(0.025)$(=)$ & \textbf{0.920(0.020)} & 0.051(0.021)$(=)$ & \textbf{0.044(0.014)} & 0.041(0.036)$(=)$ & \textbf{0.030(0.011)} \\
+H2 & 5 & 0.974(0.009)$(=)$ & \textbf{0.976(0.005)} & 0.016(0.007)$(=)$ & \textbf{0.014(0.004)} & 0.026(0.081)$(\uparrow)$ & \textbf{0.008(0.003)} \\
+H2 & 6 & 0.787(0.072)$(=)$ & \textbf{0.813(0.046)} & 0.132(0.057)$(=)$ & \textbf{0.114(0.030)} & 0.129(0.053)$(=)$ & \textbf{0.115(0.036)} \\
+H3 & 1 & 0.898(0.022)$(=)$ & \textbf{0.911(0.021)} & 0.060(0.017)$(\uparrow)$ & \textbf{0.051(0.013)} & 0.063(0.020)$(=)$ & \textbf{0.058(0.019)} \\
+H3 & 5 & 0.972(0.008)$(=)$ & \textbf{0.975(0.006)} & 0.017(0.007)$(=)$ & \textbf{0.014(0.004)} & 0.013(0.007)$(=)$ & \textbf{0.012(0.005)} \\
+H3 & 8 & 0.856(0.037)$(=)$ & \textbf{0.871(0.040)} & 0.088(0.032)$(=)$ & \textbf{0.074(0.033)} & 0.083(0.044)$(\uparrow)$ & \textbf{0.056(0.025)} \\
+}
+\begin{tabular}{@{}lc*{6}{c}@{}}
+\toprule
+ & & \multicolumn{2}{c}{HV (higher is better)} & \multicolumn{2}{c}{IGD (lower is better)} & \multicolumn{2}{c}{GD (lower is better)} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Group & Scenario & No-transfer & Full & No-transfer & Full & No-transfer & Full \\
+\midrule
+\UnifiedAblationRows
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Further Analysis}
+
+\subsection{Shared and Task-Specific Tree Structure Analyses}
+\label{sec:learned-tree-structures}
+Fig.~\ref{fig:learned-sequencing-trees} shows the sequencing trees learned together in R4 for scenarios~1, 3 and~5, which share the max-flowtime and max-weighted-tardiness objectives at utilisations 0.70, 0.80 and 0.90. The trees contain 37, 31 and 71 nodes, separately. Two subtrees recur across tasks with identical operators, terminals and ordered child structures. A, $\mathrm{NOR}\,w_2-\mathrm{SL}$, is a five-node subtree shared by S1 and S3; B, $\mathrm{W}+w_2$, is a three-node subtree shared by S3 and S5. A combines remaining-operation count, preference and slack, whereas B combines job weight and preference. Sharing is pair-specific: no nonterminal subtree occurs in all three trees. Each task also retains distinctive combinations. U1, $\max(\mathrm{TIS},\mathrm{WR}-\mathrm{TR})$, links time in system with transfer-adjusted remaining work in S1. U3, $\min(\mathrm{NIQ},\mathrm{SL})$, appears three times in S3, coupling queue length and slack in its competing priority branches. U5, $D(\mathrm{WR},w_1)+\mathrm{NIQ}+\mathrm{MWT}$, combines preference-scaled remaining work, queue length and machine waiting time in S5; $D$ denotes protected division. These subtrees are unique to their respective trees in this case.S1 and S5 use subtractive roots, while S3 selects between branches through a minimum. Shared subtrees therefore coexist with different complete decision rules.
+
+This pattern reflects the form of reuse targeted by MPSLGP: donor subtrees are assessed within receiving-task contexts, while task-local evaluation and balanced quotas retain separate heuristics. Node contributions assign each child's task, and offspring outcomes update the corresponding task/region utility. In this run, S1-to-S3 transfer produced 5,039 tracked children and 1,167 survivors; the reverse direction produced 4,902 and 1,278. S3-to-S5 and S5-to-S3 produced 5,536/1,137 and 5,711/1,328 children/survivors, respectively. These records from generation 15 to 50 show that both receiving directions retained cross-task offspring. The case thus illustrates reusable preference-aware structure alongside task-specific adaptation.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf}
+\caption{The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT.}
+\label{fig:learned-sequencing-trees}
+\end{figure*}
+
+\subsection{Task-Specific Effects of Preference Inputs}
+\label{sec:tree-preference-effects}
+We further examine the task-specific roles of preference inputs in the three sequencing trees shown in Fig.~\ref{fig:learned-sequencing-trees}. The complementary weights $w_1$ and $w_2=1-w_1$ express preferences for max-flowtime and max-weighted-tardiness, respectively. In our setting, operations with smaller priority scores are selected first. The S1 and S3 trees each contain two $w_2$ leaves, whereas S5 contains eight $w_2$ and two $w_1$ leaves. Since the weights are complementary, a heuristic can respond to changing preferences through $w_2$ alone. The following analysis traces these inputs through each expression to identify how they interact with scheduling features and affect candidate rankings.
+
+For S1, the tree can be simplified to:
+\begin{equation}
+\begin{aligned}
+g_1={}&\min(\mathrm{SL}-\mathrm{NOR}\,w_2,-X)\\
+&-\max(\mathrm{TIS},X)-\min(w_2,\mathrm{SL}).
+\end{aligned}
+\label{eq:case-tree-s1}
+\end{equation}
+Preference interacts with remaining-operation count and slack. Increasing $w_2$ changes the first minimum's active branch according to the operation's slack and remaining work. The final minimum introduces an additional slack-dependent threshold. These interactions give different operations different responses to the same preference.
+
+For S3, let $Q=\min(\mathrm{NIQ},\mathrm{SL})$. Its tree reduces to:
+\begin{equation}
+\begin{aligned}
+g_3&=\min\{C_3+(1-\mathrm{NOR})w_2,\ H_3\},\\
+C_3&=Q-\mathrm{WR}+\mathrm{W}+\mathrm{SL},\\
+H_3&=\mathrm{W}[Q-\mathrm{WR}+\min(\mathrm{PT},\mathrm{WR})]-Q.
+\end{aligned}
+\label{eq:case-tree-s3}
+\end{equation}
+A and B meet in the first branch, where their preference terms combine into $(1-\mathrm{NOR})w_2$. This contribution vanishes for $\mathrm{NOR}=1$ and lowers the branch score as the tardiness weight increases when $\mathrm{NOR}>1$. The outer minimum can instead select the preference-free branch $H_3$. The same A fragment therefore has a different effective role in S3 than in S1 because its surrounding expression differs, illustrating the context-dependent reuse enabled by subtree crossover.
+
+S5 couples both preferences with waiting information. Define $D(a,b)=1$ for $b=0$, and $D(a,b)=a/b$ otherwise. Within one work-centre queue, NIQ and the supplied weights are shared across candidates. Terms involving only these quantities are common offsets. Removing them gives the ranking-equivalent form
+\begin{equation}
+\begin{aligned}
+g_5&\overset{\mathrm{rank}}{\sim}
+C_5-\mathrm{W}w_2\\
+&\quad-[D(\mathrm{WR},w_1)+\mathrm{NIQ}+\mathrm{MWT}]K_5,\\
+K_5&=D\!\left(\max(\mathrm{NOR},w_2),\mathrm{NOR}\,\mathrm{OWT}\right),
+\end{aligned}
+\label{eq:case-tree-s5}
+\end{equation}
+where $C_5$ contains the remaining preference-free terms. The $-\mathrm{W}w_2$ term favours higher-weight jobs as the tardiness weight increases, all else equal. U5 and $K_5$ couple preference with remaining work and queue and waiting conditions. The scaled $w_1$ input enters a denominator; at $w_1=0$, protected division returns 1 for that subexpression. B is multiplied by $w_2$ in S5, in contrast to its additive placement in S3. Combining the complete expression retains the job-weight interaction while eliminating several preference-only offsets. The task-specific context determines which preference contributions remain active in ranking.
+
+Each fixed dual-tree heuristic produces 200 distinct objective pairs across the 200 test preferences. S1 and S5 receive explicit preferences through sequencing, with routing responding indirectly to the resulting shop states; S3 also uses $w_1$ in routing. The system-level responses therefore reflect both rules and their interaction. The region-aware controller acts during evolution, while preference terminals condition the deployed decisions. Together, they support cross-task exchange of preference-aware subtrees and task-specific responses through different surrounding structures.
+
+\subsection{Preference Response Analysis}
+Preference response describes how the objective outcomes of a fixed scheduling heuristic change as its preference input varies. Here, $w_1$ controls the emphasis on Objective~1, with $w_2=1-w_1$ controlling the emphasis on Objective~2. This analysis examines whether one learned heuristic produces different trade-offs and whether those changes follow the requested preference. It complements HV, IGD and GD, which summarise approximation quality across preferences. Fig.~\ref{fig:latest-preference-response} shows the responses of the co-trained R4 and H3 heuristics across 200 preference vectors. We use the run~20, selected as the lower median of the equal-group mean within-task IGD ranks over the 30 runs.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{results/latest-20261106/ablation-full-no-transfer/latest-preference-response.pdf}
+\caption{Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds.}
+\label{fig:latest-preference-response}
+\end{figure}
+
+The response patterns differ substantially among tasks. R4/S5 shows the clearest trade-off: as $w_1$ increases, Objective~1 generally decreases while Objective~2 increases, consistent with greater emphasis on the first minimisation objective. H3/S5 also shows an overall reduction in Objective~1, although Objective~2 changes comparatively little over much of the preference range. These examples demonstrate that a fixed heuristic can adjust its scheduling behaviour without replacing its trees or repeating the learning process. Other responses are less regular. In R4/S1 and R4/S3, Objective~1 tends to increase over much of the preference range, despite receiving greater emphasis. H3/S1 is nonmonotonic, while H3/S8 fluctuates considerably for both objectives. Thus, the learned heuristics respond to preferences, but responsiveness does not always translate into consistent preference alignment. The contrast between R4 and H3 on their shared scenarios also illustrates how the jointly learned heuristics can retain different task-specific responses. These findings motivate assessing both the quality of the attained trade-offs and the mapping from preference inputs to outcomes.
+
+
+\subsection{Pareto Front Analysis Across Multiple Runs}
+We compare the Pareto-front approximations obtained across 30 runs to examine how task grouping affects the attained trade-offs and their consistency. Aggregate indicators such as HV, IGD and GD provide numerical summaries, but do not reveal where the fronts differ in objective space. A single representative front also leaves run-to-run variation unexamined. We therefore analyse the collections of fronts produced by R4 and H3 on their shared scenarios~1 and~5.
+
+For each fixed scenario, let $A_{c,r}$ denote the nondominated objective set obtained by group $c\in\{\mathrm{R4},\mathrm{H3}\}$ in run $r$, where $r=1,\ldots,N$ and $N=30$. Each set is generated by evaluating one fixed sequencing--routing heuristic across 200 preferences. The comparison thus involves two collections of 30 front approximations, $\mathcal{A}_c=\{A_{c,1},\ldots,A_{c,N}\}$. We summarise each collection using the following empirical attainment function:
+\begin{equation}
+\widehat{\alpha}_c(\mathbf{z})
+=
+\frac{1}{N}\sum_{r=1}^{N}
+\mathbb{I}\!\left[
+\exists\,\mathbf{a}\in A_{c,r}:
+a_1\leq z_1,\ a_2\leq z_2
+\right],
+\label{eq:empirical-attainment}
+\end{equation}
+where $\mathbf{z}=(z_1,z_2)$ is a target point and $\mathbb{I}[\cdot]$ is the indicator function. The value $\widehat{\alpha}_c(\mathbf{z})$ is the proportion of runs whose fronts contain an outcome meeting both objective thresholds. This retains information about attainment across individual runs, whereas a pooled nondominated union describes the best outcomes obtained collectively.
+
+For a first-objective threshold $x$, the attainment boundary at level $\beta$ is:
+\begin{equation}
+b_{c,\beta}(x)
+=
+\inf\left\{y:
+\widehat{\alpha}_c\bigl((x,y)\bigr)\geq\beta
+\right\}.
+\label{eq:attainment-boundary}
+\end{equation}
+The 50\% boundary summarises trade-offs attained by at least 15 of the 30 runs. The 25\% and 75\% boundaries require attainment by at least 8 and 23 runs, respectively. Their envelope describes variability among the run-level fronts; a narrower envelope indicates more consistent attainment. All boundaries are shown in raw objective space, with lower-left boundaries indicating better trade-offs.
+
+Fig.~\ref{fig:latest-attainment} shows that the differences between the two front collections depend on both the scenario and the trade-off region. On scenario~1, H3 generally attains lower max-weighted-tardiness over much of the displayed flowtime range. On scenario~5, the median boundaries become close in the right-hand region, and the envelopes overlap substantially. Crossings indicate that the groups favour different trade-offs. The multiple-run analysis therefore complements the aggregate indicators by locating performance differences and showing how consistently those differences arise across training runs.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{results/latest-20261106/mpslgp-empirical-attainment.pdf}
+\caption{Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised.}
+\label{fig:latest-attainment}
+\end{figure}
+
+
+
+\section{Conclusions}
+\label{sec:conclusions}
+This paper proposed MPSLGP for jointly learning one preference-conditioned scheduling heuristic for each multiobjective dynamic scheduling task. The framework combines preference adaptation within a task with selective structural exchange across tasks. Directed task-pair utilities, conditioned on preference regions, regulate donor selection and transfer frequency. Offspring survival and improvement under matched task conditions update these utilities using simulation outcomes, while node-contribution-based inheritance aligns feedback with the child's receiving task. Task-local evaluation and balanced retention preserve distinct heuristics within the shared population.
+
+Experiments on ten DFJSS scenarios demonstrate the benefits and trade-offs of this approach. Compared with no-transfer, MPSLGP achieves better mean HV, IGD and GD on 15, 14 and 16 of the 18 group--scenario cases, respectively. The learned trees combine shared preference-aware subtrees with task-specific structures, and the response and Pareto front analyses reveal how task context affects the resulting trade-offs. MPSLGP obtains eight significant GD advantages over NSGPII, while independently trained PSLGP provides stronger overall approximation quality. Its mean group-level training time is 63.5--86.3\% lower than PSLGP's across all eight groups and 32.0--60.8\% lower than NSGPII's in seven. Together, these findings establish joint structural learning as a practical way to reduce the recorded cost of learning multiple conditioned heuristics under a shared population budget, with an explicit quality--cost trade-off.
+
+Future work will extend the transfer controller from fixed task labels and preference regions to contextual utility models that can adapt to changing workloads, newly introduced tasks and higher-dimensional preferences. Another direction is to extend MPSLGP to other domains, e.g., dynamic vehicle routing and cloud--edge resource scheduling, by incorporating domain-specific state features and constraint-handling mechanisms while retaining preference-conditioned heuristics and offspring-based transfer feedback.
+
+
+% A complementary direction is to learn a library of reusable rule subtrees together with their task-dependent applicability, extending pairwise crossover towards the composition of task-specific heuristics from shared modules.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{reference}
+
+\end{document}

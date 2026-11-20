@@ -22,6 +22,8 @@ src/mengxu/ruleanalysis/MPSLGP/paper-runs-preference-v2/
 src/mengxu/ruleanalysis/MPSLGP/paper-tests-preference-v2/
 src/mengxu/ruleanalysis/MPSLGP/baseline-tests-generation49/
 src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49/
+src/mengxu/ruleanalysis/MPSLGP/pslgp-generation49/
+src/mengxu/ruleanalysis/MPSLGP/same-population-budget/
 *.csv
 *.stat
 *.pdf

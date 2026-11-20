@@ -1,0 +1,102 @@
+\begingroup
+\color{resultrevision}
+\section{\resultrevision{Results}}
+\label{sec:results}
+The results below replace the earlier summaries with a verified snapshot of the completed preference-runtime-v2 experiments. MPSLGP is labelled Full only in the ablation comparison with no-transfer. Each profile has 240 group-level training runs and 540 task-specific held-out tests: eight groups, 18 group/scenario targets, and 30 seeds. Across the two profiles this gives 480 training runs, 1,080 tests, and 216,000 preference outcomes. The analysis reads the completed attempt identified by each completion marker, validates configuration and source hashes, and checks that paired training parameters differ only in the intended transfer fields. Raw training and test files are left unchanged.
+
+For every task/run, testing holds the first training-ranked pair of trees from generation 49 fixed and supplies 200 preferences, with 30 configured simulation replications per preference. It does not choose a different heuristic for each preference or pool several individuals to form a test front. Training and testing use the corrected preference-terminal scale, $100w_1$ and $100w_2$.
+
+\subsection{\resultrevision{Validity and Metric Protocol}}
+MPSLGP produces two valid objectives for all 108,000 preferences. No-transfer has 192 invalid preferences in five task/run tests. A preference is invalid when either objective contains the inherited $-1$ sentinel. No training seed is removed. Quality measures for no-transfer use its valid preference subsets, and the failures remain in the validity report. These conditional quality scores do not penalise failed preferences; validity and front quality must therefore be read together.
+
+The inherited evaluator averages each objective over its finite replications. A valid objective mean does not certify that all 30 replications were finite. Thus, the counts concern preference-level output validity, not replication-level failure rates.
+
+The main table uses common scenario-specific min--max bounds and empirical reference fronts pooled only over MPSLGP, the completed generation-49 PSLGP retests, and the newly completed generation-49 NSGPII experiments. For each objective, its pooled minimum is subtracted and the result is divided by its pooled maximum minus minimum. The same bounds and reference front are used for every method, group and seed belonging to that benchmark scenario. All three methods are recomputed from raw test objectives under these references. The ablation uses newly pooled joint references over Full and no-transfer only. The preference-response illustration retains its MPSLGP-only bounds. These reference families must not be interchanged. Let $A$ contain one run's valid normalised outcomes, $F=\operatorname{ND}(A)$ its distinct nondominated subset, and $P$ the distinct nondominated union for that scenario under the stated protocol. For MPSLGP and PSLGP, $A$ comes from one fixed conditioned heuristic; for NSGPII, it comes from the final population Pareto-front heuristics. The indicators are
+\begin{equation}
+\begin{aligned}
+\widetilde{\mathrm{HV}}(A)&=\mathrm{HV}(F;(1.1,1.1))/1.21,\\
+\widetilde{\mathrm{IGD}}(A)&=\frac{1}{|P|}\sum_{\mathbf p\in P}\min_{\mathbf a\in A}\|\mathbf p-\mathbf a\|_2,\\
+\widetilde{\mathrm{GD}}(A)&=\frac{1}{|A|}\sum_{\mathbf a\in A}\min_{\mathbf p\in P}\|\mathbf a-\mathbf p\|_2.
+\end{aligned}
+\label{eq:descriptive-test-metrics}
+\end{equation}
+Both distance indicators use arithmetic means, following the PSLGP definitions~\cite{xu2026pslgp}. The main comparison reports HV, IGD and GD under the same three-method references. GD includes every valid outcome, not just the nondominated subset; the per-run outcome multiplicities are retained. The empirical fronts contain outcomes from the evaluated runs. The analysis archive retains objective bounds, run-level scores, failed-preference records, paired tests, and input hashes.
+
+\subsection{\resultrevision{Main Comparison at Generation 49}}
+Table~\ref{tab:latest-main-quality} reports mean(sample standard deviation) over 30 seeds for all 18 group/scenario targets. Within each indicator, columns are ordered NSGPII, PSLGP and MPSLGP. The comparison uses 540 MPSLGP task/run tests, 300 completed PSLGP-I retests and 300 newly trained/tested NSGPII runs. Every selected output is from actual generation 49. The new NSGPII configurations have 50 evaluated generations, 1,000 individuals per task and the original NSGPII breeder/evaluator. Completion markers, configuration fingerprints, source hashes, actual generation headers and final-front test identities are verified. Each NSGPII run records 50,000 individual objective-evaluation calls; this does not include every setup or phenotypic-characterisation simulation and is not a cross-method evaluation-budget guarantee.
+
+MPSLGP uses task-specific Top-N rank 0, and PSLGP uses the recorded generation-49 Best Individual, each fixed across 200 preferences. NSGPII instead tests every heuristic in its complete generation-49 population Pareto front, not an external archive or a union of historical fronts. All use test seed 968356 and 30 configured replications. MPSLGP and NSGPII have no invalid recorded outcome vectors; PSLGP has two invalid preference vectors, excluded conditionally without removing a seed. Independent baseline values repeat where a scenario occurs in several MPSLGP groups; these repeated cells are not additional experiments.
+
+MPSLGP has better mean HV than NSGPII in 2 of 18 targets, better mean IGD in 5 and better mean GD in 16. The HV advantages occur at H2/scenario~6 and H3/scenario~1. IGD advantages occur at R1/scenario~1, R3/scenario~6, R4/scenario~1, H2/scenario~6 and H3/scenario~1. For H2/scenario~6, MPSLGP gives HV 0.836 (0.045) and IGD 0.114 (0.037), compared with NSGPII at 0.834 (0.035) and 0.122 (0.027). At R2/scenario~4, MPSLGP instead gives 0.786 (0.067) and 0.143 (0.058), against NSGPII at 0.871 (0.025) and 0.092 (0.022). For scenario~1 in R1, mean GD is 0.014 (0.005) for MPSLGP, 0.017 (0.006) for NSGPII and 0.011 (0.006) for PSLGP. PSLGP has more favourable means than MPSLGP on all three indicators in all 18 targets.
+
+For each fixed target and indicator, we separately compare MPSLGP with NSGPII and PSLGP using 30 run-ID-paired outcomes and an exact two-sided Wilcoxon signed-rank test. Zero differences are omitted and absolute ties receive midranks. Raw $p\leq0.05$ determines significance, without Holm or other multiplicity correction. At each baseline mean(std), $(\uparrow)$ means MPSLGP is significantly better, $(\downarrow)$ means MPSLGP is significantly worse, and $(=)$ means no significant difference. The direction uses the signed-rank sums after treating higher HV and lower IGD/GD as favourable. Preferences and front members are not independent evolutionary replicates, and repeated baseline cells are not new runs.
+
+Against NSGPII, MPSLGP has 0/9/9 better/worse/non-significant HV outcomes, 1/6/11 IGD outcomes and 8/0/10 GD outcomes under this unadjusted convention. Against PSLGP, HV and IGD each have 0/10/8 outcomes, while GD has 0/9/9. The IGD advantage over NSGPII occurs on R3/scenario~7 ($p=0.042652$): the positive paired-rank sum is 331 versus 134, with a median paired IGD improvement of 0.007119. Its mean IGD is nevertheless slightly higher than NSGPII's (0.033319 versus 0.032811), illustrating that the paired rank test and the arithmetic mean need not agree. The table keeps bold mean rankings separate from significance arrows. The GD results provide per-comparison evidence of closer outcomes to the empirical reference front relative to NSGPII, but GD alone does not establish coverage across that front. These unadjusted findings do not establish family-wise significance, overall superiority or equivalence.
+
+All three methods now supply generation-49 outputs, removing the previous source-generation mismatch. MPSLGP still shares 1,000 individuals across two or three tasks, while each independent task has 1,000. The corresponding 50\% or 66.7\% reduction in configured group-level population slots is a design property, not a measured speedup or equal-accuracy result. Training schedules, native operators and selected output types also differ. These results do not establish a general accuracy advantage for MPSLGP; an efficiency claim requires matched resource measurements and budget-matched independent controls. Earlier analyses are retained for provenance but are not used in the active main table.
+
+\input{results/latest-20261106/main-table.tex}
+
+Figure~\ref{fig:latest-main-quality} gives a visual counterpart to Table~\ref{tab:latest-main-quality}, using exactly the same 18 targets, three-method reference data, means and sample standard deviations. The wider MPSLGP dispersion on several targets remains visible. Error bars describe variability across training seeds; their overlap is not a Wilcoxon significance test, and the paired-test conclusions remain those marked in the table.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/table-vi-quality.pdf}
+\caption{\resultrevision{Generation-49 test performance corresponding to Table~\ref{tab:latest-main-quality}. Points are mean HV, IGD and GD and horizontal bars are sample standard deviations over 30 training seeds for each target. All three methods use the same scenario-specific normalisation bounds and empirical reference fronts as the table. Bars are not confidence intervals and their overlap does not determine statistical significance; see the table's paired Wilcoxon annotations. Invalid PSLGP preferences are excluded conditionally, with all seeds retained. Repeated scenario baselines reuse the same 30 independent runs.}}
+\label{fig:latest-main-quality}
+\end{figure*}
+
+\subsection{\resultrevision{Transfer Ablation with Common References}}
+Table~\ref{tab:latest-ablation-quality} reports Full versus no-transfer in the same tabular form as Table~\ref{tab:latest-main-quality}: three-decimal mean(sample standard deviation) and paired-test symbols for HV, IGD and GD across the same 18 targets. The columns are ordered no-transfer and Full. Both profiles share ablation-specific scenario bounds and empirical reference fronts pooled only over their raw valid outcomes, separately from the main comparison's references. All 1,080 run-level scores are recomputed under these two-profile references.
+
+Full has better mean HV, IGD and GD than no-transfer in 15, 14 and 16 of the 18 targets. For R4/scenario~3, Full gives HV 0.964 (0.011), IGD 0.023 (0.006) and GD 0.016 (0.005), compared with no-transfer at 0.956 (0.012), 0.027 (0.009) and 0.021 (0.006). All three indicators favour Full in mean and paired-test direction, with raw $p=0.005013$, $0.007111$ and $0.000035$, respectively. This pattern is not universal: on R3/scenario~6, no-transfer has better means for all three indicators, although none of those paired differences is significant.
+
+The 54 exact two-sided paired Wilcoxon signed-rank comparisons use the same raw $p\leq0.05$ convention as the main experiment, without multiplicity correction. Zero differences are omitted, absolute ties receive midranks, and symbols at each no-transfer entry refer to Full relative to no-transfer. The better/worse/non-significant counts are 2/0/16 for HV, 3/0/15 for IGD and 5/0/13 for GD. These per-comparison results support a benefit from allowing transfer on some targets but do not isolate individual controller components. They do not establish family-wise significance or equivalence. Each test uses 30 paired training seeds for one fixed target; preferences and simulation replications are not additional independent evolutionary runs.
+
+\input{results/latest-20261106/ablation-full-no-transfer/table.tex}
+
+\subsection{\resultrevision{Training-Phase Transfer Behaviour}}
+The recorded MPSLGP probability tables cover 30 runs per group. Averaging total cross-task probabilities over receiving tasks and preference regions gives a run-level summary, not an observed mating frequency. The two-task groups start near 0.380 and end at 0.367--0.368, while R4 and H3 move from 0.258 to about 0.252. The controller changes its stored probabilities, but the aggregate adjustment is modest under these settings.
+
+No-transfer has a cross-task mating probability of zero. The Full versus no-transfer comparison therefore tests the transfer mechanism as a whole, including the opportunity for cross-task mating and utility-based donor selection. It cannot isolate improved donor selection, the value of preference regions, or a causal reduction in negative transfer. Controls that hold transfer frequency constant and a $K=1$ controller remain needed to separate these effects.
+
+\input{results/latest-20261106/tree-case-study/subsections.tex}
+
+\subsection{\resultrevision{Validity and Preference Response}}
+Output validity and response to preferences are different properties. Full has no invalid preference vectors, compared with 0.178\% for no-transfer. The no-transfer failures are concentrated in five task/run tests. The percentages should not be treated as thousands of independent failure observations because preferences from one trained heuristic are dependent.
+
+Full has 48 single-outcome heuristics among 540 (8.89\%); no-transfer has 39 (7.22\%). Full is therefore more reliable at producing valid outputs in this snapshot, but it has a higher observed single-outcome count. Mean distinct outcome counts are 170.53 and 170.10, respectively, whereas mean within-heuristic nondominated counts are only 5.65 and 5.69. A preference-conditioned representation can produce many responses without producing equally many useful trade-offs.
+
+Figure~\ref{fig:latest-preference-response} fixes one common illustrative MPSLGP seed, 20, for the R4 and H3 task heuristics. It is selected as the lower median of the equal-group mean within-task IGD ranks over seeds 0--29 under the two-profile ablation references, rather than the best-performing run. The curves show all 200 preferences. The illustration does not establish monotonic preference alignment or front coverage for all runs.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/ablation-full-no-transfer/latest-preference-response.pdf}
+\caption{\resultrevision{Latest MPSLGP preference responses for the co-trained tasks in R4 and H3, seed 20. Each panel uses one fixed pair of trees and all 200 preferences. Values are normalised by the MPSLGP-only scenario bounds, not the two-profile ablation bounds. The seed is selected by the stated median-rank rule.}}
+\label{fig:latest-preference-response}
+\end{figure*}
+
+\subsection{\resultrevision{Raw-Objective Attainment and Scale Sensitivity}}
+Changing the pooled reference range changes the absolute indicators even when the MPSLGP test outcomes remain fixed. R3/scenario~7, for example, has MPSLGP-only HV 0.731 but two-profile joint HV 0.986. Finite poor no-transfer outcomes expand the joint objective range and compress the region occupied by most MPSLGP outcomes. This difference is not a new improvement in the learned heuristic. MPSLGP-only and joint-reference scores must not be interchanged, and isolated near-one HV values do not establish strong Pareto-front approximation.
+
+Figure~\ref{fig:latest-attainment} therefore also uses raw objective space. For each MPSLGP group/task/seed, one fixed heuristic supplies its nondominated preference outcomes. The empirical attainment at a target point is the fraction of the 30 seed fronts that weakly dominate that point. Median boundaries and the 25--75\% envelopes compare R4 and H3 on their shared scenarios 1 and 5. No outcomes are removed as plotting outliers. These are comparisons of training groups within MPSLGP, not raw-front comparisons against PSLGP. A lower-left boundary is favourable, and crossings mean that no grouping is uniformly preferable across trade-offs.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/mpslgp-empirical-attainment.pdf}
+\caption{\resultrevision{Raw-objective empirical attainment for latest MPSLGP runs in R4 and H3 on shared scenarios 1 and 5. Solid staircases show 50\% attainment, and shading spans 25--75\%, requiring attainment by at least 8, 15, and 23 of 30 run fronts. Curves are exact right-continuous boundaries; no pooled normalisation or outlier removal is used.}}
+\label{fig:latest-attainment}
+\end{figure*}
+
+\subsection{\resultrevision{Training Time Comparison}}
+Table~\ref{tab:latest-training-time} highlights a practical advantage of MPSLGP: learning the task-specific heuristics of a group jointly has a lower recorded training cost than learning them independently in most of the comparisons. For each of 30 seeds, MPSLGP's joint training run is counted once, while each independent method's task times are summed over the scenarios in that group. The analysis uses 240 MPSLGP group runs and 300 unique task runs for each baseline; a task run reused in several groups is not an additional experiment. Means and sample standard deviations are calculated from the 30 group-level sums, not by adding task standard deviations.
+
+All three methods use the sum of their logged generation times for generations 0--49, in minutes. The per-generation sums are checked against the corresponding cumulative time files. PSLGP's historical training continues through generation 50, but that last generation's time is excluded to match the selected generation-49 output. The measure covers logged generation intervals rather than the full process lifetime; some setup and finalisation are outside those intervals. It is not CPU time, held-out testing time, or parallel batch completion time.
+
+MPSLGP's mean recorded group time ranges from 80.01 to 145.61 minutes, compared with 390.10--587.31 for PSLGP and 128.23--205.30 for NSGPII. MPSLGP has a lower mean than PSLGP in all eight groups, corresponding to reductions of 63.5--86.3\% relative to each group's PSLGP mean. It also has a lower mean than NSGPII in seven groups, with reductions of 32.0--60.8\% in those groups. For the three-task group R4, MPSLGP takes 80.01 (4.73) minutes, compared with PSLGP at 583.72 (39.82) and NSGPII at 203.98 (16.82), reductions of 86.3\% and 60.8\%, respectively. R1 is the exception to the NSGPII advantage: MPSLGP takes 145.61 (118.08) minutes versus 135.97 (13.26), or 7.1\% longer. The large MPSLGP dispersion in R1 remains visible in the table. These percentages compare group means, rather than averaging per-seed percentage changes.
+
+The shared-population design offers a direct structural explanation for the lower group-level workload. MPSLGP learns the two or three task-specific heuristics within one population of 1,000 individuals, whereas independent training maintains 2,000 or 3,000 individuals in total across those tasks. Each retained MPSLGP individual is evaluated on its assigned task, rather than on every task. This reduces the configured group-level population slots by 50\% or 66.7\% while retaining a separate heuristic for each task. Cross-task subtree exchange allows this shared search to reuse rule structures across tasks. The combination is useful when several scheduling environments require their own preference-conditioned heuristics and the total training budget is limited.
+
+The measured time reductions describe the recorded configurations, not the isolated effect of transfer. All methods are timed over the same fixed generation indices, so the results do not show earlier stopping through faster convergence. Native operators, surrogate procedures, hardware and batch concurrency also differ. The evidence supports lower recorded training cost for joint learning, while greater efficiency at equal approximation quality still requires matched execution conditions and quality targets.
+
+\endgroup

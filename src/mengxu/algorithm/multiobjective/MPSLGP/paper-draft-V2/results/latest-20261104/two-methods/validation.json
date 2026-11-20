@@ -1,0 +1,18 @@
+{
+  "TableVIUnchanged": true,
+  "NewTableCellsVerified": 72,
+  "TablePages": [
+    13
+  ],
+  "Generation49Runs": 840,
+  "Methods": [
+    "Full",
+    "PSLGP"
+  ],
+  "FullFavourableMeans": {
+    "HV": 0,
+    "IGD": 0
+  },
+  "RawSourceFilesVerified": 2041,
+  "PDFSHA256": "dd3fe8ab209fe75c29c192227ceb325b42ea902dd2cdf772c1ba58337b24145f"
+}

@@ -1,0 +1,14 @@
+{
+  "Nodes": 139,
+  "Edges": 136,
+  "PreferenceLeaves": 14,
+  "OriginalTreeNodeCounts": [
+    37,
+    31,
+    71
+  ],
+  "NodeLabelCollisions": 0,
+  "CompleteOrderedTrees": true,
+  "PDFSHA256": "a04673fc2fc6086162d0fa7293b16814d7dfdaf1d709edd2b94dd5cc64ac0b1d",
+  "PNGSHA256": "e10cd1d084a90e4940af4bdfadbb7580f749fbdc14c891d1e3772814894261f2"
+}

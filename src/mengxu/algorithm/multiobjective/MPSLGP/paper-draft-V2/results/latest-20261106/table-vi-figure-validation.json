@@ -1,0 +1,45 @@
+{
+  "PlotPoints": 162,
+  "Targets": 18,
+  "Metrics": [
+    "HV",
+    "IGD",
+    "GD"
+  ],
+  "LegendOrder": [
+    "NSGPII",
+    "PSLGP",
+    "MPSLGP"
+  ],
+  "ErrorBars": "standard deviation over all30 training runs; n-1 denominator",
+  "SeriesColours": {
+    "NSGPII": "#2563EB",
+    "PSLGP": "#F97316",
+    "MPSLGP": "#64748B"
+  },
+  "AxesAndTextColour": "#000000",
+  "AxisLimits": {
+    "HV": [
+      0.6656172556381955,
+      1.0022620924034147
+    ],
+    "IGD": [
+      -0.011531035918197059,
+      0.21263703077781518
+    ],
+    "GD": [
+      -0.01691794503456019,
+      0.20129720884527455
+    ]
+  },
+  "TableVIProtectedSHA256": {
+    "main-table.tex": "14c4b6a9db75c0505b9d145a4cf63beb47a8b822492d7d9f0edd31aaea49bf7c",
+    "table-rows.tex": "513638d38fc84eedf327e4c341809d68fbdc0e066df7d3dfc121d1e46e6dbcb8",
+    "mean-std.csv": "7b75f9feb7846ebcb7cc7e0a459452e637ec6b0e3aab04d51bd035ce55e8ba7e",
+    "per-run.csv": "e7274847a3c4282863bf7726a67b37fb39f6d0930291e20f7ec2f71a9de48321",
+    "paired-tests.csv": "54449f5d7eab9a9e9f95ea4df03ebe37ee846ffcc923b8f1d0014846e7b8d24b",
+    "protocol.json": "95b31239459f5410fca64fe28e088cdbb73c7780f917dd672b8671df40b472d4"
+  },
+  "PDFSHA256": "22db8f86b997245a90991d281dea0a080b115de7a86b4a1d4c01971981d0443e",
+  "PNGSHA256": "b017ec1b5809dc7fcc5cd1f224e86862fb2ca3bff0bcdd3a768aeda20aa5e6ef"
+}

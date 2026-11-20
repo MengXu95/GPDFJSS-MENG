@@ -1,0 +1,55 @@
+\subsection{\resultrevision{Shared and Task-Specific Tree Structures}}
+\label{sec:learned-tree-structures}
+Figure~\ref{fig:learned-sequencing-trees} examines the three sequencing trees learned together in R4, run~20, for scenarios~1, 3 and~5. These scenarios share the maximum-flow-time and maximum-weighted-tardiness objectives, with utilisations 0.70, 0.80 and 0.90. Run~20 is the representative seed already fixed for the preference-response illustration, not a run selected for unusually similar trees. For each task, we use the first training-ranked heuristic in the generation-49 task-specific Top-N record. The original trees contain 37, 31 and 71 nodes. Routing trees are not displayed, and no evaluated tree is pruned or rewritten for this analysis.
+
+Two complete modules recur across tasks. Module A, $\mathrm{NOR}\,p_2-\mathrm{SL}$, is an identical five-node subtree in scenarios~1 and~3; module B, $\mathrm{W}+p_2$, is an identical three-node subtree in scenarios~3 and~5. Here $p_2$ denotes the value of the Ptwo terminal. Identity means the same operators, terminals and ordered child structure, rather than a loose similarity in features. A couples remaining-operation count, preference and slack; B combines job weight with preference. The three-node product inside A is nested within the same shared module, not a separate independent example of exchange. No nonterminal subtree is common to all three trees. Sharing is therefore pair-specific rather than a single common rule copied to every task.
+
+Each task also retains its own combinations. U1, $\max(\mathrm{TIS},\mathrm{WR}-\mathrm{TR})$, occurs only in the scenario-1 tree and links time in system with remaining work adjusted by transfer time. U3, $\min(\mathrm{NIQ},\mathrm{SL})$, occurs three times in scenario~3, coupling queue length with slack inside its two competing priority branches. U5, $D(\mathrm{WR},p_1)+\mathrm{NIQ}+\mathrm{MWT}$, occurs only in scenario~5 and brings preference-scaled remaining work together with queue length and machine waiting time. $D$ is protected division, defined below. The trees have 9, 9 and 31 distinct proper nonterminal subtrees, respectively, whose exact structures are absent from the other two trees. These are structural counts, not counts of independent functional effects. The task-specific organisation is important: S1 and S5 use subtractive roots, whereas S3 chooses between branches through a minimum. A shared module can thus be retained without imposing the same complete decision rule on every task.
+
+This coexistence of reusable modules and task-specific contexts is consistent with the purpose of MPSLGP's cross-task subtree exchange. A donor fragment can be inserted into a receiving-task tree, while task-local evaluation and balanced task quotas retain separate heuristics. The receiving task and preference region guide the transfer gate during training; the resulting heuristic remains a task-specific expression at deployment. A child's task follows the parental node contributions, and tracked offspring supply survival and relative-improvement feedback to the corresponding task/region utility. The same run's diagnostics confirm cross-task activity: from S1 to S3, 5,039 tracked transfer children include 1,167 recorded survivors; in the reverse direction, the counts are 4,902 and 1,278. From S3 to S5, the corresponding counts are 5,536 and 1,137, and from S5 to S3 they are 5,711 and 1,328. These counts sum the directed task-pair records over generations~15--49 and preference regions. They show that both receiving directions retained cross-task offspring, but do not identify the ancestry of A or B. Shared syntax alone can also arise through common primitives or independent search. Together with the ablation results, this case illustrates the intended combination of cross-task reuse and task-specific adaptation, rather than proving a particular module's causal contribution or transfer direction.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261106/tree-case-study/learned-sequencing-trees.pdf}
+\caption{\resultrevision{Original generation-49 sequencing trees for R4, run~20: (a) scenario~1 and (b) scenario~3 share the upper row, while (c) scenario~5 spans the lower row. All 139 nodes are retained in a compact ordered-tree layout; left and right children preserve the expression order. Circles denote operators and rounded boxes denote terminals. Teal A and blue B identify exact shared subtrees; coral U1/U3/U5 mark examples unique to the corresponding task among these three trees. Yellow leaves are preference terminals. WR abbreviates WKR (work remaining), TR abbreviates TRANT (transfer time), and $p_1$, $p_2$ denote Pone and Ptwo. Colour marks structural identity, not a reconstructed transfer genealogy.}}
+\label{fig:learned-sequencing-trees}
+\end{figure*}
+
+\subsection{\resultrevision{Task-Specific Effects of Preference Inputs}}
+\label{sec:tree-preference-effects}
+The same three trees show how a common preference input can acquire different task-specific roles. In this experiment, $p_1=100w_1$ and $p_2=100(1-w_1)$, where $w_1$ weights maximum flow time and $1-w_1$ weights maximum weighted tardiness. Terminal-normalisation mode~2 uses the raw scheduling attributes, and smaller calculated priority values are selected first. S1 and S3 each contain two Ptwo leaves and no Pone leaf; S5 contains eight Ptwo and two Pone leaves. Absence of Pone does not imply absence of preference conditioning, since Ptwo determines the complementary weight. Conversely, counting leaves is not enough to establish a ranking effect. We interpret the expressions algebraically without changing the deployed trees; all three identities below were symbolically checked and tested on 2,100 synthetic finite-input cases, including preference endpoints and zero protected-division denominators. These checks verify the algebra, not additional scheduling experiments.
+
+For S1, write $X=\mathrm{WR}-\mathrm{TR}$. The repeated $X-X$ branches cancel, giving
+\begin{equation}
+\begin{aligned}
+g_1={}&\min(\mathrm{SL}-\mathrm{NOR}\,p_2,-X)\\
+&-\max(\mathrm{TIS},X)-\min(p_2,\mathrm{SL}).
+\end{aligned}
+\label{eq:case-tree-s1}
+\end{equation}
+Preference enters through a remaining-operations interaction and a slack-dependent minimum. At a fixed shop state, increasing $p_2$ can change which branch is active and which operations receive a lower score; the branch threshold depends on each operation's slack and remaining work. The Ptwo term is therefore more than a uniform scaling of a fixed rule. Nevertheless, when a term is the same for every queued candidate, its change alone cannot alter their order. The cancellation also shows why the original tree's size is not a measure of its effective decision complexity.
+
+For S3, let $Q=\min(\mathrm{NIQ},\mathrm{SL})$. Its tree reduces to
+\begin{equation}
+\begin{aligned}
+g_3&=\min\{C_3+(1-\mathrm{NOR})p_2,\ H_3\},\\
+C_3&=Q-\mathrm{WR}+\mathrm{W}+\mathrm{SL},\\
+H_3&=\mathrm{W}[Q-\mathrm{WR}+\min(\mathrm{PT},\mathrm{WR})]-Q.
+\end{aligned}
+\label{eq:case-tree-s3}
+\end{equation}
+Shared modules A and B meet in the first branch: B contributes $+p_2$, while subtracting A contributes $-\mathrm{NOR}\,p_2$. Their combined coefficient is $1-\mathrm{NOR}$, rather than either module's isolated coefficient. For an operation with $\mathrm{NOR}=1$, this branch loses its direct preference dependence; for $\mathrm{NOR}>1$, a larger tardiness weight lowers that branch's priority. The complete score can also switch to the preference-free branch $H_3$. Thus, even the identical A module has a different effective role in S3 than in S1 because its surrounding tree differs. This shows how the same fragment can support different complete rules, which is the form of reuse targeted by cross-task crossover.
+
+S5 uses both preferences and a different interaction with waiting information. Define $D(a,b)=1$ when $b=0$, and $D(a,b)=a/b$ otherwise. For candidates in the same work-centre queue, NIQ and the supplied preference are shared. The terms $\mathrm{NIQ}+p_1+4p_2-p_2^2+\max(\mathrm{NIQ},p_2)$ are consequently common offsets and do not affect their relative priorities. Removing only these offsets yields the ranking-equivalent form
+\begin{equation}
+\begin{aligned}
+g_5&\overset{\mathrm{rank}}{\sim}
+C_5-\mathrm{W}p_2\\
+&\quad-[D(\mathrm{WR},p_1)+\mathrm{NIQ}+\mathrm{MWT}]K_5,\\
+K_5&=D\!\left(\max(\mathrm{NOR},p_2),\mathrm{NOR}\,\mathrm{OWT}\right),
+\end{aligned}
+\label{eq:case-tree-s5}
+\end{equation}
+where $C_5$ contains the remaining preference-free terms. The $-\mathrm{W}p_2$ term favours higher-weight jobs as the tardiness preference increases, all else equal, while U5 and $K_5$ couple preferences with remaining work, queue and waiting conditions. Pone's denominator changes the scale of the work-remaining term. At $w_1=0$, protected division returns 1 for that subexpression rather than infinity, so its endpoint behaviour cannot be inferred by ordinary division. The shared B module is embedded under multiplication by $p_2$ in S5, unlike its additive placement in S3; after the full expression is combined, the job-weight interaction remains relevant while several preference-only offsets disappear. This demonstrates that repeated preference leaves can contribute differently, or cancel in ranking, depending on their task-specific context.
+
+The archived tests record 200 distinct objective pairs over the 200 preferences for each of these three fixed dual-tree heuristics. This confirms nonconstant recorded responses, not monotonic alignment with the requested trade-off. S1 and S5 have no preference terminals in their routing trees, so their explicit preference inputs enter through sequencing; routing can still change indirectly as the shop state changes. S3's routing tree also contains Pone, preventing attribution of its full simulation response to sequencing alone. The preference-region controller operates during evolution, whereas these terminal interactions act inside the deployed heuristic. Their complementary roles allow potentially reusable preference-aware modules to be recombined and assessed in each receiving task, while retaining different decision responses for different scheduling conditions. The inherited preference-conditioned representation supplies this capability; the MPSLGP extension controls its cross-task structural exchange and feedback.

@@ -1,0 +1,19 @@
+{
+  "PDFPages": 15,
+  "AllTextBlack": true,
+  "BlackTextSpans": 9344,
+  "Fig5FontSize": 13,
+  "Fig7PanelGrid": [
+    3,
+    2
+  ],
+  "Fig8PanelGrid": [
+    2,
+    1
+  ],
+  "Fig7Fig8SingleColumn": true,
+  "ActualFramesWithin252ptColumns": true,
+  "Figures1To4BlackCopy": true,
+  "DataChecks": "PASS",
+  "PDFSHA256": "c9fc7fcab45833ce22f4bcd43421df195e385f1661e141b032aefe890377f842"
+}

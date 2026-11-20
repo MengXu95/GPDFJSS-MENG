@@ -1,0 +1,16 @@
+{
+  "AlternativesSHA256": {
+    "MPSLGP_Editable_Figures_black.pptx": "fc40a75aef52ec578ec4a6949ae8fca2ccd54f2a218f90d497a8a36091644aec",
+    "MPSLGP_Editable_Figures_black.pdf": "4f14a6b1031334d95261ae649015c082d52151420d452447217922eeaca5a47a",
+    "MPSLGP_Editable_Figures.pptx": "5a0d55f6cf12d808ec79d2648a56bb07803084c69ece7e810b02fdc1031f9d76",
+    "MPSLGP_Editable_Figures.pdf": "ca954f6993c54d47249fe91fbb22c716a227298ddc24e93d6b4dcc77d6de77ea"
+  },
+  "ActiveScheme": "original colours for Fig1-4",
+  "BlackTextAlternativePreserved": true,
+  "Fig6PreferenceLabels": [
+    "w_1",
+    "w_2"
+  ],
+  "TerminalScale": 100,
+  "ThreeFormulaEquivalences": "PASS"
+}

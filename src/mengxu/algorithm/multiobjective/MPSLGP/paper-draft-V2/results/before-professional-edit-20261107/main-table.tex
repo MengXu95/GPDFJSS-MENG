@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Three-method generation-49 HV, IGD and GD comparison: mean(sample standard deviation) across 30 seeds per group/scenario, shown to three decimal places. All methods share scenario-specific min--max bounds and empirical reference fronts pooled over their raw valid outcomes. At each baseline entry, $(\uparrow)$, $(\downarrow)$ and $(=)$ mean MPSLGP is significantly better, worse or not significantly different under an exact two-sided paired Wilcoxon signed-rank test at $\alpha=0.05$, without multiplicity correction. Direction follows paired signed-rank sums, not rounded means; $(=)$ does not establish equivalence. Higher HV and lower IGD/GD are better; bold marks the best unrounded mean, independently of significance. GD averages nearest-reference distances over all valid outcomes, not only their nondominated subset. All outputs use actual generation 49; two invalid PSLGP preferences are excluded conditionally and all seeds remain. MPSLGP shares 1,000 individuals across tasks; each independent baseline task uses 1,000.}}
+\label{tab:latest-main-quality}
+\fontsize{6.5}{8}\selectfont
+\setlength{\tabcolsep}{0.6pt}
+\input{results/latest-20261106/table-rows.tex}
+\begin{tabular}{@{}lc*{9}{c}@{}}
+\toprule
+ & & \multicolumn{3}{c}{HV $\uparrow$} & \multicolumn{3}{c}{IGD $\downarrow$} & \multicolumn{3}{c}{GD $\downarrow$} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+Group & Scenario & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP & NSGPII & PSLGP & MPSLGP \\
+\midrule
+\ThreeGenerationFortyNineRows
+\bottomrule
+\end{tabular}
+\end{table*}

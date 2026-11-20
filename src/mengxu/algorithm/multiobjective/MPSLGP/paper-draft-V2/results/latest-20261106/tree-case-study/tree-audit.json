@@ -1,0 +1,934 @@
+{
+  "Group": "R4",
+  "Seed": 20,
+  "Generation": 49,
+  "Selection": "Previously fixed lower-median representative seed;final task-specific training rank0;not chosen by tree similarity",
+  "Trees": [
+    {
+      "Task": 0,
+      "Scenario": 1,
+      "Role": "sequencing",
+      "Nodes": 37,
+      "Expression": "(- (Min (- (- (- WKR TRANT) (- WKR TRANT)) (- (* NOR Ptwo) SL)) (- (* W (- (- WKR TRANT) (- WKR TRANT))) (- WKR TRANT))) (+ (Max TIS (- WKR TRANT)) (Min Ptwo SL)))",
+      "TerminalCounts": {
+        "WKR": 6,
+        "TRANT": 6,
+        "NOR": 1,
+        "Ptwo": 2,
+        "SL": 2,
+        "W": 1,
+        "TIS": 1
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(- (Min (- (- (- WKR TRANT) (- WKR TRANT)) (- (* NOR Ptwo) SL)) (- (* W (- (- WKR TRANT) (- WKR TRANT))) (- WKR TRANT))) (+ (Max TIS (- WKR TRANT)) (Min Ptwo SL)))",
+          "Nodes": 37
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(Min (- (- (- WKR TRANT) (- WKR TRANT)) (- (* NOR Ptwo) SL)) (- (* W (- (- WKR TRANT) (- WKR TRANT))) (- WKR TRANT)))",
+          "Nodes": 27
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(- (- (- WKR TRANT) (- WKR TRANT)) (- (* NOR Ptwo) SL))",
+          "Nodes": 13
+        },
+        {
+          "Path": "r.0.0.0",
+          "Expression": "(- (- WKR TRANT) (- WKR TRANT))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.0.0.0",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.0.1",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(- (* NOR Ptwo) SL)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.1.0",
+          "Expression": "(* NOR Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1",
+          "Expression": "(- (* W (- (- WKR TRANT) (- WKR TRANT))) (- WKR TRANT))",
+          "Nodes": 13
+        },
+        {
+          "Path": "r.0.1.0",
+          "Expression": "(* W (- (- WKR TRANT) (- WKR TRANT)))",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.0.1.0.1",
+          "Expression": "(- (- WKR TRANT) (- WKR TRANT))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.1.0.1.0",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.0.1.1",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.1",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(+ (Max TIS (- WKR TRANT)) (Min Ptwo SL))",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.1.0",
+          "Expression": "(Max TIS (- WKR TRANT))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.1.0.1",
+          "Expression": "(- WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1",
+          "Expression": "(Min Ptwo SL)",
+          "Nodes": 3
+        }
+      ],
+      "DistinctPrivateProperNonterminalSubtrees": 9
+    },
+    {
+      "Task": 0,
+      "Scenario": 1,
+      "Role": "routing",
+      "Nodes": 25,
+      "Expression": "(+ (+ (Min WIQ (- TRANT NPT)) (Max (* NIQ PT) (Max (+ TRANT WIQ) (Max (+ TRANT WIQ) (* TRANT W))))) (+ PT WIQ))",
+      "TerminalCounts": {
+        "WIQ": 4,
+        "TRANT": 4,
+        "NPT": 1,
+        "NIQ": 1,
+        "PT": 2,
+        "W": 1
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(+ (+ (Min WIQ (- TRANT NPT)) (Max (* NIQ PT) (Max (+ TRANT WIQ) (Max (+ TRANT WIQ) (* TRANT W))))) (+ PT WIQ))",
+          "Nodes": 25
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(+ (Min WIQ (- TRANT NPT)) (Max (* NIQ PT) (Max (+ TRANT WIQ) (Max (+ TRANT WIQ) (* TRANT W)))))",
+          "Nodes": 21
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(Min WIQ (- TRANT NPT))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(- TRANT NPT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1",
+          "Expression": "(Max (* NIQ PT) (Max (+ TRANT WIQ) (Max (+ TRANT WIQ) (* TRANT W))))",
+          "Nodes": 15
+        },
+        {
+          "Path": "r.0.1.0",
+          "Expression": "(* NIQ PT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.1",
+          "Expression": "(Max (+ TRANT WIQ) (Max (+ TRANT WIQ) (* TRANT W)))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.0.1.1.0",
+          "Expression": "(+ TRANT WIQ)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.1.1",
+          "Expression": "(Max (+ TRANT WIQ) (* TRANT W))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.1.1.1.0",
+          "Expression": "(+ TRANT WIQ)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.1.1.1",
+          "Expression": "(* TRANT W)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(+ PT WIQ)",
+          "Nodes": 3
+        }
+      ]
+    },
+    {
+      "Task": 1,
+      "Scenario": 3,
+      "Role": "sequencing",
+      "Nodes": 31,
+      "Expression": "(Min (- (- (Min NIQ SL) (- WKR (+ W Ptwo))) (- (* NOR Ptwo) SL)) (- (* W (- (Min NIQ SL) (- WKR (Min PT WKR)))) (Min NIQ SL)))",
+      "TerminalCounts": {
+        "NIQ": 3,
+        "SL": 4,
+        "WKR": 3,
+        "W": 2,
+        "Ptwo": 2,
+        "NOR": 1,
+        "PT": 1
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(Min (- (- (Min NIQ SL) (- WKR (+ W Ptwo))) (- (* NOR Ptwo) SL)) (- (* W (- (Min NIQ SL) (- WKR (Min PT WKR)))) (Min NIQ SL)))",
+          "Nodes": 31
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(- (- (Min NIQ SL) (- WKR (+ W Ptwo))) (- (* NOR Ptwo) SL))",
+          "Nodes": 15
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(- (Min NIQ SL) (- WKR (+ W Ptwo)))",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.0.0.0",
+          "Expression": "(Min NIQ SL)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(- WKR (+ W Ptwo))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.1.1",
+          "Expression": "(+ W Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1",
+          "Expression": "(- (* NOR Ptwo) SL)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.1.0",
+          "Expression": "(* NOR Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(- (* W (- (Min NIQ SL) (- WKR (Min PT WKR)))) (Min NIQ SL))",
+          "Nodes": 15
+        },
+        {
+          "Path": "r.1.0",
+          "Expression": "(* W (- (Min NIQ SL) (- WKR (Min PT WKR))))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.1.0.1",
+          "Expression": "(- (Min NIQ SL) (- WKR (Min PT WKR)))",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.1.0.1.0",
+          "Expression": "(Min NIQ SL)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.0.1.1",
+          "Expression": "(- WKR (Min PT WKR))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.1.0.1.1.1",
+          "Expression": "(Min PT WKR)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1",
+          "Expression": "(Min NIQ SL)",
+          "Nodes": 3
+        }
+      ],
+      "DistinctPrivateProperNonterminalSubtrees": 9
+    },
+    {
+      "Task": 1,
+      "Scenario": 3,
+      "Role": "routing",
+      "Nodes": 21,
+      "Expression": "(* (Max (+ (+ (Max (- TRANT NPT) TRANT) (+ (Max TRANT Pone) WIQ)) (+ TRANT NPT)) TRANT) (+ TRANT WIQ))",
+      "TerminalCounts": {
+        "TRANT": 6,
+        "NPT": 2,
+        "Pone": 1,
+        "WIQ": 2
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(* (Max (+ (+ (Max (- TRANT NPT) TRANT) (+ (Max TRANT Pone) WIQ)) (+ TRANT NPT)) TRANT) (+ TRANT WIQ))",
+          "Nodes": 21
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(Max (+ (+ (Max (- TRANT NPT) TRANT) (+ (Max TRANT Pone) WIQ)) (+ TRANT NPT)) TRANT)",
+          "Nodes": 17
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(+ (+ (Max (- TRANT NPT) TRANT) (+ (Max TRANT Pone) WIQ)) (+ TRANT NPT))",
+          "Nodes": 15
+        },
+        {
+          "Path": "r.0.0.0",
+          "Expression": "(+ (Max (- TRANT NPT) TRANT) (+ (Max TRANT Pone) WIQ))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.0.0.0.0",
+          "Expression": "(Max (- TRANT NPT) TRANT)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.0.0.0",
+          "Expression": "(- TRANT NPT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.0.1",
+          "Expression": "(+ (Max TRANT Pone) WIQ)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.0.1.0",
+          "Expression": "(Max TRANT Pone)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(+ TRANT NPT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(+ TRANT WIQ)",
+          "Nodes": 3
+        }
+      ]
+    },
+    {
+      "Task": 2,
+      "Scenario": 5,
+      "Role": "sequencing",
+      "Nodes": 71,
+      "Expression": "(- (- (- (- TRANT (- TIS Ptwo)) (- (* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT))) (+ PT Ptwo))) (- (- (- (- WKR Pone) NOR) TRANT) (+ PT Ptwo))) (- (+ rDD (* Ptwo (+ W Ptwo))) (- (- (- SL (- WKR (- NIQ TRANT))) (- OWT SL)) (- (- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR) (+ PT Ptwo)))))",
+      "TerminalCounts": {
+        "TRANT": 4,
+        "TIS": 1,
+        "Ptwo": 8,
+        "WKR": 5,
+        "Pone": 2,
+        "NIQ": 3,
+        "MWT": 1,
+        "NOR": 3,
+        "OWT": 2,
+        "PT": 3,
+        "rDD": 1,
+        "W": 1,
+        "SL": 2
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(- (- (- (- TRANT (- TIS Ptwo)) (- (* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT))) (+ PT Ptwo))) (- (- (- (- WKR Pone) NOR) TRANT) (+ PT Ptwo))) (- (+ rDD (* Ptwo (+ W Ptwo))) (- (- (- SL (- WKR (- NIQ TRANT))) (- OWT SL)) (- (- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR) (+ PT Ptwo)))))",
+          "Nodes": 71
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(- (- (- TRANT (- TIS Ptwo)) (- (* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT))) (+ PT Ptwo))) (- (- (- (- WKR Pone) NOR) TRANT) (+ PT Ptwo)))",
+          "Nodes": 37
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(- (- TRANT (- TIS Ptwo)) (- (* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT))) (+ PT Ptwo)))",
+          "Nodes": 25
+        },
+        {
+          "Path": "r.0.0.0",
+          "Expression": "(- TRANT (- TIS Ptwo))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.0.1",
+          "Expression": "(- TIS Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(- (* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT))) (+ PT Ptwo))",
+          "Nodes": 19
+        },
+        {
+          "Path": "r.0.0.1.0",
+          "Expression": "(* (+ (/ WKR Pone) (+ NIQ MWT)) (/ (Max NOR Ptwo) (* NOR OWT)))",
+          "Nodes": 15
+        },
+        {
+          "Path": "r.0.0.1.0.0",
+          "Expression": "(+ (/ WKR Pone) (+ NIQ MWT))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.0.1.0.0.0",
+          "Expression": "(/ WKR Pone)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.0.0.1",
+          "Expression": "(+ NIQ MWT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.0.1",
+          "Expression": "(/ (Max NOR Ptwo) (* NOR OWT))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.0.1.0.1.0",
+          "Expression": "(Max NOR Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.0.1.1",
+          "Expression": "(* NOR OWT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.1",
+          "Expression": "(+ PT Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1",
+          "Expression": "(- (- (- (- WKR Pone) NOR) TRANT) (+ PT Ptwo))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.0.1.0",
+          "Expression": "(- (- (- WKR Pone) NOR) TRANT)",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.1.0.0",
+          "Expression": "(- (- WKR Pone) NOR)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.1.0.0.0",
+          "Expression": "(- WKR Pone)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1.1",
+          "Expression": "(+ PT Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(- (+ rDD (* Ptwo (+ W Ptwo))) (- (- (- SL (- WKR (- NIQ TRANT))) (- OWT SL)) (- (- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR) (+ PT Ptwo))))",
+          "Nodes": 33
+        },
+        {
+          "Path": "r.1.0",
+          "Expression": "(+ rDD (* Ptwo (+ W Ptwo)))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.1.0.1",
+          "Expression": "(* Ptwo (+ W Ptwo))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.1.0.1.1",
+          "Expression": "(+ W Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1",
+          "Expression": "(- (- (- SL (- WKR (- NIQ TRANT))) (- OWT SL)) (- (- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR) (+ PT Ptwo)))",
+          "Nodes": 25
+        },
+        {
+          "Path": "r.1.1.0",
+          "Expression": "(- (- SL (- WKR (- NIQ TRANT))) (- OWT SL))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.1.1.0.0",
+          "Expression": "(- SL (- WKR (- NIQ TRANT)))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.1.1.0.0.1",
+          "Expression": "(- WKR (- NIQ TRANT))",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.1.1.0.0.1.1",
+          "Expression": "(- NIQ TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1.0.1",
+          "Expression": "(- OWT SL)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1.1",
+          "Expression": "(- (- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR) (+ PT Ptwo))",
+          "Nodes": 13
+        },
+        {
+          "Path": "r.1.1.1.0",
+          "Expression": "(- (- (Max WKR TRANT) (Max NIQ Ptwo)) WKR)",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.1.1.1.0.0",
+          "Expression": "(- (Max WKR TRANT) (Max NIQ Ptwo))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.1.1.1.0.0.0",
+          "Expression": "(Max WKR TRANT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1.1.0.0.1",
+          "Expression": "(Max NIQ Ptwo)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1.1.1",
+          "Expression": "(+ PT Ptwo)",
+          "Nodes": 3
+        }
+      ],
+      "DistinctPrivateProperNonterminalSubtrees": 31
+    },
+    {
+      "Task": 2,
+      "Scenario": 5,
+      "Role": "routing",
+      "Nodes": 41,
+      "Expression": "(* (+ (* (+ (+ WIQ TIS) (+ TRANT (+ (* NIQ PT) WIQ))) (+ (* NIQ PT) (Max (+ (* TRANT W) NPT) (* TRANT W)))) (+ TRANT WIQ)) (+ (+ TRANT WIQ) (Max (* TRANT W) (+ TRANT NPT))))",
+      "TerminalCounts": {
+        "WIQ": 4,
+        "TIS": 1,
+        "TRANT": 7,
+        "NIQ": 2,
+        "PT": 2,
+        "W": 3,
+        "NPT": 2
+      },
+      "Subtrees": [
+        {
+          "Path": "r",
+          "Expression": "(* (+ (* (+ (+ WIQ TIS) (+ TRANT (+ (* NIQ PT) WIQ))) (+ (* NIQ PT) (Max (+ (* TRANT W) NPT) (* TRANT W)))) (+ TRANT WIQ)) (+ (+ TRANT WIQ) (Max (* TRANT W) (+ TRANT NPT))))",
+          "Nodes": 41
+        },
+        {
+          "Path": "r.0",
+          "Expression": "(+ (* (+ (+ WIQ TIS) (+ TRANT (+ (* NIQ PT) WIQ))) (+ (* NIQ PT) (Max (+ (* TRANT W) NPT) (* TRANT W)))) (+ TRANT WIQ))",
+          "Nodes": 29
+        },
+        {
+          "Path": "r.0.0",
+          "Expression": "(* (+ (+ WIQ TIS) (+ TRANT (+ (* NIQ PT) WIQ))) (+ (* NIQ PT) (Max (+ (* TRANT W) NPT) (* TRANT W))))",
+          "Nodes": 25
+        },
+        {
+          "Path": "r.0.0.0",
+          "Expression": "(+ (+ WIQ TIS) (+ TRANT (+ (* NIQ PT) WIQ)))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.0.0.0.0",
+          "Expression": "(+ WIQ TIS)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.0.1",
+          "Expression": "(+ TRANT (+ (* NIQ PT) WIQ))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.0.0.0.1.1",
+          "Expression": "(+ (* NIQ PT) WIQ)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.0.1.1.0",
+          "Expression": "(* NIQ PT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1",
+          "Expression": "(+ (* NIQ PT) (Max (+ (* TRANT W) NPT) (* TRANT W)))",
+          "Nodes": 13
+        },
+        {
+          "Path": "r.0.0.1.0",
+          "Expression": "(* NIQ PT)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.1",
+          "Expression": "(Max (+ (* TRANT W) NPT) (* TRANT W))",
+          "Nodes": 9
+        },
+        {
+          "Path": "r.0.0.1.1.0",
+          "Expression": "(+ (* TRANT W) NPT)",
+          "Nodes": 5
+        },
+        {
+          "Path": "r.0.0.1.1.0.0",
+          "Expression": "(* TRANT W)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.0.1.1.1",
+          "Expression": "(* TRANT W)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.0.1",
+          "Expression": "(+ TRANT WIQ)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1",
+          "Expression": "(+ (+ TRANT WIQ) (Max (* TRANT W) (+ TRANT NPT)))",
+          "Nodes": 11
+        },
+        {
+          "Path": "r.1.0",
+          "Expression": "(+ TRANT WIQ)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1",
+          "Expression": "(Max (* TRANT W) (+ TRANT NPT))",
+          "Nodes": 7
+        },
+        {
+          "Path": "r.1.1.0",
+          "Expression": "(* TRANT W)",
+          "Nodes": 3
+        },
+        {
+          "Path": "r.1.1.1",
+          "Expression": "(+ TRANT NPT)",
+          "Nodes": 3
+        }
+      ]
+    }
+  ],
+  "SharedSequencingSubtrees": [
+    {
+      "Expression": "(- (* NOR Ptwo) SL)",
+      "Nodes": 5,
+      "Occurrences": [
+        {
+          "Scenario": 1,
+          "Path": "r.0.0.1"
+        },
+        {
+          "Scenario": 3,
+          "Path": "r.0.1"
+        }
+      ]
+    },
+    {
+      "Expression": "(* NOR Ptwo)",
+      "Nodes": 3,
+      "Occurrences": [
+        {
+          "Scenario": 1,
+          "Path": "r.0.0.1.0"
+        },
+        {
+          "Scenario": 3,
+          "Path": "r.0.1.0"
+        }
+      ]
+    },
+    {
+      "Expression": "(+ W Ptwo)",
+      "Nodes": 3,
+      "Occurrences": [
+        {
+          "Scenario": 3,
+          "Path": "r.0.0.1.1"
+        },
+        {
+          "Scenario": 5,
+          "Path": "r.1.0.1.1"
+        }
+      ]
+    }
+  ],
+  "Modules": {
+    "A": {
+      "Expression": "(- (* NOR Ptwo) SL)",
+      "Scenarios": [
+        1,
+        3
+      ],
+      "Colour": "#087F8C",
+      "Label": "A: NOR*p2 - SL (shared S1/S3)",
+      "Occurrences": [
+        {
+          "Scenario": 1,
+          "Path": "r.0.0.1"
+        },
+        {
+          "Scenario": 3,
+          "Path": "r.0.1"
+        }
+      ]
+    },
+    "B": {
+      "Expression": "(+ W Ptwo)",
+      "Scenarios": [
+        3,
+        5
+      ],
+      "Colour": "#2563EB",
+      "Label": "B: W + p2 (shared S3/S5)",
+      "Occurrences": [
+        {
+          "Scenario": 3,
+          "Path": "r.0.0.1.1"
+        },
+        {
+          "Scenario": 5,
+          "Path": "r.1.0.1.1"
+        }
+      ]
+    },
+    "U1": {
+      "Expression": "(Max TIS (- WKR TRANT))",
+      "Scenarios": [
+        1
+      ],
+      "Colour": "#B45309",
+      "Label": "U1: Max(TIS, WR-TR) (S1 only)",
+      "Occurrences": [
+        {
+          "Scenario": 1,
+          "Path": "r.1.0"
+        }
+      ]
+    },
+    "U3": {
+      "Expression": "(Min NIQ SL)",
+      "Scenarios": [
+        3
+      ],
+      "Colour": "#A23B72",
+      "Label": "U3: Min(NIQ, SL) (S3 only)",
+      "Occurrences": [
+        {
+          "Scenario": 3,
+          "Path": "r.0.0.0"
+        },
+        {
+          "Scenario": 3,
+          "Path": "r.1.0.1.0"
+        },
+        {
+          "Scenario": 3,
+          "Path": "r.1.1"
+        }
+      ]
+    },
+    "U5": {
+      "Expression": "(+ (/ WKR Pone) (+ NIQ MWT))",
+      "Scenarios": [
+        5
+      ],
+      "Colour": "#B24732",
+      "Label": "U5: D(WR,p1) + NIQ + MWT (S5 only)",
+      "Occurrences": [
+        {
+          "Scenario": 5,
+          "Path": "r.0.0.1.0.0"
+        }
+      ]
+    }
+  },
+  "PreferenceAnalysis": {
+    "SymbolicIdentitiesVerified": [
+      1,
+      3,
+      5
+    ],
+    "NumericIdentityCases": 2100,
+    "NumericCasesAreSyntheticAlgebraTests": true,
+    "ProtectedDivision": "D(a,b)=1 if b=0,else a/b",
+    "PreferenceTerminals": "Pone=100*w1;Ptwo=100*(1-w1)",
+    "S5CommonPreferenceOffset": "NIQ + Pone - Ptwo**2 + 4*Ptwo + Max(NIQ, Ptwo)",
+    "S5RankEquivalent": "NOR - OWT + 3*PT - Ptwo*W + 2*SL - TIS + TRANT - WKR - rDD - (MWT + NIQ + D(WKR, Pone))*D(Max(NOR, Ptwo), NOR*OWT) - Max(TRANT, WKR)",
+    "S5CommonContext": "Same work-centre queue:NIQ/MWT shared;all candidates receive the same preference",
+    "Forms": {
+      "1": "-Max(TIS, -TRANT + WKR) - Min(Ptwo, SL) + Min(TRANT - WKR, -NOR*Ptwo + SL)",
+      "3": "Min(W*(-WKR + Min(NIQ, SL) + Min(PT, WKR)) - Min(NIQ, SL), Ptwo*(1 - NOR) + SL + W - WKR + Min(NIQ, SL))",
+      "5": "NIQ + NOR - OWT + 3*PT + Pone - Ptwo**2 + Ptwo*(4 - W) + 2*SL - TIS + TRANT - WKR - rDD - (MWT + NIQ + D(WKR, Pone))*D(Max(NOR, Ptwo), NOR*OWT) + Max(NIQ, Ptwo) - Max(TRANT, WKR)"
+    }
+  },
+  "TransferPairs": [
+    {
+      "ReceivingTask": 0,
+      "ContributingTask": 1,
+      "TransferCount": 4902,
+      "SurvivedCount": 1278
+    },
+    {
+      "ReceivingTask": 0,
+      "ContributingTask": 2,
+      "TransferCount": 5455,
+      "SurvivedCount": 1314
+    },
+    {
+      "ReceivingTask": 1,
+      "ContributingTask": 0,
+      "TransferCount": 5039,
+      "SurvivedCount": 1167
+    },
+    {
+      "ReceivingTask": 1,
+      "ContributingTask": 2,
+      "TransferCount": 5711,
+      "SurvivedCount": 1328
+    },
+    {
+      "ReceivingTask": 2,
+      "ContributingTask": 0,
+      "TransferCount": 5368,
+      "SurvivedCount": 1072
+    },
+    {
+      "ReceivingTask": 2,
+      "ContributingTask": 1,
+      "TransferCount": 5536,
+      "SurvivedCount": 1137
+    }
+  ],
+  "RecordedDualTreeResponses": [
+    {
+      "Scenario": 1,
+      "Seed": 20,
+      "Preferences": 200,
+      "DistinctOutcomePairs": 200,
+      "ConsecutiveOutcomeChanges": 199,
+      "Weight0AtFirstPreference": 0.0,
+      "FirstFitness0": 1322.8826120135711,
+      "FirstFitness1": 2638.6877046919517,
+      "LastFitness0": 1351.5184094734345,
+      "LastFitness1": 2718.201866724733
+    },
+    {
+      "Scenario": 3,
+      "Seed": 20,
+      "Preferences": 200,
+      "DistinctOutcomePairs": 200,
+      "ConsecutiveOutcomeChanges": 199,
+      "Weight0AtFirstPreference": 0.0,
+      "FirstFitness0": 1398.046790709702,
+      "FirstFitness1": 2550.354317266833,
+      "LastFitness0": 1480.807222888899,
+      "LastFitness1": 2527.8013700185975
+    },
+    {
+      "Scenario": 5,
+      "Seed": 20,
+      "Preferences": 200,
+      "DistinctOutcomePairs": 200,
+      "ConsecutiveOutcomeChanges": 199,
+      "Weight0AtFirstPreference": 0.0,
+      "FirstFitness0": 1501.4883512265556,
+      "FirstFitness1": 2961.671066793757,
+      "LastFitness0": 1491.860903917841,
+      "LastFitness1": 3358.0040722313584
+    }
+  ],
+  "NoSubtreeGenealogyAvailable": true,
+  "ProtectedAnalysisSHA256": {
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\per-run.csv": "e7274847a3c4282863bf7726a67b37fb39f6d0930291e20f7ec2f71a9de48321",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\mean-std.csv": "7b75f9feb7846ebcb7cc7e0a459452e637ec6b0e3aab04d51bd035ce55e8ba7e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\paired-tests.csv": "54449f5d7eab9a9e9f95ea4df03ebe37ee846ffcc923b8f1d0014846e7b8d24b",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\table-rows.tex": "513638d38fc84eedf327e4c341809d68fbdc0e066df7d3dfc121d1e46e6dbcb8",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\protocol.json": "95b31239459f5410fca64fe28e088cdbb73c7780f917dd672b8671df40b472d4",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\per-run.csv": "12263c2d6408696ac7712fd4ec1689334fe204580dd2127cbedb045cd75b675e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\mean-std.csv": "4ccd4d650c1f4ea4c6a4dae0e18ae3435cd3bf05eabeb821b70dd7b402789282",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\paired-tests.csv": "1ded173be003adc87f9f4ab34689bb79146afaa248afe8a3b387958fc85d0cc0",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\table-rows.tex": "5dc68b15a19be937b37327081da016f02de1e288ea3288cb06b00937b7e7ff99",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\protocol.json": "7161cfe0d52794a07f9801b951a2d18218ae5e313ba289a842b9d8174f8c492f",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\training-time\\per-run.csv": "01b0ad940f5bae9a33e348ea1fa6b091c8bea5ee26649d7a4e40e33676a274d7",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\training-time\\mean-std.csv": "4c0edd94414b6592da4dcf862163cf52163d8c3bb69718739242e53af0567352",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\training-time\\table-rows.tex": "342f1e48f000bdc1f2fd956ddf7772b32ec902ba08f3abf442eb9fc7ab78ac91",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\training-time\\protocol.json": "0c333178bcdb881f22acc355ff0568a8156bb788ffaef850290c85f06a689113"
+  },
+  "SourcesSHA256": {
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task00\\attempt-0001\\selected-heuristic.properties": "e9abaf9c3a0d21395fdc4343cde9db9f6fc69a955b537e8ef738cbbe567d9989",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-runs-preference-v2\\full\\IGD\\R4\\run20\\attempt-0001\\job.20.out.stat": "c78039e297e627f5b00732f2031f6e23818212ade0174f1274cfc9447bdf7118",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task00\\attempt-0001\\test.properties": "6d605021052a20f963febb8b44228e26c4c143f587ce01752637504e84560793",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task00\\attempt-0001\\preference-results.csv": "3b668013aa0986f061dbd72a2871272384b50fc5ae16d89fb5bd9a3fd566b0ab",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task01\\attempt-0001\\selected-heuristic.properties": "d53893eb6b28b1c65a94cfb68efa983fe6ebebb1e3774727e4d6b4f89ebe7bf9",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task01\\attempt-0001\\test.properties": "92784a57a4a4094784bc23a3d509068761646b29563a90c9f7e993fb4a77c28c",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task01\\attempt-0001\\preference-results.csv": "1bdf6717e3064719eb2ac9d5365377c35a22c57e725c44d1dc9d61f6cd5305de",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task02\\attempt-0001\\selected-heuristic.properties": "c3d8bb277392d2b9b5c33ea173363bd15fc1906ca3509e768958ef4d4b5a9a87",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task02\\attempt-0001\\test.properties": "32cec179b88e7167cb2373ccc521281ce688b0dd8d72e92acf341b57591eba67",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-tests-preference-v2\\full\\IGD\\R4\\run20\\task02\\attempt-0001\\preference-results.csv": "62a778411a954d499543a6adaff8c27ee684c5d67096d6eb7ba963d93158795d",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\ruleanalysis\\MPSLGP\\paper-runs-preference-v2\\full\\IGD\\R4\\run20\\attempt-0001\\job.20.transferContribution.csv": "13b0ddaecc17883a2276252b99b1f25c5372a522801fd52d485ee722caee9d2e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\yimei\\jss\\gp\\function\\Div.java": "4dfef2953183f91381602fe03c1f85707cbc6d73b313b04e8c3730ed9c240d21",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\yimei\\jss\\gp\\terminal\\JobShopAttribute.java": "04d825c398f57e1a1809d834242b1d2add3d360735584a1796e421ff3ba1e2b8",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\yimei\\jss\\gp\\terminal\\AttributeGPNode.java": "02c620499dd3460c81e703047f558b94f806bbe5dfd0dde3a0a3f329a5413efc",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\yimei\\jss\\jobshop\\OperationOption.java": "3698b68d286bd9c677049a5e8be111bdc2faf822fa871a5b0ed416741381b3fa"
+  }
+}

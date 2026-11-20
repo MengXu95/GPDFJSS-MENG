@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -62,30 +63,46 @@ public final class NSGPIIPaperExperimentMain {
     public static final class CountingStatistics extends ec.multiobjective.MultiObjectiveStatistics {
         @Override public void postEvaluationStatistics(EvolutionState state) {
             super.postEvaluationStatistics(state);
-            try {
-                Path path = Paths.get(state.parameters.getString(new ec.util.Parameter("nsgpii.evaluation-count-file"), null));
-                long calls = ((CountingProblem) state.evaluator.p_problem).calls.get();
-                atomicWrite(path, "individual.evaluation.calls=" + calls + "\nactual.generation=" + state.generation + "\n");
-            } catch (IOException failure) { throw new IllegalStateException("Cannot record evaluation count", failure); }
+            recordEvaluationCount(state);
         }
     }
 
+    public static final class CountingPSLStatistics extends mengxu.algorithm.multiobjective.ParetoSetLearning.PSLMultiObjectiveStatisticsTopN {
+        @Override public void postEvaluationStatistics(EvolutionState state) {
+            super.postEvaluationStatistics(state);
+            recordEvaluationCount(state);
+        }
+    }
+
+    private static void recordEvaluationCount(EvolutionState state) {
+        if (state.generation != state.numGenerations - 1) { return; }
+        try {
+            Path path = Paths.get(state.parameters.getString(new ec.util.Parameter("nsgpii.evaluation-count-file"), null));
+            long calls = ((CountingProblem) state.evaluator.p_problem).calls.get();
+            Files.writeString(path, "individual.evaluation.calls=" + calls + "\nactual.generation=" + state.generation + "\n",
+                    StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.CREATE_NEW);
+        } catch (IOException failure) { throw new IllegalStateException("Cannot record evaluation count", failure); }
+    }
+
     static final class Config {
-        String action = "plan", budget = "matched", heap = "2g";
+        String action = "plan", budget = "matched", heap = "2g", method = "NSGPII";
         List<String> groups = new ArrayList<>(GROUPS.keySet());
         List<Integer> scenarios = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         int runs = 30, start = 0, parallel = 10, totalPopulation = 1000, smokeGenerations = 3;
-        boolean smoke, skipExisting;
+        boolean smoke, skipExisting, retryIncomplete;
         Path template = Paths.get("C:/Users/xumen/Desktop/2026Paper/PSLGP/FinalResultsForPaper/FinalResultsForPaper/fNSGPII/multipletreegp-dynamic/params/multipletreegp-dynamic.params");
         Path output = Paths.get("src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49");
         Config(String[] arguments) {
+            boolean explicitTemplate = false, explicitOutput = false;
             for (int index = 0; index < arguments.length; index++) {
                 String argument = arguments[index];
                 if (argument.equals("--smoke")) { smoke = true; continue; }
                 if (argument.equals("--skip-existing")) { skipExisting = true; continue; }
+                if (argument.equals("--retry-incomplete")) { retryIncomplete = true; continue; }
                 if (index + 1 >= arguments.length) { throw new IllegalArgumentException("Missing value for " + argument); }
                 String value = arguments[++index];
                 switch (argument) {
+                    case "--method": method = value.toUpperCase(Locale.ROOT); break;
                     case "--action": action = value; break;
                     case "--budget": budget = value; break;
                     case "--groups": groups = Arrays.asList(value.split(",")); break;
@@ -99,23 +116,32 @@ public final class NSGPIIPaperExperimentMain {
                     case "--heap": heap = value; break;
                     case "--population-total": totalPopulation = Integer.parseInt(value); break;
                     case "--smoke-generations": smokeGenerations = Integer.parseInt(value); break;
-                    case "--template": template = Paths.get(value); break;
-                    case "--output": output = Paths.get(value); break;
+                    case "--template": template = Paths.get(value); explicitTemplate = true; break;
+                    case "--output": output = Paths.get(value); explicitOutput = true; break;
                     default: throw new IllegalArgumentException("Unknown argument " + argument);
                 }
             }
-            if (!Arrays.asList("plan", "train", "test").contains(action) || !Arrays.asList("matched", "independent").contains(budget)
+            if (!Arrays.asList("PSLGP", "NSGPII").contains(method)
+                    || !Arrays.asList("plan", "train", "test").contains(action) || !Arrays.asList("matched", "independent").contains(budget)
                     || runs < 1 || start < 0 || parallel < 1 || totalPopulation < 3 || smokeGenerations < 3 || smokeGenerations > 50
                     || (!smoke && smokeGenerations != 3) || !heap.matches("[1-9][0-9]*[mgMG]")
                     || groups.isEmpty() || groups.stream().anyMatch(group -> !GROUPS.containsKey(group))
                     || scenarios.isEmpty() || scenarios.stream().anyMatch(scenario -> scenario < 1 || scenario > 10)
                     || scenarios.stream().distinct().count() != scenarios.size()
-                    || groups.stream().distinct().count() != groups.size()) { throw new IllegalArgumentException("Invalid NSGPII experiment configuration"); }
+                    || groups.stream().distinct().count() != groups.size()) { throw new IllegalArgumentException("Invalid baseline experiment configuration"); }
+            if (retryIncomplete && (!skipExisting || !action.equals("train"))) {
+                throw new IllegalArgumentException("--retry-incomplete requires --action train --skip-existing");
+            }
+            if (isPSL()) {
+                if (!explicitTemplate) { template = Paths.get(template.toString().replace("fNSGPII", "PSLIGD_BR")); }
+                if (!explicitOutput) { output = Paths.get("src/mengxu/ruleanalysis/MPSLGP/pslgp-generation49"); }
+            }
             template = template.toAbsolutePath().normalize(); output = output.toAbsolutePath().normalize();
             if (smoke) { output = output.resolve("smoke"); }
             output = output.resolve(budget);
             if (output.startsWith(template.getParent().getParent().getParent())) { throw new IllegalArgumentException("Output must be outside the historical archive"); }
         }
+        boolean isPSL() { return method.equals("PSLGP"); }
         int generations() { return smoke ? smokeGenerations : 50; }
         int groupPopulation() { return smoke ? Math.min(totalPopulation, 24) : totalPopulation; }
         int population(String group, int task, int seed) {
@@ -128,6 +154,10 @@ public final class NSGPIIPaperExperimentMain {
     }
 
     static Map<String, String> loadTemplate(Path path) throws IOException {
+        return loadTemplate(path, false);
+    }
+
+    static Map<String, String> loadTemplate(Path path, boolean psl) throws IOException {
         ParameterDatabase database = new ParameterDatabase(path.toFile());
         StringWriter buffer = new StringWriter();
         database.list(new PrintWriter(buffer), false);
@@ -137,6 +167,16 @@ public final class NSGPIIPaperExperimentMain {
             if (separator > 0) { result.put(line.substring(0, separator), line.substring(separator + 3)); }
         }
         result.keySet().removeIf(key -> key.startsWith("parent."));
+        if (psl) {
+            String prefix = "mengxu.algorithm.multiobjective.ParetoSetLearning.";
+            if (!(prefix + "GPRuleEvolutionStatePSL").equals(result.get("state"))
+                || !(prefix + "PSLBreederKeepParetoFront").equals(result.get("breed"))
+                || !(prefix + "KNNsurrogateClearingPSLEvaluatorbasedonHV").equals(result.get("eval"))
+                || !(prefix + "PSLMultiObjectiveStatisticsTopN").equals(result.get("stat"))
+                || !"relative_with_preference".equals(result.get("terminals-from"))
+                || !"IGD".equals(result.get("compare-criteria"))) { throw new IOException("Template is not the expected native PSLGP-I configuration"); }
+            return result;
+        }
         if (!"mengxu.algorithm.multiobjective.GPRuleEvolutionStateMO".equals(result.get("state"))
                 || !"mengxu.algorithm.multiobjective.NSGPII.NSGA2BreederNoEnvironmentalSelection".equals(result.get("breed"))
                 || !"mengxu.algorithm.multiobjective.NSGPII.NSGA2EvaluatorNoEnvironmentalSelection".equals(result.get("eval"))
@@ -181,16 +221,22 @@ public final class NSGPIIPaperExperimentMain {
                     sim + ".num-jobs", config.smoke ? 200 : 5000, sim + ".warmup-jobs", config.smoke ? 50 : 1000,
                     sim + ".replications", 1, sim + ".num-machines", 10, sim + ".min-num-operations", 2,
                     sim + ".max-num-operations", 10, sim + ".due-date-factor", 1.5);
-            put(identity, "method", "NSGPII", "group", group, "task", task, "scenario", scenario,
+            if (config.isPSL()) {
+                put(parameters, "stat", CountingPSLStatistics.class.getName(), "breed.elite.0", config.smoke ? 2 : 10,
+                        "output-top-N", 5, "topN-from-pareto-front", false,
+                        "num-preferences-for-HV", 101, "terminal-normalisation", 2,
+                        yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER, yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION);
+            }
+            put(identity, "method", config.method, "group", group, "task", task, "scenario", scenario,
                     "seed", seed, "population", population, "generations", config.generations(),
                     "budget", config.budget, "group.population.total", config.groupPopulation(),
                     "template", config.template, "template.sha256", fileHash(config.template),
-                    "selection", "entire final-generation population Pareto front; no external archive",
+                    "selection", config.isPSL() ? "first recorded Top N individual" : "entire final-generation population Pareto front; no external archive",
                     "test.replications", config.smoke ? 1 : 30, "test.seed", MPSLGPTaskEvaluator.simSeed,
                     "smoke", config.smoke);
             fingerprint = sha256((serialize(identity) + serialize(parameters)).getBytes(StandardCharsets.UTF_8));
         }
-        String label() { return "NSGPII " + group + " task=" + task + " S" + scenario + " seed=" + seed + " N=" + population; }
+        String label() { return config.method + " " + group + " task=" + task + " S" + scenario + " seed=" + seed + " N=" + population; }
         List<BaselineGenerationTestMain.Candidate> finalFront() throws IOException {
             Path stats = training.resolve("out.stat");
             List<String> lines = Files.readAllLines(stats, StandardCharsets.UTF_8);
@@ -200,10 +246,16 @@ public final class NSGPIIPaperExperimentMain {
                 if (header.matches()) { last = Integer.parseInt(header.group(1)); }
             }
             if (last != config.generations() - 1) { throw new IOException("Wrong actual final generation " + last + ": " + stats); }
-            return BaselineGenerationTestMain.readCandidates(lines, stats, last, BaselineGenerationTestMain.Method.NSGPII, false);
+            return BaselineGenerationTestMain.readCandidates(lines, stats, last,
+                    config.isPSL() ? BaselineGenerationTestMain.Method.PSLGP_I : BaselineGenerationTestMain.Method.NSGPII, false);
         }
         void verifyTraining() throws IOException {
-            Properties marker = readProperties(training.resolve("completed.properties"));
+            Path markerPath = training.resolve("completed.properties");
+            if (!Files.isRegularFile(markerPath)) {
+                throw new IOException("Incomplete training: missing " + markerPath + "; check " + training.resolve("training.log")
+                        + " and finish training before testing or reusing this job.");
+            }
+            Properties marker = readProperties(markerPath);
             if (!"COMPLETED".equals(marker.getProperty("status")) || !fingerprint.equals(marker.getProperty("configuration.sha256"))
                     || !fileHash(training.resolve("out.stat")).equals(marker.getProperty("stats.sha256"))
                     || !fileHash(training.resolve("effective.params")).equals(marker.getProperty("params.sha256"))
@@ -216,14 +268,52 @@ public final class NSGPIIPaperExperimentMain {
                 throw new IOException("Final evaluation count metadata does not match training completion: " + directory);
             }
         }
-        void train() throws Exception {
-            if (Files.exists(training)) {
-                if (config.skipExisting) { verifyTraining(); System.out.println("[SKIP TRAIN] " + label()); return; }
+        void checkExistingTraining() throws IOException {
+            if (!Files.exists(training)) { return; }
+            if (Files.isSymbolicLink(directory) || Files.isSymbolicLink(training) || !Files.isDirectory(training)) {
+                throw new IOException("Output is not a regular training directory: " + training);
+            }
+            if (!config.skipExisting) {
                 throw new IOException("Training output exists; use --skip-existing or another --output: " + training);
+            }
+            if (Files.exists(training.resolve("completed.properties"))) { verifyTraining(); return; }
+            if (!config.retryIncomplete) {
+                throw new IOException("Incomplete training: missing " + training.resolve("completed.properties")
+                        + "; use --action train --skip-existing --retry-incomplete to preserve and restart this job from generation 0."
+                        + " Check " + training.resolve("training.log"));
+            }
+            Path experiment = training.resolve("experiment.properties"), input = training.resolve("effective.params");
+            if (!Files.isRegularFile(experiment) || !Files.isRegularFile(input)) {
+                throw new IOException("Cannot verify incomplete training without experiment.properties and effective.params;"
+                        + " preserve the job directory manually before retrying: " + directory);
+            }
+            String previous = Files.readString(experiment, StandardCharsets.UTF_8) + Files.readString(input, StandardCharsets.UTF_8);
+            if (!fingerprint.equals(sha256(previous.getBytes(StandardCharsets.UTF_8)))) {
+                throw new IOException("Refusing to retry a different training configuration/source: " + directory);
+            }
+            String expected = input.toAbsolutePath().normalize().toString().replace('\\', '/');
+            boolean active = ProcessHandle.allProcesses().anyMatch(process -> process.isAlive()
+                    && Arrays.stream(process.info().arguments().orElse(new String[0]))
+                    .anyMatch(argument -> argument.replace('\\', '/').equalsIgnoreCase(expected)));
+            if (active) { throw new IOException("A training worker still uses this output; wait for it to finish: " + directory); }
+        }
+        boolean prepareTraining() throws IOException {
+            checkExistingTraining();
+            if (Files.exists(training)) {
+                if (Files.exists(training.resolve("completed.properties"))) {
+                    System.out.println("[SKIP TRAIN] " + label()); return false;
+                }
+                Path backup = directory.resolveSibling(directory.getFileName() + ".incomplete-" + UUID.randomUUID());
+                Files.move(directory, backup);
+                System.out.println("[RETRY PRESERVED] " + label() + " previous output=" + backup + " restartingGeneration=0");
             }
             Files.createDirectories(directory); Files.createDirectory(training);
             atomicWrite(training.resolve("effective.params"), serialize(parameters));
             atomicWrite(training.resolve("experiment.properties"), serialize(identity));
+            return true;
+        }
+        void train() throws Exception {
+            if (!prepareTraining()) { return; }
             List<String> command = workerCommand("--train-worker", training.resolve("effective.params"));
             long started = System.nanoTime();
             execute(command, training, training.resolve("training.log"), label());
@@ -251,7 +341,9 @@ public final class NSGPIIPaperExperimentMain {
                 if (config.skipExisting && Files.isRegularFile(markerPath)) {
                     Properties marker = readProperties(markerPath);
                     if (fingerprint.equals(marker.getProperty("configuration.sha256")) && "COMPLETED".equals(marker.getProperty("status"))
-                            && fileHash(output.resolve("test-results.csv")).equals(marker.getProperty("csv.sha256"))) {
+                            && fileHash(output.resolve("test-results.csv")).equals(marker.getProperty("csv.sha256"))
+                            && (!config.isPSL() || (fileHash(output.resolve("test-outcomes.csv")).equals(marker.getProperty("details.sha256"))
+                            && fileHash(output.resolve("test.properties")).equals(marker.getProperty("spec.sha256"))))) {
                         validateTestRows(output.resolve("test-results.csv"));
                         System.out.println("[SKIP TEST] " + label()); return;
                     }
@@ -266,16 +358,43 @@ public final class NSGPIIPaperExperimentMain {
                     "objective.1", parameters.get("eval.problem.eval-model.objectives.1"),
                     "test.set", "missing-" + parameters.get("eval.problem.eval-model.sim-models.0.util-level") + "-1.5",
                     "rule.count", finalFront().size());
+            if (config.isPSL()) {
+                BaselineGenerationTestMain.Candidate candidate = finalFront().get(0);
+                put(spec, "method", "PSLGP_I", "run", seed, "generation", config.generations() - 1,
+                        "source.params", training.resolve("effective.params"),
+                        "source.params.sha256", fileHash(training.resolve("effective.params")),
+                        "preferences", config.smoke ? 3 : 200, "replications", config.smoke ? 1 : 30,
+                        "output.csv", "test-results.csv", "rule.0.sequencing", candidate.sequencing.getLispString(),
+                        "rule.0.routing", candidate.routing.getLispString(),
+                        "rule.0.fitness.0", candidate.fitness[0], "rule.0.fitness.1", candidate.fitness[1]);
+                    }
             atomicWrite(output.resolve("test.properties"), serialize(spec));
-            execute(workerCommand("--test-worker", output.resolve("test.properties")), output, output.resolve("testing.log"), label());
+                    execute(workerCommand(config.isPSL() ? "--pslgp-test-worker" : "--test-worker", output.resolve("test.properties")), output, output.resolve("testing.log"), label());
             if (!fileHash(training.resolve("out.stat")).equals(spec.get("source.stats.sha256"))) { throw new IOException("Training source changed during test"); }
             int tested = validateTestRows(output.resolve("test-results.csv"));
             Map<String, String> marker = new TreeMap<>();
             put(marker, "status", "COMPLETED", "configuration.sha256", fingerprint, "actual.generation", config.generations() - 1,
                     "rules.tested", tested, "csv.sha256", fileHash(output.resolve("test-results.csv")));
+            if (config.isPSL()) {
+                put(marker, "details.sha256", fileHash(output.resolve("test-outcomes.csv")),
+                        "spec.sha256", fileHash(output.resolve("test.properties")));
+            }
             atomicWrite(markerPath, serialize(marker));
         }
         int validateTestRows(Path csv) throws IOException {
+            if (config.isPSL()) {
+                Properties properties = readProperties(csv.getParent().resolve("test.properties"));
+                Map<String, String> spec = new TreeMap<>();
+                for (String key : properties.stringPropertyNames()) { spec.put(key, properties.getProperty(key)); }
+                if (!Integer.toString(seed).equals(spec.get("run"))
+                        || !Integer.toString(config.generations() - 1).equals(spec.get("generation"))
+                        || !Integer.toString(config.smoke ? 3 : 200).equals(spec.get("preferences"))
+                        || !Integer.toString(config.smoke ? 1 : 30).equals(spec.get("replications"))) {
+                    throw new IOException("PSLGP test protocol mismatch");
+                }
+                BaselineGenerationTestMain.validateOutputs(csv.getParent(), spec);
+                return 1;
+            }
             List<BaselineGenerationTestMain.Candidate> front = finalFront();
             List<String> rows = Files.readAllLines(csv, StandardCharsets.UTF_8);
             if (rows.size() != front.size() + 1 || !rows.get(0).equals("Run,Generation,CandidateIndex,SeqRuleSize,RoutRuleSize,TrainFitness0,TrainFitness1,TestFitness0,TestFitness1")) {
@@ -309,7 +428,8 @@ public final class NSGPIIPaperExperimentMain {
             while ((line = reader.readLine()) != null) {
                 if (Thread.currentThread().isInterrupted()) { throw new InterruptedException("Interrupted " + identity); }
                 writer.write(line); writer.newLine(); writer.flush();
-                if (line.startsWith("Generation") || line.startsWith("[NSGPII") || line.startsWith("WARNING") || line.startsWith("FATAL")) {
+                if (line.startsWith("Generation") || line.startsWith("[NSGPII") || line.startsWith("[WORKER")
+                    || line.startsWith("[PREFERENCE") || line.startsWith("[INVALID") || line.startsWith("WARNING") || line.startsWith("FATAL")) {
                     System.out.println("[" + identity + "] " + line);
                 }
             }
@@ -351,7 +471,95 @@ public final class NSGPIIPaperExperimentMain {
         if (!fileHash(source).equals(spec.getProperty("source.stats.sha256"))) { throw new IOException("Training source changed during evaluation"); }
     }
 
-    private static void selfTest() {
+    private static void expectTrainingRefusal(Job job, String message) throws IOException {
+        try { job.prepareTraining(); }
+        catch (IOException expected) {
+            if (!expected.getMessage().contains(message)) { throw expected; }
+            return;
+        }
+        throw new AssertionError("Training should have been refused: " + message);
+    }
+
+    private static void retrySelfTest() throws IOException {
+        for (String action : Arrays.asList("plan", "train", "test")) {
+            boolean rejected = false;
+            List<String> invalid = new ArrayList<>(Arrays.asList("--action", action, "--retry-incomplete"));
+            if (!action.equals("train")) { invalid.add("--skip-existing"); }
+            try { new Config(invalid.toArray(new String[0])); }
+            catch (IllegalArgumentException expected) { rejected = expected.getMessage().contains("--retry-incomplete requires"); }
+            if (!rejected) { throw new AssertionError("Unsafe retry flags accepted for " + action); }
+        }
+        Path root = Files.createTempDirectory("samebudget-retry-");
+        try {
+            Path template = root.resolve("archive").resolve("native").resolve("params").resolve("template.params");
+            Files.createDirectories(template.getParent());
+            Files.writeString(template, "self-test-template\n", StandardCharsets.UTF_8);
+            for (String method : Arrays.asList("NSGPII", "PSLGP")) {
+                List<String> arguments = new ArrayList<>(Arrays.asList("--method", method, "--action", "train",
+                        "--skip-existing", "--template", template.toString(), "--output", root.resolve(method).toString()));
+                Config strict = new Config(arguments.toArray(new String[0]));
+                arguments.add("--retry-incomplete");
+                Config retry = new Config(arguments.toArray(new String[0]));
+                Job job = new Job(retry, Collections.emptyMap(), "R4", 0, 28);
+                Job strictJob = new Job(strict, Collections.emptyMap(), "R4", 0, 28);
+                job.checkExistingTraining();
+                if (Files.exists(job.directory)) { throw new AssertionError("Preflight created output"); }
+                if (!job.prepareTraining()) { throw new AssertionError("Fresh training was skipped"); }
+                Path log = job.training.resolve("training.log"), input = job.training.resolve("effective.params");
+                Files.writeString(log, "interrupted log\n", StandardCharsets.UTF_8);
+                expectTrainingRefusal(strictJob, "--retry-incomplete");
+                Files.writeString(input, "different=true\n", StandardCharsets.UTF_8);
+                expectTrainingRefusal(job, "different training configuration/source");
+                atomicWrite(input, serialize(job.parameters));
+                Files.delete(job.training.resolve("experiment.properties"));
+                expectTrainingRefusal(job, "Cannot verify incomplete training");
+                atomicWrite(job.training.resolve("experiment.properties"), serialize(job.identity));
+                Path oldTest = job.directory.resolve("test-generation49");
+                Files.createDirectory(oldTest);
+                Files.writeString(oldTest.resolve("test-results.csv"), "old test\n", StandardCharsets.UTF_8);
+                job.checkExistingTraining();
+                if (!"interrupted log\n".equals(Files.readString(log, StandardCharsets.UTF_8))) {
+                    throw new AssertionError("Preflight/refusal changed interrupted training");
+                }
+                if (!job.prepareTraining()) { throw new AssertionError("Compatible interrupted training was skipped"); }
+                Path[] backups;
+                try (java.util.stream.Stream<Path> paths = Files.list(job.directory.getParent())) {
+                    backups = paths.filter(path -> path.getFileName().toString().startsWith("run28.incomplete-")).toArray(Path[]::new);
+                }
+                if (backups.length != 1
+                        || !"interrupted log\n".equals(Files.readString(backups[0].resolve("training").resolve("training.log"), StandardCharsets.UTF_8))
+                        || !"old test\n".equals(Files.readString(backups[0].resolve("test-generation49").resolve("test-results.csv"), StandardCharsets.UTF_8))
+                        || Files.exists(log) || Files.exists(oldTest)
+                        || !serialize(job.parameters).equals(Files.readString(input, StandardCharsets.UTF_8))) {
+                    throw new AssertionError("Retry did not preserve the whole job or recreate matching inputs");
+                }
+                Path stats = job.training.resolve("out.stat"), counts = job.training.resolve("evaluation-count.properties");
+                Files.writeString(stats, "Generation: 49\n" + (retry.isPSL() ? "Top N individuals:\n" : "Pareto Front of Subpopulation 0\n")
+                        + "Evaluated: true\nFitness: [2.0 3.0]\nTree 0:\nPT\nTree 1:\nNIQ\n", StandardCharsets.UTF_8);
+                Files.writeString(counts, "individual.evaluation.calls=123\nactual.generation=49\n", StandardCharsets.UTF_8);
+                Map<String, String> marker = new TreeMap<>();
+                put(marker, "status", "COMPLETED", "configuration.sha256", job.fingerprint,
+                        "stats.sha256", fileHash(stats), "params.sha256", fileHash(input),
+                        "counts.sha256", fileHash(counts), "individual.evaluation.calls", 123);
+                atomicWrite(job.training.resolve("completed.properties"), serialize(marker));
+                if (job.prepareTraining() || strictJob.prepareTraining()) { throw new AssertionError("Verified training was not reused"); }
+                strict.skipExisting = false;
+                expectTrainingRefusal(strictJob, "Training output exists");
+                Files.writeString(stats, "damaged\n", StandardCharsets.UTF_8);
+                expectTrainingRefusal(job, "Training completion/source mismatch");
+                try (java.util.stream.Stream<Path> paths = Files.list(job.directory.getParent())) {
+                    if (paths.count() != 2) { throw new AssertionError("Completed/incompatible output was backed up or replaced"); }
+                }
+            }
+        } finally {
+            try (java.util.stream.Stream<Path> paths = Files.walk(root)) {
+                for (Path path : paths.sorted(Collections.reverseOrder()).toArray(Path[]::new)) { Files.delete(path); }
+            }
+        }
+        System.out.println("PASS: both baselines safely preserve/retry matching interrupted jobs, reuse verified results and refuse incompatible or unverified output.");
+    }
+
+    private static void selfTest() throws IOException {
         Config matched = new Config(new String[0]);
         for (int seed = 0; seed < 30; seed++) {
             for (String group : GROUPS.keySet()) {
@@ -360,20 +568,63 @@ public final class NSGPIIPaperExperimentMain {
                 if (sum != 1000) { throw new AssertionError("Group budget " + group); }
             }
         }
-        if (matched.parallel != 10 || matched.generations() != 50 || matched.population("R1", 0, 0) != 500
+        if (matched.retryIncomplete || matched.parallel != 10 || matched.generations() != 50 || matched.population("R1", 0, 0) != 500
                 || matched.population("R4", 0, 0) != 334 || matched.population("R4", 1, 1) != 334
                 || new Config(new String[]{"--budget", "independent"}).population("R4", 0, 0) != 1000) {
             throw new AssertionError("Generation/parallel/quota defaults");
         }
+        Config psl = new Config(new String[]{"--method", "PSLGP"});
+        if (!psl.isPSL() || !psl.template.toString().contains("PSLIGD_BR") || !psl.output.toString().contains("pslgp-generation49")
+                || psl.population("R4", 2, 2) != 334 || psl.generations() != 50) { throw new AssertionError("PSLGP matched plan"); }
+        for (int seed = 0; seed < 30; seed++) {
+            for (String group : GROUPS.keySet()) {
+                for (int task = 0; task < GROUPS.get(group).length; task++) {
+                    if (psl.population(group, task, seed) != matched.population(group, task, seed)) {
+                        throw new AssertionError("PSLGP/NSGPII quota mismatch");
+                    }
+                }
+            }
+        }
+        Path countDirectory = Files.createTempDirectory("mpslgp-final-count-");
+        Path countFile = countDirectory.resolve("evaluation-count.properties");
+        try {
+            EvolutionState state = new EvolutionState();
+            state.numGenerations = 50;
+            state.generation = 48;
+            state.parameters = new ParameterDatabase();
+            state.parameters.set(new ec.util.Parameter("nsgpii.evaluation-count-file"), countFile.toString());
+            state.evaluator = new ec.simple.SimpleEvaluator();
+            CountingProblem problem = new CountingProblem();
+            problem.calls.set(123);
+            state.evaluator.p_problem = problem;
+            recordEvaluationCount(state);
+            if (Files.exists(countFile)) { throw new AssertionError("Intermediate generations must not write count metadata"); }
+            state.generation = 49;
+            recordEvaluationCount(state);
+            Properties counts = readProperties(countFile);
+            if (!"123".equals(counts.getProperty("individual.evaluation.calls"))
+                    || !"49".equals(counts.getProperty("actual.generation"))) { throw new AssertionError("Final evaluation count metadata"); }
+            problem.calls.incrementAndGet();
+            boolean refusedOverwrite = false;
+            try { recordEvaluationCount(state); }
+            catch (IllegalStateException expected) { refusedOverwrite = expected.getCause() instanceof java.nio.file.FileAlreadyExistsException; }
+            if (!refusedOverwrite || !"123".equals(readProperties(countFile).getProperty("individual.evaluation.calls"))) {
+                throw new AssertionError("Existing final count must not be replaced");
+            }
+        } finally { Files.deleteIfExists(countFile); Files.deleteIfExists(countDirectory); }
+        retrySelfTest();
         System.out.println("PASS: native NSGPII experiment plan,50 evaluated generations,final49,ten workers,500/500 and rotating334/333/333 budgets.");
+        System.out.println("PASS: PSLGP-I native template, isolated output, matching quotas and generation49 selection.");
+        System.out.println("PASS: evaluation counts are written once at the final generation without replacing an existing file.");
     }
 
     public static void main(String[] arguments) throws Exception {
         if (arguments.length == 1 && arguments[0].equals("--self-test")) { selfTest(); return; }
         if (arguments.length == 2 && arguments[0].equals("--train-worker")) { GPRun.main(new String[]{"-file", arguments[1]}); return; }
+        if (arguments.length == 2 && arguments[0].equals("--pslgp-test-worker")) { BaselineGenerationTestMain.main(new String[]{"--worker", arguments[1]}); return; }
         if (arguments.length == 2 && arguments[0].equals("--test-worker")) { testWorker(Paths.get(arguments[1])); return; }
         Config config = new Config(arguments);
-        Map<String, String> base = loadTemplate(config.template);
+        Map<String, String> base = loadTemplate(config.template, config.isPSL());
         String templateHash = fileHash(config.template);
         List<Job> jobs = new ArrayList<>();
         java.util.Set<Integer> independentScenarios = new java.util.HashSet<>();
@@ -384,7 +635,7 @@ public final class NSGPIIPaperExperimentMain {
                 for (int seed = config.start; seed < config.start + config.runs; seed++) { jobs.add(new Job(config, base, group, task, seed)); }
             }
         }
-        System.out.println("[PLAN] action=" + config.action + " budget=" + config.budget + " jobs=" + jobs.size()
+        System.out.println("[PLAN] method=" + config.method + " action=" + config.action + " budget=" + config.budget + " jobs=" + jobs.size()
                 + " parallel=" + config.parallel + " evaluatedGenerations=" + config.generations() + " finalGeneration=" + (config.generations() - 1));
         for (Job job : jobs) { System.out.println("[INSTANCE] " + job.label() + " output=" + job.directory); }
         if (jobs.isEmpty()) { throw new IllegalArgumentException("Selected groups do not contain the requested scenarios"); }
@@ -394,12 +645,7 @@ public final class NSGPIIPaperExperimentMain {
         }
         if (config.action.equals("test")) { for (Job job : jobs) { job.verifyTraining(); } }
         else {
-            for (Job job : jobs) {
-                if (Files.exists(job.training)) {
-                    if (!config.skipExisting) { throw new IOException("Training output exists: " + job.training); }
-                    job.verifyTraining();
-                }
-            }
+            for (Job job : jobs) { job.checkExistingTraining(); }
         }
         ExecutorService pool = Executors.newFixedThreadPool(config.parallel);
         Thread shutdown = new Thread(() -> { pool.shutdownNow(); ACTIVE.forEach(Process::destroy); }, "nsgpii-shutdown");
@@ -424,6 +670,6 @@ public final class NSGPIIPaperExperimentMain {
             pool.shutdownNow(); ACTIVE.forEach(Process::destroyForcibly); Runtime.getRuntime().removeShutdownHook(shutdown);
         }
         if (!fileHash(config.template).equals(templateHash)) { throw new IOException("Historical template changed"); }
-        if (failed > 0) { throw new IOException(failed + " NSGPII jobs failed; preserved outputs/logs, no historical results overwritten."); }
+        if (failed > 0) { throw new IOException(failed + " " + config.method + " jobs failed; preserved outputs/logs, no historical results overwritten."); }
     }
 }

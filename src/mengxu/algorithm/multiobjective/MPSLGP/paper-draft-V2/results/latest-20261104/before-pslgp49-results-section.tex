@@ -1,0 +1,124 @@
+\begingroup
+\color{resultrevision}
+\section{\resultrevision{Results}}
+\label{sec:results}
+The results below replace the earlier summaries with a verified snapshot of the completed preference-runtime-v2 experiments. Each of Full, no-transfer, and fixed-transfer has 240 group-level training runs and 540 task-specific held-out tests: eight groups, 18 group/scenario targets, and 30 seeds. Across the three methods this gives 720 training runs, 1,620 tests, and 324,000 preference outcomes. Fixed-transfer was the last batch to finish, on 3 November 2026. The analysis reads the completed attempt identified by each completion marker, validates configuration and source hashes, and checks that paired training parameters differ only in the intended transfer fields. Raw training and test files are left unchanged.
+
+For every task/run, testing holds the first training-ranked pair of trees from generation 49 fixed and supplies 200 preferences, with 30 configured simulation replications per preference. It does not choose a different heuristic for each preference or pool several individuals to form a test front. Training and testing use the corrected preference-terminal scale, $100w_1$ and $100w_2$.
+
+\subsection{\resultrevision{Validity and Metric Protocol}}
+Full produces two valid objectives for all 108,000 preferences. No-transfer has 192 invalid preferences in five task/run tests, while fixed-transfer has 171 in four. A preference is invalid when either objective contains the inherited $-1$ sentinel. No training seed is removed. Quality measures for the controls use their valid preference subsets, and the failures remain in the validity report. These conditional quality scores do not penalise failed preferences; validity and front quality must therefore be read together.
+
+The inherited evaluator averages each objective over its finite replications. A valid objective mean does not certify that all 30 replications were finite. Thus, the counts concern preference-level output validity, not replication-level failure rates.
+
+Two reference protocols serve different purposes. The Full--PSLGP plot uses freshly recomputed Full-only descriptive references and the unchanged published PSLGP-I entries. For the ablations, bounds and empirical fronts are constructed jointly from valid outcomes of all three methods. In both cases, each benchmark scenario has its own coordinatewise min--max bounds. Let $A$ contain the valid normalised preference outcomes of one fixed heuristic, $F=\operatorname{ND}(A)$ its distinct nondominated subset, and $P$ the distinct nondominated union for that scenario under the stated protocol. The indicators are
+\begin{equation}
+\begin{aligned}
+\widetilde{\mathrm{HV}}(A)&=\mathrm{HV}(F;(1.1,1.1))/1.21,\\
+\widetilde{\mathrm{IGD}}(A)&=\frac{1}{|P|}\sum_{\mathbf p\in P}\min_{\mathbf a\in A}\|\mathbf p-\mathbf a\|_2,\\
+\widetilde{\mathrm{GD}}(A)&=\frac{1}{|A|}\sum_{\mathbf a\in A}\min_{\mathbf p\in P}\|\mathbf a-\mathbf p\|_2.
+\end{aligned}
+\label{eq:descriptive-test-metrics}
+\end{equation}
+Both distance indicators use arithmetic means, following the PSLGP definitions~\cite{xu2026pslgp}. GD includes every valid preference outcome, not just the nondominated subset. The empirical fronts contain outcomes from the evaluated runs. The analysis archive retains objective bounds, run-level scores, failed-preference records, paired tests, and input hashes.
+
+\subsection{\resultrevision{Main Comparison: Full MPSLGP and PSLGP-I}}
+Figure~\ref{fig:latest-main-comparison} reports all 18 targets as mean and sample standard deviation. In a numerical comparison of the displayed entries, Full has higher HV in 11 targets, lower IGD in 11, and lower GD in 10. These counts are descriptive, not statistical wins against PSLGP-I, because the two studies use different reference data.
+
+The numerical pattern varies across targets. For scenario 2 in R1, Full has HV 0.973 (0.009), IGD 0.014 (0.007), and GD 0.017 (0.015). The published PSLGP-I values are 0.958 (0.012), 0.024 (0.008), and 0.019 (0.009). For scenario 4 in R2, Full instead gives 0.762 (0.063), 0.166 (0.040), and 0.077 (0.038), versus 0.895 (0.060), 0.073 (0.051), and 0.041 (0.046). The local Full indicators are also less favourable for scenarios 6 and 7 in R3, scenario 8 in R5, and scenario 10 in H1. Shared search does not provide the same descriptive quality on every task or trade-off.
+
+Full retains the population budget of one independent 1,000-individual run while training two or three task heuristics together. Relative to the published per-task allocation, this reduces the configured group-level population slots by 50\% or 66.7\%. This is an allocation difference, not a measured speedup or evidence of equal accuracy under fewer evaluations. A budget-matched PSLGP rerun with common test references is needed for that claim.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/main-full-vs-pslgp.pdf}
+\caption{\resultrevision{Main comparison across 18 targets: latest Full-only local indicators and published PSLGP-I values~\cite{xu2026pslgp}, each with mean $\pm$ sample standard deviation over 30 runs. S denotes the benchmark scenario. Reference data differ between the two studies; error bars do not constitute a cross-paper significance test.}}
+\label{fig:latest-main-comparison}
+\end{figure*}
+
+\subsection{\resultrevision{Transfer Ablations with Common References}}
+Figures~\ref{fig:latest-ablation-quality} and~\ref{fig:latest-ablation-effects} compare Full, no-transfer, and fixed-transfer after recomputing all their indicators with joint scenario-specific references. Against no-transfer, Full has better mean HV, IGD, and GD in 15, 14, and 17 of the 18 targets. Against fixed-transfer, the corresponding counts are 7, 7, and 9. Transfer presence has a broadly favourable mean pattern relative to local mating, but the present adaptive controller is not consistently better than fixed transfer.
+
+For scenario 3 in R4, Full gives joint HV 0.9689 (0.0092), IGD 0.0195 (0.0062), and GD 0.0143 (0.0045). No-transfer gives 0.9621 (0.0093), 0.0233 (0.0079), and 0.0183 (0.0050). All three means favour Full in this target. For scenario 1 in R1, fixed-transfer instead has joint HV 0.9439 (0.0153), compared with Full at 0.9318 (0.0229), and also has lower mean IGD and GD. Both examples remain in the analysis.
+
+None of the 108 exact paired signed-rank tests survives Holm correction at 0.05. The smallest unadjusted $p$ is 0.000730 for Full versus no-transfer GD on R4/scenario~3; its adjusted value is 0.078797. A non-significant result is not evidence of equivalence. The mean patterns support further study of transfer but do not establish adaptive-transfer superiority. These tests use 30 paired training seeds for each fixed target; the 200 preferences and 30 replications are not additional independent evolutionary runs.
+
+The map displays relative changes in target means. For an indicator mean $q$ and control $c$, the signed percentage is
+\begin{equation}
+\Delta_q=100\,\sigma_q\frac{\bar q_{\mathrm{Full}}-\bar q_c}{\bar q_c},
+\qquad
+\sigma_q=\begin{cases}1,&q=\mathrm{HV},\\-1,&q=\mathrm{IGD},\mathrm{GD}.\end{cases}
+\end{equation}
+Large percentage gains in GD can reflect a few poor control runs as well as a change in typical performance. Means, dispersion, and paired tests should therefore be considered together.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/ablation-joint-quality.pdf}
+\caption{\resultrevision{Completed transfer ablations under common reference data. Points and bars are means and sample standard deviations over 30 paired seeds. Full, no-transfer, and fixed-transfer share scenario-specific bounds and empirical fronts. Control quality scores are conditional on valid preferences; no seed is removed.}}
+\label{fig:latest-ablation-quality}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/ablation-effect-map.pdf}
+\caption{\resultrevision{Relative changes in target means for Full against each ablation. Positive values favour Full; negative values favour the control. The map describes effect direction and size, not significant wins. No test survives the 108-comparison Holm family.}}
+\label{fig:latest-ablation-effects}
+\end{figure*}
+
+\subsection{\resultrevision{Training-Phase Transfer Behaviour}}
+Figure~\ref{fig:latest-transfer-training} shows the actual Full probability tables across 30 runs per group. The curves average total cross-task probabilities over receiving tasks and preference regions; they are not observed mating frequencies. The two-task groups start near 0.380 and end at 0.367--0.368, while R4 and H3 move from 0.258 to about 0.252. The controller changes its stored probabilities, but the aggregate adjustment is modest under these settings.
+
+Fixed-transfer uses probabilities 0.8 for two tasks and 0.4 for three tasks, whereas the no-transfer probability is zero. Full's no-transfer reference therefore changes the realised transfer frequency even when the configured budget is shared. The adaptive-versus-fixed ablation combines this frequency effect with utility-based donor selection. It cannot isolate improved donor selection, the value of preference regions, or a causal reduction in negative transfer. A frequency-matched fixed controller and a $K=1$ controller remain needed to separate these effects.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/training-transfer-probabilities.pdf}
+\caption{\resultrevision{Training-phase transfer probabilities from all 240 latest Full runs. Each curve is the mean of 30 run-level task/region averages after utility updates; shading is sample standard deviation. Dashed lines are the configured fixed-transfer mating rates and dotted lines denote no transfer. These stored probabilities are not empirical mating frequencies.}}
+\label{fig:latest-transfer-training}
+\end{figure*}
+
+\subsection{\resultrevision{Validity and Preference Response}}
+Figure~\ref{fig:latest-validity-response} separates output validity from response to preferences. Full has no invalid preference vectors, compared with 0.178\% for no-transfer and 0.158\% for fixed-transfer. These failures are concentrated in five and four task/run tests, respectively. The percentages should not be treated as thousands of independent failure observations because preferences from one trained heuristic are dependent.
+
+Full has 48 single-outcome heuristics among 540 (8.89\%); no-transfer has 39 (7.22\%) and fixed-transfer 57 (10.56\%). Full is therefore more reliable at producing valid outputs in this snapshot, but it does not have the lowest observed single-outcome count. Mean distinct outcome counts are 170.53, 170.10, and 166.21, respectively, whereas mean within-heuristic nondominated counts are only 5.65, 5.69, and 5.37. A preference-conditioned representation can produce many responses without producing equally many useful trade-offs.
+
+Figure~\ref{fig:latest-preference-response} fixes one common illustrative seed, 11, for the R4 and H3 task heuristics. It is selected as the lower median of the equal-group mean within-task IGD ranks over seeds 0--29, rather than the best-performing run. The curves show all 200 preferences. Several responses are irregular; both objectives can move in the same direction over part of the range. The illustration does not establish monotonic preference alignment or front coverage for all runs.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/validity-and-response.pdf}
+\caption{\resultrevision{Preference-level invalid counts, single-outcome heuristic counts, and mean distinct nondominated outcomes for the completed methods. Invalid percentages use 108,000 preferences per method; single-outcome percentages use 540 trained task heuristics. Validity and responsiveness are different properties.}}
+\label{fig:latest-validity-response}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/latest-preference-response.pdf}
+\caption{\resultrevision{Latest Full preference responses for the co-trained tasks in R4 and H3, seed 11. Each panel uses one fixed pair of trees and all 200 preferences. Values are normalised by the Full-only scenario bounds, not the three-method ablation bounds. The seed is selected by the stated median-rank rule.}}
+\label{fig:latest-preference-response}
+\end{figure*}
+
+\subsection{\resultrevision{Raw-Objective Attainment and Scale Sensitivity}}
+Changing the pooled reference range changes the absolute indicators even when the Full test outcomes remain fixed. R3/scenario~7, for example, has Full-only HV 0.731 but joint HV 0.984. The joint normalisation includes finite control outcomes up to $WF_{\max}=29044.5$ and $T_{\max}=10600.8$, which compress the region occupied by most Full outcomes. This difference is not a new improvement in the learned heuristic. Full-only and joint-reference scores must not be interchanged, and isolated near-one HV values do not establish strong Pareto-front approximation.
+
+Figure~\ref{fig:latest-attainment} therefore also uses raw objective space. For each Full group/task/seed, one fixed heuristic supplies its nondominated preference outcomes. The empirical attainment at a target point is the fraction of the 30 seed fronts that weakly dominate that point. Median boundaries and the 25--75\% envelopes compare R4 and H3 on their shared scenarios 1 and 5. No outcomes are removed as plotting outliers. These are comparisons of training groups within Full, not raw-front comparisons against PSLGP. A lower-left boundary is favourable, and crossings mean that no grouping is uniformly preferable across trade-offs.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/latest-empirical-attainment.pdf}
+\caption{\resultrevision{Raw-objective empirical attainment for latest Full runs in R4 and H3 on shared scenarios 1 and 5. Solid staircases show 50\% attainment, and shading spans 25--75\%, requiring attainment by at least 8, 15, and 23 of 30 run fronts. Curves are exact right-continuous boundaries; no pooled normalisation or outlier removal is used.}}
+\label{fig:latest-attainment}
+\end{figure*}
+
+\subsection{\resultrevision{Training Cost and Heuristic Size}}
+Figure~\ref{fig:latest-cost} records whole-group training time once per method/group/seed, rather than summing the same run time over its task rows. Full's mean group time ranges from 80.42 to 146.02 minutes; no-transfer ranges from 78.36 to 105.96 and fixed-transfer from 82.56 to 106.29. Full R1 has a large standard deviation of 118.07 minutes. Batch concurrency and run conditions differ, so these observations cannot establish a hardware-independent speedup over either ablation or the published PSLGP experiment.
+
+The mean total size of the tested dual-tree heuristics is 82.82 nodes for Full, 82.72 for no-transfer, and 82.43 for fixed-transfer. Rule sizes are thus similar in aggregate. Neither lower run time nor a small tree is sufficient evidence of preference responsiveness or approximation quality. The present results support a distinction between completion reliability, preference response, and front quality; the adaptive method does not dominate all three criteria over both completed controls.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{results/latest-20261103/runtime-and-complexity.pdf}
+\caption{\resultrevision{Latest training costs and tested heuristic sizes. Training time is whole-group wall time, with mean and sample standard deviation over 30 runs. Heuristic size is the mean sum of sequencing and routing nodes over all tested task heuristics in the group. Concurrent batch execution limits causal interpretation of timing differences.}}
+\label{fig:latest-cost}
+\end{figure*}
+\endgroup

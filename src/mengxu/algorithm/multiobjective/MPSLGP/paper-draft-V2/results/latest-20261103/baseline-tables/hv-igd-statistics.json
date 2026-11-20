@@ -1,0 +1,16 @@
+{
+  "Tests": 72,
+  "Metrics": [
+    "HV",
+    "IGD"
+  ],
+  "MinimumRawP": 0.0037444327026605,
+  "CorrespondingHolmP": 0.26959915459156036,
+  "MinimumTest": {
+    "Group": "R4",
+    "Scenario": 3,
+    "Comparator": "no-transfer",
+    "Metric": "HVJoint"
+  },
+  "SignificantTests": 0
+}

@@ -1,0 +1,17 @@
+{
+  "TrainingTimeCells": 24,
+  "TrainingRuns": 840,
+  "TablePages": [
+    15
+  ],
+  "PDFPages": 16,
+  "RemovedFigureLabels": [
+    "fig:latest-ablation-quality",
+    "fig:latest-transfer-training",
+    "fig:latest-validity-response",
+    "fig:latest-cost"
+  ],
+  "QualityDataUnchanged": true,
+  "SourcesVerified": 3363,
+  "PDFSHA256": "4248fde4e816714cf28b66693754542aa2f567128e084e9816f016c10688ad27"
+}

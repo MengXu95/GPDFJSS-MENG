@@ -1,0 +1,13 @@
+{
+  "RawTaskTests": 1080,
+  "ReferenceScenarios": 10,
+  "Methods": [
+    "Full",
+    "no-transfer"
+  ],
+  "AllIndicatorsIndependentlyReproduced": true,
+  "MaxIndicatorError": 4.440892098500626e-16,
+  "MeanRowsVerified": 36,
+  "ExactTestsVerified": 54,
+  "OriginalRawArtifactsVerified": 11880
+}

@@ -24,7 +24,7 @@ The runner uses the archive template:
 C:/Users/xumen/Desktop/2026Paper/PSLGP/FinalResultsForPaper/FinalResultsForPaper/fNSGPII/multipletreegp-dynamic/params/multipletreegp-dynamic.params
 ```
 
-It preserves the existing `GPRuleEvolutionStateMO`, `NSGA2BreederNoEnvironmentalSelection`, and `NSGA2EvaluatorNoEnvironmentalSelection`. The native fitness, terminal set, crossover, mutation and survivor selection remain unchanged. Two small subclasses delegate the original problem/statistics calls and record individual objective-evaluation calls once per generation; they do not choose individuals or alter fitness.
+It preserves the existing `GPRuleEvolutionStateMO`, `NSGA2BreederNoEnvironmentalSelection`, and `NSGA2EvaluatorNoEnvironmentalSelection`. The native fitness, terminal set, crossover, mutation and survivor selection remain unchanged. Two small subclasses delegate the original problem/statistics calls, accumulate individual objective-evaluation calls in memory and write their total once at the final evaluated generation; they do not choose individuals or alter fitness.
 
 Formal training has `generations=50`, so evaluated generations are **0--49**. Early success termination is disabled. Generation 49's complete population Pareto front is saved, and the tester validates the actual last generation before reading it. It does not use a historical CSV index, a best individual, an external archive, or a union across generations.
 
@@ -77,7 +77,7 @@ src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49/independent/Independent/S<sce
 
 `test-generation49/` contains `test.properties`, `test-results.csv`, `testing.log`, and `completed.properties`. Every CSV row records the seed, actual generation, candidate index, tree sizes, training objectives and raw test objectives. Row count and selected-rule identities are checked before completion.
 
-Historical archives and existing MPSLGP/PSLGP results are read-only. Complete compatible jobs can be reused with `--skip-existing`; incomplete or incompatible output is refused, not deleted or overwritten. Use a new `--output` root for a different experiment or after a failed partial run. Training output eligibility is checked before workers start. Test input completion is checked before any testing workers start.
+Historical archives and existing MPSLGP/PSLGP results are read-only. Complete compatible jobs can be reused with `--skip-existing`; by default, incomplete or incompatible output is refused, not deleted or overwritten. For interrupted training, opt in with `--action train --skip-existing --retry-incomplete`: matching saved training specifications are required, active workers are checked, and the entire interrupted job directory is preserved as `runXX.incomplete-<UUID>` before restarting from generation 0. Completed incompatible jobs are never automatically retried. Missing training specifications and incomplete test output still require manual preservation/inspection. Use a new `--output` root for a different experiment; this does not inherit completed jobs from the old root. Training output eligibility is checked before workers start. Test input completion is checked before any testing workers start.
 
 Progress includes the group, task, instance, seed, population, child PID, generation, per-front-rule test completion and batch completed/failed counts. One worker failure is reported without cancelling unrelated jobs; the coordinator reports failure after collecting all jobs. A shutdown hook stops active children if the coordinator is terminated.
 

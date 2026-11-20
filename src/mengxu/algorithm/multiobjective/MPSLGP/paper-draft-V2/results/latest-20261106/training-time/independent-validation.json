@@ -1,0 +1,10 @@
+{
+  "RawTimingRuns": 840,
+  "MeanSDCells": 24,
+  "IncludedGenerations": [
+    0,
+    49
+  ],
+  "PSLGPGeneration50Excluded": true,
+  "IndependentStdlibCSVAndStatisticsCheck": "PASS"
+}

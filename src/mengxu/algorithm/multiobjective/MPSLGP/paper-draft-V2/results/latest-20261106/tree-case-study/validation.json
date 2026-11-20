@@ -1,0 +1,27 @@
+{
+  "Scenarios": [
+    1,
+    3,
+    5
+  ],
+  "Seed": 20,
+  "OriginalNodesVerified": 139,
+  "PreferenceLeaves": 14,
+  "MaximalSharedModules": [
+    "A",
+    "B"
+  ],
+  "TaskPrivateModules": [
+    "U1",
+    "U3",
+    "U5"
+  ],
+  "SymbolicIdentitiesVerified": 3,
+  "NumericAlgebraCases": 2100,
+  "FigurePages": [
+    13
+  ],
+  "QualityAndTimingDataUnchanged": true,
+  "SourcesVerified": 15,
+  "PDFSHA256": "4248fde4e816714cf28b66693754542aa2f567128e084e9816f016c10688ad27"
+}

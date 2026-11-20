@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Supplementary HV and IGD comparison excluding MOGP/D: mean(sample standard deviation) over 30 runs per target, shown to three decimal places. Bounds and empirical reference fronts are recomputed using only Full MPSLGP, PSLGP, and NSGPII, rather than deleting a column from Table~\ref{tab:latest-main-quality}. Higher HV and lower IGD are better; bold marks the best unrounded mean for each indicator, not significance. The same final outputs and valid-only policy are retained; this is not a population-budget-matched experiment.}}
+\label{tab:latest-three-method-quality}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\input{results/latest-20261103/baseline-tables/three-methods/table-rows.tex}
+\begin{tabular}{@{}lc*{6}{c}@{}}
+\toprule
+ & & \multicolumn{3}{c}{HV $\uparrow$} & \multicolumn{3}{c}{IGD $\downarrow$} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+Group & Scenario & Full MPSLGP & PSLGP & NSGPII & Full MPSLGP & PSLGP & NSGPII \\
+\midrule
+\ThreeMethodHVIGDRows
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Two-method HV and IGD comparison: mean(sample standard deviation) over 30 seeds per group/scenario, shown to three decimal places. Only Full MPSLGP and retested PSLGP-I contribute to the scenario-specific normalisation bounds and empirical reference fronts; NSGPII and MOGP/D outcomes are excluded from this calculation. Both methods use actual generation 49 and one fixed dual-tree heuristic across 200 preferences. MPSLGP selects task-specific Top-N rank 0; PSLGP uses its recorded Best Individual. Higher HV and lower IGD are better; bold marks the best unrounded mean, not statistical significance. Two invalid PSLGP preferences are excluded conditionally; all seeds remain. This is not a population-budget- or selection-matched experiment.}}
+\label{tab:latest-two-method-quality}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\input{results/latest-20261104/two-methods/table-rows.tex}
+\begin{tabular}{@{}lc*{4}{c}@{}}
+\toprule
+ & & \multicolumn{2}{c}{HV $\uparrow$} & \multicolumn{2}{c}{IGD $\downarrow$} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Group & Scenario & Full MPSLGP & PSLGP & Full MPSLGP & PSLGP \\
+\midrule
+\MPSLGPPSLGPOnlyRows
+\bottomrule
+\end{tabular}
+\end{table*}

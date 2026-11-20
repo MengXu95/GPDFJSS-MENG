@@ -1,0 +1,17 @@
+{
+  "Nodes": 139,
+  "Edges": 136,
+  "PreferenceLeaves": 14,
+  "OriginalTreeNodeCounts": [
+    37,
+    31,
+    71
+  ],
+  "NodeLabelCollisions": 0,
+  "ModuleBadgeCollisions": 0,
+  "CompleteOrderedTrees": true,
+  "Layout": "bigtree Reingold-Tilford/Walker,ordered children,centred parents,equal-level alignment",
+  "Renderer": "Python matplotlib:circle operators,rounded terminal boxes,orthogonal edges",
+  "PDFSHA256": "9334c5d6275a80c6cb9af647f614f8ffbb94f0c0f6c1d778d3e720055532520d",
+  "PNGSHA256": "6a913b65be54396d7ee042461c268d72272cf6a917bd0c7743d6156892b4f37b"
+}

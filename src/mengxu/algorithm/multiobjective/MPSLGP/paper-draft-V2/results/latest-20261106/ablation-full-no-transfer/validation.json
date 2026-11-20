@@ -1,0 +1,14 @@
+{
+  "AblationCellsVerified": 108,
+  "AblationPlotPoints": 108,
+  "RawWilcoxonComparisons": 54,
+  "OnlyFullAndNoTransfer": true,
+  "PreviousAblationPreserved": true,
+  "TablePages": [
+    11
+  ],
+  "OriginalEffectMapRemoved": true,
+  "MainResultsUnchanged": true,
+  "SourceFilesVerified": 1344,
+  "PDFSHA256": "4248fde4e816714cf28b66693754542aa2f567128e084e9816f016c10688ad27"
+}

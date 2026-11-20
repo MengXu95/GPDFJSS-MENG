@@ -1,0 +1,210 @@
+{
+  "snapshot": "latest-20261103",
+  "runtime_version": 2,
+  "training_runs": 720,
+  "task_tests": 1620,
+  "tested_preferences": 324000,
+  "paired_tests": 108,
+  "minimum_raw_p": 0.0007296018302440643,
+  "minimum_holm_p": 0.0787969976663589,
+  "significant_tests": 0,
+  "representative_seed": 11,
+  "validity": [
+    {
+      "Algorithm": "full",
+      "TrainingRuns": 240,
+      "TaskRuns": 540,
+      "PreferenceRows": 108000,
+      "InvalidPreferences": 0,
+      "RunsWithInvalid": 0,
+      "SingleOutcomeRuns": 48,
+      "MeanDistinctOutcomes": 170.52962962962962,
+      "MeanNondominatedOutcomes": 5.65
+    },
+    {
+      "Algorithm": "no-transfer",
+      "TrainingRuns": 240,
+      "TaskRuns": 540,
+      "PreferenceRows": 108000,
+      "InvalidPreferences": 192,
+      "RunsWithInvalid": 5,
+      "SingleOutcomeRuns": 39,
+      "MeanDistinctOutcomes": 170.0962962962963,
+      "MeanNondominatedOutcomes": 5.688888888888889
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "TrainingRuns": 240,
+      "TaskRuns": 540,
+      "PreferenceRows": 108000,
+      "InvalidPreferences": 171,
+      "RunsWithInvalid": 4,
+      "SingleOutcomeRuns": 57,
+      "MeanDistinctOutcomes": 166.2074074074074,
+      "MeanNondominatedOutcomes": 5.366666666666666
+    }
+  ],
+  "main_context_counts": {
+    "HV": 11,
+    "IGD": 11,
+    "GD": 10
+  },
+  "ablation_mean_counts": {
+    "no-transfer": {
+      "HV": 15,
+      "IGD": 14,
+      "GD": 17
+    },
+    "fixed-transfer": {
+      "HV": 7,
+      "IGD": 7,
+      "GD": 9
+    }
+  },
+  "runtime_minutes": [
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "H1",
+      "mean": 90.42722222222223,
+      "std": 9.161568575368248
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "H2",
+      "mean": 86.77555555555556,
+      "std": 6.18067333393311
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "H3",
+      "mean": 85.34055555555555,
+      "std": 4.61611304895311
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "R1",
+      "mean": 106.29055555555556,
+      "std": 14.894105575923948
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "R2",
+      "mean": 103.44,
+      "std": 7.426426614498823
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "R3",
+      "mean": 82.555,
+      "std": 6.137285005715418
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "R4",
+      "mean": 98.15444444444444,
+      "std": 7.88793750671454
+    },
+    {
+      "Algorithm": "fixed-transfer",
+      "Group": "R5",
+      "mean": 102.43055555555556,
+      "std": 5.185124765885901
+    },
+    {
+      "Algorithm": "full",
+      "Group": "H1",
+      "mean": 83.73888888888888,
+      "std": 5.59211153023068
+    },
+    {
+      "Algorithm": "full",
+      "Group": "H2",
+      "mean": 83.96277777777777,
+      "std": 5.662751662018743
+    },
+    {
+      "Algorithm": "full",
+      "Group": "H3",
+      "mean": 81.17333333333333,
+      "std": 4.8461534297970905
+    },
+    {
+      "Algorithm": "full",
+      "Group": "R1",
+      "mean": 146.01944444444445,
+      "std": 118.06968079345867
+    },
+    {
+      "Algorithm": "full",
+      "Group": "R2",
+      "mean": 88.94444444444444,
+      "std": 13.548095349965235
+    },
+    {
+      "Algorithm": "full",
+      "Group": "R3",
+      "mean": 87.79222222222224,
+      "std": 6.516099621584704
+    },
+    {
+      "Algorithm": "full",
+      "Group": "R4",
+      "mean": 80.41666666666667,
+      "std": 4.729059508128184
+    },
+    {
+      "Algorithm": "full",
+      "Group": "R5",
+      "mean": 82.94666666666667,
+      "std": 5.039020916881202
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "H1",
+      "mean": 105.96000000000001,
+      "std": 7.328702299495869
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "H2",
+      "mean": 102.89444444444445,
+      "std": 8.74310602345758
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "H3",
+      "mean": 102.89888888888889,
+      "std": 15.540270843197966
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "R1",
+      "mean": 94.69722222222222,
+      "std": 5.912508792138383
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "R2",
+      "mean": 102.35111111111111,
+      "std": 10.44110368842487
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "R3",
+      "mean": 96.5161111111111,
+      "std": 16.519844378849488
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "R4",
+      "mean": 78.36,
+      "std": 4.824866940773458
+    },
+    {
+      "Algorithm": "no-transfer",
+      "Group": "R5",
+      "mean": 91.01055555555556,
+      "std": 9.372579108458714
+    }
+  ]
+}

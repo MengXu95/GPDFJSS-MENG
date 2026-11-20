@@ -1,0 +1,178 @@
+# Three-Method Actual-Generation-49 Comparison
+
+Per-scenario min/max from only MPSLGP,PSLGP,NSGPII actual49 valid outcomes,all groups/seeds
+
+Generation and test protocol aligned;not total population/evaluation-budget matched;conditioned single heuristics versus a multiheuristic front;TopN versus Best selection differs
+
+Exact two-sided paired Wilcoxon signed-rank tests use alpha=0.05 without multiple-comparison correction. Symbols describe MPSLGP relative to each baseline, not the baseline relative to MPSLGP. Unadjusted tests do not provide family-wise error control.
+
+## Mean and Sample SD
+| Method   | Group       |   Task |   Scenario |   Runs |   HVMean |      HVStd |   IGDMean |     IGDStd |    GDMean |      GDStd |   InputRows |   InvalidRows |
+|:---------|:------------|-------:|-----------:|-------:|---------:|-----------:|----------:|-----------:|----------:|-----------:|------------:|--------------:|
+| MPSLGP   | R1          |      0 |          1 |     30 | 0.96655  | 0.0128014  | 0.0186753 | 0.00840348 | 0.0139372 | 0.00460989 |        6000 |             0 |
+| MPSLGP   | R1          |      1 |          2 |     30 | 0.9585   | 0.00849955 | 0.0237708 | 0.00644637 | 0.0238457 | 0.0153884  |        6000 |             0 |
+| MPSLGP   | R2          |      0 |          3 |     30 | 0.965916 | 0.0117133  | 0.0185488 | 0.00812606 | 0.0154354 | 0.00995    |        6000 |             0 |
+| MPSLGP   | R2          |      1 |          4 |     30 | 0.786324 | 0.067168   | 0.142551  | 0.0580774  | 0.101347  | 0.0319481  |        6000 |             0 |
+| MPSLGP   | R3          |      0 |          6 |     30 | 0.828822 | 0.0526994  | 0.120316  | 0.0346901  | 0.0961667 | 0.0394796  |        6000 |             0 |
+| MPSLGP   | R3          |      1 |          7 |     30 | 0.939831 | 0.0325594  | 0.0333191 | 0.0328411  | 0.032092  | 0.0335635  |        6000 |             0 |
+| MPSLGP   | R4          |      0 |          1 |     30 | 0.96654  | 0.0119646  | 0.0187161 | 0.00794877 | 0.0149112 | 0.0047555  |        6000 |             0 |
+| MPSLGP   | R4          |      1 |          3 |     30 | 0.961711 | 0.0113191  | 0.0203591 | 0.00835149 | 0.0182012 | 0.00665508 |        6000 |             0 |
+| MPSLGP   | R4          |      2 |          5 |     30 | 0.934944 | 0.0170275  | 0.0370865 | 0.0135318  | 0.0269103 | 0.0128402  |        6000 |             0 |
+| MPSLGP   | R5          |      0 |          8 |     30 | 0.812201 | 0.0773019  | 0.116136  | 0.0684367  | 0.0661667 | 0.0417552  |        6000 |             0 |
+| MPSLGP   | R5          |      1 |          9 |     30 | 0.928099 | 0.0159956  | 0.0493002 | 0.0101957  | 0.0337967 | 0.019462   |        6000 |             0 |
+| MPSLGP   | H1          |      0 |          1 |     30 | 0.968849 | 0.0131814  | 0.0205197 | 0.0156434  | 0.0184288 | 0.0236567  |        6000 |             0 |
+| MPSLGP   | H1          |      1 |         10 |     30 | 0.768152 | 0.0845002  | 0.118051  | 0.0621219  | 0.0853063 | 0.0380113  |        6000 |             0 |
+| MPSLGP   | H2          |      0 |          5 |     30 | 0.93875  | 0.0140924  | 0.0344093 | 0.0103749  | 0.0181087 | 0.00750749 |        6000 |             0 |
+| MPSLGP   | H2          |      1 |          6 |     30 | 0.835705 | 0.0446792  | 0.113523  | 0.0373665  | 0.0963325 | 0.0293476  |        6000 |             0 |
+| MPSLGP   | H3          |      0 |          1 |     30 | 0.969305 | 0.00982079 | 0.0172512 | 0.00511706 | 0.0148793 | 0.00476751 |        6000 |             0 |
+| MPSLGP   | H3          |      1 |          5 |     30 | 0.930333 | 0.0171843  | 0.0395823 | 0.0154228  | 0.0277397 | 0.014268   |        6000 |             0 |
+| MPSLGP   | H3          |      2 |          8 |     30 | 0.792483 | 0.0713252  | 0.13      | 0.0695878  | 0.0738726 | 0.0418881  |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          1 |     30 | 0.970286 | 0.0139411  | 0.0169979 | 0.0107944  | 0.0107217 | 0.00626451 |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          2 |     30 | 0.964427 | 0.0120999  | 0.0193043 | 0.00684455 | 0.0125086 | 0.00409999 |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          3 |     30 | 0.968686 | 0.00910584 | 0.0165559 | 0.00745048 | 0.0128684 | 0.00713178 |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          4 |     30 | 0.844952 | 0.0529483  | 0.0995071 | 0.0426649  | 0.0734429 | 0.0291753  |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          5 |     30 | 0.948573 | 0.0129504  | 0.0276835 | 0.00771551 | 0.0168782 | 0.00916    |        6000 |             2 |
+| PSLGP    | Independent |     -1 |          6 |     30 | 0.86248  | 0.0397889  | 0.0938582 | 0.0245451  | 0.0935873 | 0.06937    |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          7 |     30 | 0.950591 | 0.0130982  | 0.0239092 | 0.00831783 | 0.0246903 | 0.0103454  |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          8 |     30 | 0.851064 | 0.0510365  | 0.0808881 | 0.0383007  | 0.0561856 | 0.0255071  |        6000 |             0 |
+| PSLGP    | Independent |     -1 |          9 |     30 | 0.942529 | 0.0225951  | 0.0420147 | 0.0181701  | 0.0251665 | 0.0177885  |        6000 |             0 |
+| PSLGP    | Independent |     -1 |         10 |     30 | 0.783505 | 0.0822325  | 0.103654  | 0.0623841  | 0.074374  | 0.0412073  |        6000 |             0 |
+| NSGPII   | Independent |     -1 |          1 |     30 | 0.969173 | 0.0072787  | 0.0190048 | 0.00372292 | 0.0170091 | 0.00577405 |         295 |             0 |
+| NSGPII   | Independent |     -1 |          2 |     30 | 0.963981 | 0.00694242 | 0.0208049 | 0.00401283 | 0.0226258 | 0.0108551  |         353 |             0 |
+| NSGPII   | Independent |     -1 |          3 |     30 | 0.972667 | 0.00633755 | 0.0165248 | 0.00282372 | 0.0197338 | 0.0045573  |         412 |             0 |
+| NSGPII   | Independent |     -1 |          4 |     30 | 0.871371 | 0.0246241  | 0.0922799 | 0.0221793  | 0.103972  | 0.0264788  |         445 |             0 |
+| NSGPII   | Independent |     -1 |          5 |     30 | 0.966874 | 0.0107594  | 0.0236776 | 0.00597481 | 0.0298219 | 0.0121549  |         564 |             0 |
+| NSGPII   | Independent |     -1 |          6 |     30 | 0.833879 | 0.0349796  | 0.122489  | 0.0273097  | 0.10833   | 0.022872   |         326 |             0 |
+| NSGPII   | Independent |     -1 |          7 |     30 | 0.94976  | 0.0108067  | 0.0328105 | 0.00701497 | 0.0447324 | 0.0368391  |         357 |             0 |
+| NSGPII   | Independent |     -1 |          8 |     30 | 0.826473 | 0.0580811  | 0.112979  | 0.0482505  | 0.105288  | 0.0429377  |         378 |             0 |
+| NSGPII   | Independent |     -1 |          9 |     30 | 0.95755  | 0.0127424  | 0.0349027 | 0.00792096 | 0.036007  | 0.0218694  |         393 |             0 |
+| NSGPII   | Independent |     -1 |         10 |     30 | 0.821507 | 0.0365395  | 0.0998161 | 0.0340883  | 0.129125  | 0.060482   |         540 |             0 |
+
+## Favourable MPSLGP Means
+| Baseline   |   GD |   HV |   IGD |
+|:-----------|-----:|-----:|------:|
+| NSGPII     |   16 |    2 |     5 |
+| PSLGP      |    0 |    0 |     0 |
+
+## Unadjusted Significant Paired Comparisons
+|                                    |   0 |
+|:-----------------------------------|----:|
+| ('NSGPII', 'GD', 'MPSLGP better')  |   8 |
+| ('NSGPII', 'HV', 'MPSLGP worse')   |   9 |
+| ('NSGPII', 'IGD', 'MPSLGP better') |   1 |
+| ('NSGPII', 'IGD', 'MPSLGP worse')  |   6 |
+| ('PSLGP', 'GD', 'MPSLGP worse')    |   9 |
+| ('PSLGP', 'HV', 'MPSLGP worse')    |  10 |
+| ('PSLGP', 'IGD', 'MPSLGP worse')   |  10 |
+
+## Paired Tests
+| Group   |   Scenario | Metric   | Baseline   |   FullMean |   BaselineMean | FullMeanBetter   |   Runs |   MedianPairedGain |   PositiveRankSum |   NegativeRankSum |      PValue |   Alpha | Correction   | Direction     | Significant   | Symbol     |
+|:--------|-----------:|:---------|:-----------|-----------:|---------------:|:-----------------|-------:|-------------------:|------------------:|------------------:|------------:|--------:|:-------------|:--------------|:--------------|:-----------|
+| R1      |          1 | HV       | NSGPII     |  0.96655   |      0.969173  | False            |     30 |       -0.00265364  |               201 |               264 | 0.529105    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R1      |          1 | HV       | PSLGP      |  0.96655   |      0.970286  | False            |     30 |       -0.00919686  |               163 |               302 | 0.157948    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R1      |          1 | IGD      | NSGPII     |  0.0186753 |      0.0190048 | True             |     30 |        0.00185198  |               286 |               179 | 0.280087    |    0.05 | none         | MPSLGP better | False         | =          |
+| R1      |          1 | IGD      | PSLGP      |  0.0186753 |      0.0169979 | False            |     30 |       -0.00469946  |               158 |               307 | 0.129353    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R1      |          1 | GD       | NSGPII     |  0.0139372 |      0.0170091 | True             |     30 |        0.001856    |               362 |               103 | 0.00663954  |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R1      |          1 | GD       | PSLGP      |  0.0139372 |      0.0107217 | False            |     30 |       -0.00377273  |                90 |               375 | 0.00256009  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R1      |          2 | HV       | NSGPII     |  0.9585    |      0.963981  | False            |     30 |       -0.0047341   |               110 |               355 | 0.0105983   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R1      |          2 | HV       | PSLGP      |  0.9585    |      0.964427  | False            |     30 |       -0.00412513  |               139 |               326 | 0.0549216   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R1      |          2 | IGD      | NSGPII     |  0.0237708 |      0.0208049 | False            |     30 |       -0.00236102  |               148 |               317 | 0.0840655   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R1      |          2 | IGD      | PSLGP      |  0.0237708 |      0.0193043 | False            |     30 |       -0.00413269  |               114 |               351 | 0.0136632   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R1      |          2 | GD       | NSGPII     |  0.0238457 |      0.0226258 | False            |     30 |        4.85101e-05 |               234 |               231 | 0.983834    |    0.05 | none         | MPSLGP better | False         | =          |
+| R1      |          2 | GD       | PSLGP      |  0.0238457 |      0.0125086 | False            |     30 |       -0.00708538  |                15 |               450 | 2.55182e-07 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          3 | HV       | NSGPII     |  0.965916  |      0.972667  | False            |     30 |       -0.00666633  |               107 |               358 | 0.00870546  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          3 | HV       | PSLGP      |  0.965916  |      0.968686  | False            |     30 |       -0.000282207 |               186 |               279 | 0.349211    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R2      |          3 | IGD      | NSGPII     |  0.0185488 |      0.0165248 | False            |     30 |        0.000227678 |               221 |               244 | 0.823577    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R2      |          3 | IGD      | PSLGP      |  0.0185488 |      0.0165559 | False            |     30 |       -0.000379998 |               168 |               297 | 0.19093     |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R2      |          3 | GD       | NSGPII     |  0.0154354 |      0.0197338 | True             |     30 |        0.00676907  |               368 |                97 | 0.00433823  |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R2      |          3 | GD       | PSLGP      |  0.0154354 |      0.0128684 | False            |     30 |       -0.00115841  |               177 |               288 | 0.262122    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R2      |          4 | HV       | NSGPII     |  0.786324  |      0.871371  | False            |     30 |       -0.0625946   |                 6 |               459 | 2.6077e-08  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          4 | HV       | PSLGP      |  0.786324  |      0.844952  | False            |     30 |       -0.0498195   |                79 |               386 | 0.00103817  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          4 | IGD      | NSGPII     |  0.142551  |      0.0922799 | False            |     30 |       -0.0375936   |                46 |               419 | 3.45316e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          4 | IGD      | PSLGP      |  0.142551  |      0.0995071 | False            |     30 |       -0.0267383   |                93 |               372 | 0.00322299  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R2      |          4 | GD       | NSGPII     |  0.101347  |      0.103972  | True             |     30 |        0.0163309   |               264 |               201 | 0.529105    |    0.05 | none         | MPSLGP better | False         | =          |
+| R2      |          4 | GD       | PSLGP      |  0.101347  |      0.0734429 | False            |     30 |       -0.0304052   |                54 |               411 | 8.85651e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R3      |          6 | HV       | NSGPII     |  0.828822  |      0.833879  | False            |     30 |       -0.00099417  |               214 |               251 | 0.715133    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R3      |          6 | HV       | PSLGP      |  0.828822  |      0.86248   | False            |     30 |       -0.0483609   |               110 |               355 | 0.0105983   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R3      |          6 | IGD      | NSGPII     |  0.120316  |      0.122489  | True             |     30 |        0.00950153  |               260 |               205 | 0.583757    |    0.05 | none         | MPSLGP better | False         | =          |
+| R3      |          6 | IGD      | PSLGP      |  0.120316  |      0.0938582 | False            |     30 |       -0.0354534   |                96 |               369 | 0.00403179  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R3      |          6 | GD       | NSGPII     |  0.0961667 |      0.10833   | True             |     30 |        0.0185075   |               300 |               165 | 0.170598    |    0.05 | none         | MPSLGP better | False         | =          |
+| R3      |          6 | GD       | PSLGP      |  0.0961667 |      0.0935873 | False            |     30 |       -0.0188999   |               174 |               291 | 0.236652    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R3      |          7 | HV       | NSGPII     |  0.939831  |      0.94976   | False            |     30 |       -0.00357886  |               158 |               307 | 0.129353    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R3      |          7 | HV       | PSLGP      |  0.939831  |      0.950591  | False            |     30 |       -0.00854503  |               139 |               326 | 0.0549216   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R3      |          7 | IGD      | NSGPII     |  0.0333191 |      0.0328105 | False            |     30 |        0.00711944  |               331 |               134 | 0.0426517   |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R3      |          7 | IGD      | PSLGP      |  0.0333191 |      0.0239092 | False            |     30 |       -0.00419269  |               130 |               335 | 0.0345367   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R3      |          7 | GD       | NSGPII     |  0.032092  |      0.0447324 | True             |     30 |        0.0130707   |               374 |                91 | 0.00276632  |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R3      |          7 | GD       | PSLGP      |  0.032092  |      0.0246903 | False            |     30 |       -8.76248e-06 |               215 |               250 | 0.730342    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R4      |          1 | HV       | NSGPII     |  0.96654   |      0.969173  | False            |     30 |       -0.00289664  |               190 |               275 | 0.39305     |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R4      |          1 | HV       | PSLGP      |  0.96654   |      0.970286  | False            |     30 |       -1.69659e-05 |               191 |               274 | 0.404495    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R4      |          1 | IGD      | NSGPII     |  0.0187161 |      0.0190048 | True             |     30 |        0.00125154  |               261 |               204 | 0.569858    |    0.05 | none         | MPSLGP better | False         | =          |
+| R4      |          1 | IGD      | PSLGP      |  0.0187161 |      0.0169979 | False            |     30 |        0.000865058 |               190 |               275 | 0.39305     |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R4      |          1 | GD       | NSGPII     |  0.0149112 |      0.0170091 | True             |     30 |        0.00166755  |               328 |               137 | 0.0497101   |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R4      |          1 | GD       | PSLGP      |  0.0149112 |      0.0107217 | False            |     30 |       -0.00425979  |                71 |               394 | 0.000505488 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          3 | HV       | NSGPII     |  0.961711  |      0.972667  | False            |     30 |       -0.010979    |                38 |               427 | 1.21836e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          3 | HV       | PSLGP      |  0.961711  |      0.968686  | False            |     30 |       -0.00721234  |                93 |               372 | 0.00322299  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          3 | IGD      | NSGPII     |  0.0203591 |      0.0165248 | False            |     30 |       -0.0020559   |               106 |               359 | 0.00814298  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          3 | IGD      | PSLGP      |  0.0203591 |      0.0165559 | False            |     30 |       -0.00312611  |               123 |               342 | 0.0234101   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          3 | GD       | NSGPII     |  0.0182012 |      0.0197338 | True             |     30 |        0.00153672  |               313 |               152 | 0.100397    |    0.05 | none         | MPSLGP better | False         | =          |
+| R4      |          3 | GD       | PSLGP      |  0.0182012 |      0.0128684 | False            |     30 |       -0.00584103  |                87 |               378 | 0.00202018  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          5 | HV       | NSGPII     |  0.934944  |      0.966874  | False            |     30 |       -0.0342825   |                 2 |               463 | 5.58794e-09 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          5 | HV       | PSLGP      |  0.934944  |      0.948573  | False            |     30 |       -0.01381     |                84 |               381 | 0.00158328  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          5 | IGD      | NSGPII     |  0.0370865 |      0.0236776 | False            |     30 |       -0.00997069  |                38 |               427 | 1.21836e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          5 | IGD      | PSLGP      |  0.0370865 |      0.0276835 | False            |     30 |       -0.00634904  |                98 |               367 | 0.0046648   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R4      |          5 | GD       | NSGPII     |  0.0269103 |      0.0298219 | True             |     30 |        0.004856    |               271 |               194 | 0.439967    |    0.05 | none         | MPSLGP better | False         | =          |
+| R4      |          5 | GD       | PSLGP      |  0.0269103 |      0.0168782 | False            |     30 |       -0.00641156  |                53 |               412 | 7.91065e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          8 | HV       | NSGPII     |  0.812201  |      0.826473  | False            |     30 |       -0.00432798  |               198 |               267 | 0.489846    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R5      |          8 | HV       | PSLGP      |  0.812201  |      0.851064  | False            |     30 |       -0.0270354   |               137 |               328 | 0.0497101   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          8 | IGD      | NSGPII     |  0.116136  |      0.112979  | False            |     30 |        0.009723    |               224 |               241 | 0.871208    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R5      |          8 | IGD      | PSLGP      |  0.116136  |      0.0808881 | False            |     30 |       -0.016456    |               142 |               323 | 0.0635565   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R5      |          8 | GD       | NSGPII     |  0.0661667 |      0.105288  | True             |     30 |        0.0421097   |               381 |                84 | 0.00158328  |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| R5      |          8 | GD       | PSLGP      |  0.0661667 |      0.0561856 | False            |     30 |        0.00299318  |               201 |               264 | 0.529105    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| R5      |          9 | HV       | NSGPII     |  0.928099  |      0.95755   | False            |     30 |       -0.0302863   |                 7 |               458 | 3.53903e-08 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          9 | HV       | PSLGP      |  0.928099  |      0.942529  | False            |     30 |       -0.0158398   |                75 |               390 | 0.000729602 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          9 | IGD      | NSGPII     |  0.0493002 |      0.0349027 | False            |     30 |       -0.013159    |                24 |               441 | 1.41934e-06 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          9 | IGD      | PSLGP      |  0.0493002 |      0.0420147 | False            |     30 |       -0.00887957  |                94 |               371 | 0.00347516  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| R5      |          9 | GD       | NSGPII     |  0.0337967 |      0.036007  | True             |     30 |        0.000929564 |               273 |               192 | 0.41613     |    0.05 | none         | MPSLGP better | False         | =          |
+| R5      |          9 | GD       | PSLGP      |  0.0337967 |      0.0251665 | False            |     30 |       -0.00432545  |               142 |               323 | 0.0635565   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |          1 | HV       | NSGPII     |  0.968849  |      0.969173  | False            |     30 |        0.00347094  |               234 |               231 | 0.983834    |    0.05 | none         | MPSLGP better | False         | =          |
+| H1      |          1 | HV       | PSLGP      |  0.968849  |      0.970286  | False            |     30 |       -0.00487028  |               206 |               259 | 0.597808    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |          1 | IGD      | NSGPII     |  0.0205197 |      0.0190048 | False            |     30 |        0.00266079  |               256 |               209 | 0.640825    |    0.05 | none         | MPSLGP better | False         | =          |
+| H1      |          1 | IGD      | PSLGP      |  0.0205197 |      0.0169979 | False            |     30 |       -0.00490346  |               154 |               311 | 0.109432    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |          1 | GD       | NSGPII     |  0.0184288 |      0.0170091 | False            |     30 |        0.000360997 |               278 |               187 | 0.359878    |    0.05 | none         | MPSLGP better | False         | =          |
+| H1      |          1 | GD       | PSLGP      |  0.0184288 |      0.0107217 | False            |     30 |       -0.0043936   |                64 |               401 | 0.000256289 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H1      |         10 | HV       | NSGPII     |  0.768152  |      0.821507  | False            |     30 |       -0.0334678   |                88 |               377 | 0.00218778  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H1      |         10 | HV       | PSLGP      |  0.768152  |      0.783505  | False            |     30 |       -0.00702677  |               191 |               274 | 0.404495    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |         10 | IGD      | NSGPII     |  0.118051  |      0.0998161 | False            |     30 |       -0.00872718  |               177 |               288 | 0.262122    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |         10 | IGD      | PSLGP      |  0.118051  |      0.103654  | False            |     30 |       -0.00846759  |               181 |               284 | 0.298844    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H1      |         10 | GD       | NSGPII     |  0.0853063 |      0.129125  | True             |     30 |        0.0437543   |               396 |                69 | 0.000418397 |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| H1      |         10 | GD       | PSLGP      |  0.0853063 |      0.074374  | False            |     30 |       -0.0146214   |               175 |               290 | 0.244946    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H2      |          5 | HV       | NSGPII     |  0.93875   |      0.966874  | False            |     30 |       -0.0283565   |                 3 |               462 | 9.31323e-09 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H2      |          5 | HV       | PSLGP      |  0.93875   |      0.948573  | False            |     30 |       -0.00580218  |               116 |               349 | 0.01546     |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H2      |          5 | IGD      | NSGPII     |  0.0344093 |      0.0236776 | False            |     30 |       -0.0114125   |                54 |               411 | 8.85651e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H2      |          5 | IGD      | PSLGP      |  0.0344093 |      0.0276835 | False            |     30 |       -0.0066042   |               107 |               358 | 0.00870546  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H2      |          5 | GD       | NSGPII     |  0.0181087 |      0.0298219 | True             |     30 |        0.00924292  |               439 |                26 | 1.99117e-06 |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| H2      |          5 | GD       | PSLGP      |  0.0181087 |      0.0168782 | False            |     30 |       -0.000980243 |               200 |               265 | 0.515848    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H2      |          6 | HV       | NSGPII     |  0.835705  |      0.833879  | True             |     30 |       -0.00107471  |               247 |               218 | 0.776569    |    0.05 | none         | MPSLGP better | False         | =          |
+| H2      |          6 | HV       | PSLGP      |  0.835705  |      0.86248   | False            |     30 |       -0.026987    |               128 |               337 | 0.0309848   |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H2      |          6 | IGD      | NSGPII     |  0.113523  |      0.122489  | True             |     30 |        0.00869886  |               296 |               169 | 0.198076    |    0.05 | none         | MPSLGP better | False         | =          |
+| H2      |          6 | IGD      | PSLGP      |  0.113523  |      0.0938582 | False            |     30 |       -0.0029355   |               148 |               317 | 0.0840655   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H2      |          6 | GD       | NSGPII     |  0.0963325 |      0.10833   | True             |     30 |        0.0120706   |               322 |               143 | 0.0666647   |    0.05 | none         | MPSLGP better | False         | =          |
+| H2      |          6 | GD       | PSLGP      |  0.0963325 |      0.0935873 | False            |     30 |       -0.0159993   |               144 |               321 | 0.0698929   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H3      |          1 | HV       | NSGPII     |  0.969305  |      0.969173  | True             |     30 |       -4.88533e-05 |               240 |               225 | 0.887195    |    0.05 | none         | MPSLGP better | False         | =          |
+| H3      |          1 | HV       | PSLGP      |  0.969305  |      0.970286  | False            |     30 |       -0.00343746  |               190 |               275 | 0.39305     |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H3      |          1 | IGD      | NSGPII     |  0.0172512 |      0.0190048 | True             |     30 |        0.00359931  |               303 |               162 | 0.151887    |    0.05 | none         | MPSLGP better | False         | =          |
+| H3      |          1 | IGD      | PSLGP      |  0.0172512 |      0.0169979 | False            |     30 |       -0.00291159  |               198 |               267 | 0.489846    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H3      |          1 | GD       | NSGPII     |  0.0148793 |      0.0170091 | True             |     30 |        0.00156066  |               311 |               154 | 0.109432    |    0.05 | none         | MPSLGP better | False         | =          |
+| H3      |          1 | GD       | PSLGP      |  0.0148793 |      0.0107217 | False            |     30 |       -0.00396992  |                74 |               391 | 0.000666553 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          5 | HV       | NSGPII     |  0.930333  |      0.966874  | False            |     30 |       -0.036443    |                 0 |               465 | 1.86265e-09 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          5 | HV       | PSLGP      |  0.930333  |      0.948573  | False            |     30 |       -0.0214086   |                57 |               408 | 0.000123337 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          5 | IGD      | NSGPII     |  0.0395823 |      0.0236776 | False            |     30 |       -0.0120245   |                18 |               447 | 4.71249e-07 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          5 | IGD      | PSLGP      |  0.0395823 |      0.0276835 | False            |     30 |       -0.00985047  |                83 |               382 | 0.00145748  |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          5 | GD       | NSGPII     |  0.0277397 |      0.0298219 | True             |     30 |        0.00405317  |               284 |               181 | 0.298844    |    0.05 | none         | MPSLGP better | False         | =          |
+| H3      |          5 | GD       | PSLGP      |  0.0277397 |      0.0168782 | False            |     30 |       -0.00954318  |                45 |               420 | 3.04952e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          8 | HV       | NSGPII     |  0.792483  |      0.826473  | False            |     30 |       -0.0275222   |               139 |               326 | 0.0549216   |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H3      |          8 | HV       | PSLGP      |  0.792483  |      0.851064  | False            |     30 |       -0.0477958   |                62 |               403 | 0.000209127 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          8 | IGD      | NSGPII     |  0.13      |      0.112979  | False            |     30 |       -0.0139938   |               179 |               286 | 0.280087    |    0.05 | none         | MPSLGP worse  | False         | =          |
+| H3      |          8 | IGD      | PSLGP      |  0.13      |      0.0808881 | False            |     30 |       -0.0332452   |                55 |               410 | 9.90257e-05 |    0.05 | none         | MPSLGP worse  | True          | \downarrow |
+| H3      |          8 | GD       | NSGPII     |  0.0738726 |      0.105288  | True             |     30 |        0.0318223   |               352 |               113 | 0.0128337   |    0.05 | none         | MPSLGP better | True          | \uparrow   |
+| H3      |          8 | GD       | PSLGP      |  0.0738726 |      0.0561856 | False            |     30 |       -0.0153512   |               152 |               313 | 0.100397    |    0.05 | none         | MPSLGP worse  | False         | =          |

@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\color{resultrevision}
+\caption{\resultrevision{Transfer-ablation HV, IGD and GD results: mean(sample standard deviation) over 30 paired training seeds per group/scenario, shown to three decimal places. Full, no-transfer and fixed-transfer share the ablation-specific scenario bounds and empirical reference fronts. At each control entry, $(\uparrow)$, $(\downarrow)$ and $(=)$ mean Full is significantly better, worse or not significantly different under an exact two-sided paired Wilcoxon signed-rank test at $\alpha=0.05$, without multiplicity correction. Direction follows paired signed-rank sums; bold marks the best unrounded mean separately. Higher HV and lower IGD/GD are better. Invalid control preferences are excluded conditionally; all seeds remain. These scores use a different reference family from Table~\ref{tab:latest-main-quality}.}}
+\label{tab:latest-ablation-quality}
+\fontsize{6.5}{8}\selectfont
+\setlength{\tabcolsep}{0.2pt}
+\input{results/latest-20261106/ablation/table-rows.tex}
+\begin{tabular}{@{}lc*{9}{c}@{}}
+\toprule
+ & & \multicolumn{3}{c}{HV $\uparrow$} & \multicolumn{3}{c}{IGD $\downarrow$} & \multicolumn{3}{c}{GD $\downarrow$} \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}
+Group & Scenario & No-transfer & Fixed-transfer & Full & No-transfer & Fixed-transfer & Full & No-transfer & Fixed-transfer & Full \\
+\midrule
+\UnifiedAblationRows
+\bottomrule
+\end{tabular}
+\end{table*}

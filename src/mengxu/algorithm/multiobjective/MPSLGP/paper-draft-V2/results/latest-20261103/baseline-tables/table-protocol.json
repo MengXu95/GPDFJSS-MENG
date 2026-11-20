@@ -1,0 +1,143 @@
+{
+  "Methods": [
+    "Full",
+    "PSLGP",
+    "NSGPII",
+    "MOGP/D"
+  ],
+  "ArchiveRoot": "C:\\Users\\xumen\\Desktop\\2026Paper\\PSLGP\\FinalResultsForPaper\\FinalResultsForPaper",
+  "FullRawSnapshot": "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261103",
+  "Metrics": [
+    "HV",
+    "IGD"
+  ],
+  "Scope": "Full plus PSLGP-I (displayed as PSLGP), NSGPII and MOGP/D; ablations retain their original three-method references",
+  "MainRuns": 1440,
+  "IndependentArchiveRuns": 900,
+  "FullTaskRuns": 540,
+  "Selection": "Full: fixed final first-ranked task heuristic; PSLGP-I: final snapshot ind=0, all200 preferences; NSGPII/MOGP-D: final archived solution set",
+  "SnapshotNumbers": "49 for Full, 24 for archived PSLGP, 29 for archived NSGPII/MOEAD; archived CSV indices are snapshots, not asserted actual training generations",
+  "Normalization": "Per-scenario objective min/max pooled over the four displayed methods, including all Full groups and seeds",
+  "ReferenceFront": "Unique nondominated union of the four methods' normalized valid outcomes",
+  "HV": "2D minimization HV; reference(1.1,1.1); divide by1.21",
+  "IGD": "Arithmetic mean nearest-outcome distance from joint reference to all valid outcomes",
+  "InvalidPolicy": "Conditional valid-only. All seeds retained. Two archived PSLGP-I preferences invalid; no all-invalid run",
+  "Dispersion": "Sample standard deviation over30 evolutionary runs per method/scenario or Full group/task",
+  "Display": "Means and sample standard deviations shown to three decimal places; calculations and best-mean selection use unrounded values",
+  "Inference": "Descriptive common-reference quality, not a matched-budget or runtime-verified causal comparison. No cross-archive paired significance marks",
+  "Budget": "Full configured50 generations/1000 shared individuals; independent archive configs51generations/1000 individuals per task",
+  "ArchiveRuntime": "Historical archive lacks per-run runtime-v2 provenance; current checks cannot retroactively certify it",
+  "ExternalFilesUnchanged": true,
+  "References": {
+    "1": {
+      "Minimum": [
+        1199.9001669292966,
+        1920.1647834606963
+      ],
+      "Maximum": [
+        2010.796256290128,
+        5423.500954919215
+      ],
+      "FrontSize": 11
+    },
+    "2": {
+      "Minimum": [
+        1220.7005833780383,
+        1961.1442747841347
+      ],
+      "Maximum": [
+        5278.408386115099,
+        9160.77616728014
+      ],
+      "FrontSize": 13
+    },
+    "3": {
+      "Minimum": [
+        1245.875154461313,
+        2047.109838377393
+      ],
+      "Maximum": [
+        7244.6220672734735,
+        12106.391174656888
+      ],
+      "FrontSize": 16
+    },
+    "4": {
+      "Minimum": [
+        1281.9035046448594,
+        2103.035404532855
+      ],
+      "Maximum": [
+        2872.6145582887275,
+        5080.334079144034
+      ],
+      "FrontSize": 20
+    },
+    "5": {
+      "Minimum": [
+        1308.5873996138114,
+        2113.247798759044
+      ],
+      "Maximum": [
+        4444.77746820198,
+        15015.694198607556
+      ],
+      "FrontSize": 18
+    },
+    "6": {
+      "Minimum": [
+        4469.138046979071,
+        581.1077538289236
+      ],
+      "Maximum": [
+        7429.953328017728,
+        1542.4041362916007
+      ],
+      "FrontSize": 10
+    },
+    "7": {
+      "Minimum": [
+        4540.664667634564,
+        592.0672105856742
+      ],
+      "Maximum": [
+        9938.453142035523,
+        2124.5259159678526
+      ],
+      "FrontSize": 15
+    },
+    "8": {
+      "Minimum": [
+        4578.708416312295,
+        641.5812109059215
+      ],
+      "Maximum": [
+        8933.651210109529,
+        1896.937977912573
+      ],
+      "FrontSize": 14
+    },
+    "9": {
+      "Minimum": [
+        4615.801412276549,
+        684.8374070172268
+      ],
+      "Maximum": [
+        10081.496361937729,
+        2952.935227065003
+      ],
+      "FrontSize": 14
+    },
+    "10": {
+      "Minimum": [
+        4675.477605795043,
+        736.7791978479709
+      ],
+      "Maximum": [
+        11153.353569004086,
+        2792.479360886787
+      ],
+      "FrontSize": 24
+    }
+  }
+}

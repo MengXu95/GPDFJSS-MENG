@@ -1,0 +1,48 @@
+{
+  "Nodes": 139,
+  "Edges": 136,
+  "PreferenceLeaves": 14,
+  "OriginalTreeNodeCounts": [
+    37,
+    31,
+    71
+  ],
+  "NodeLabelCollisions": 0,
+  "ModuleBadgeCollisions": 0,
+  "CompleteOrderedTrees": true,
+  "PanelRows": 2,
+  "TopRowScenarios": [
+    1,
+    3
+  ],
+  "BottomRowScenario": 5,
+  "PreferenceDisplayLabels": [
+    "w_1",
+    "w_2"
+  ],
+  "PreferenceTerminalScale": 100,
+  "Palette": {
+    "A": [
+      "#2563EB",
+      "#DEE8FC"
+    ],
+    "B": [
+      "#F97316",
+      "#FEEADC"
+    ],
+    "U": [
+      "#000000",
+      "#F3F3F3"
+    ]
+  },
+  "PreferenceFills": {
+    "Pone": "#B3C8F8",
+    "Ptwo": "#FDCEAD"
+  },
+  "TextAndEdgesColour": "#000000",
+  "PaletteReference": "Figures7and8:objective1blue/objective2orange;sharedtintsat15percent,preferenceleavesat35percent",
+  "Layout": "bigtree Reingold-Tilford/Walker,ordered children,centred parents,equal-level alignment",
+  "Renderer": "Python matplotlib:circle operators,rounded terminal boxes,orthogonal edges",
+  "PDFSHA256": "68633e01672cdde5195bdfe2b0ae15d45e8778b69097272154d83aa0e6071d28",
+  "PNGSHA256": "a4f26a553cc6734bb7c4097d990a98394ae426604258f6a794185605dcf6f321"
+}

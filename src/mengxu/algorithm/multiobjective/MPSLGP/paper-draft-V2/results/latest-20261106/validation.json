@@ -1,0 +1,17 @@
+{
+  "TableCellsVerified": 162,
+  "TablePages": [
+    11
+  ],
+  "PDFPages": 16,
+  "ActualGeneration": 49,
+  "Methods": [
+    "NSGPII",
+    "PSLGP",
+    "Full"
+  ],
+  "Runs": 1140,
+  "NSGPIINewTests": 300,
+  "SourcesVerified": 4443,
+  "PDFSHA256": "4248fde4e816714cf28b66693754542aa2f567128e084e9816f016c10688ad27"
+}

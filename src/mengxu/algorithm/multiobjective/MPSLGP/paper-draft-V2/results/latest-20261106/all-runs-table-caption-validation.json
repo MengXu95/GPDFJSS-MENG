@@ -1,0 +1,16 @@
+{
+  "Tables": 3,
+  "CaptionPages": {
+    "Three-method generation-49 HV, IGD and GD comparison:": 11,
+    "Transfer-ablation HV, IGD and GD results:": 11,
+    "Recorded training time for the same task groups:": 15
+  },
+  "CaptionColour": "red",
+  "Summary": "mean(standard deviation) over all30runs",
+  "All30RunsVerified": true,
+  "StandardDeviationDenominator": 29,
+  "NumericalResultsChanged": false,
+  "WilcoxonTestsChanged": false,
+  "PDFPages": 16,
+  "PDFSHA256": "4248fde4e816714cf28b66693754542aa2f567128e084e9816f016c10688ad27"
+}

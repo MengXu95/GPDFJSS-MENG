@@ -1,0 +1,114 @@
+{
+  "Methods": [
+    "NSGPII",
+    "PSLGP",
+    "MPSLGP"
+  ],
+  "TrainingRuns": 840,
+  "MPSLGPRuns": 240,
+  "IndependentRunsPerMethod": 300,
+  "Groups": {
+    "R1": [
+      1,
+      2
+    ],
+    "R2": [
+      3,
+      4
+    ],
+    "R3": [
+      6,
+      7
+    ],
+    "R4": [
+      1,
+      3,
+      5
+    ],
+    "R5": [
+      8,
+      9
+    ],
+    "H1": [
+      1,
+      10
+    ],
+    "H2": [
+      5,
+      6
+    ],
+    "H3": [
+      1,
+      5,
+      8
+    ]
+  },
+  "IncludedGenerations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "Unit": "minutes",
+  "Definition": "Sum of logged per-generation elapsed seconds for 0..49, divided by60; independently validated against timeSumGen.csv",
+  "GroupCost": "MPSLGP joint run counted once;independent task times summed for each group and seed;not parallel batch completion time",
+  "Caveats": "Different hardware/concurrency and operators/population allocations;not a controlled speedup or equal-quality comparison;timing windows omit some setup/finalization",
+  "ProtectedQualitySHA256": {
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\per-run.csv": "e7274847a3c4282863bf7726a67b37fb39f6d0930291e20f7ec2f71a9de48321",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\mean-std.csv": "7b75f9feb7846ebcb7cc7e0a459452e637ec6b0e3aab04d51bd035ce55e8ba7e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\paired-tests.csv": "54449f5d7eab9a9e9f95ea4df03ebe37ee846ffcc923b8f1d0014846e7b8d24b",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\table-rows.tex": "513638d38fc84eedf327e4c341809d68fbdc0e066df7d3dfc121d1e46e6dbcb8",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\protocol.json": "95b31239459f5410fca64fe28e088cdbb73c7780f917dd672b8671df40b472d4",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\per-run.csv": "12263c2d6408696ac7712fd4ec1689334fe204580dd2127cbedb045cd75b675e",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\mean-std.csv": "4ccd4d650c1f4ea4c6a4dae0e18ae3435cd3bf05eabeb821b70dd7b402789282",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\paired-tests.csv": "1ded173be003adc87f9f4ab34689bb79146afaa248afe8a3b387958fc85d0cc0",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\table-rows.tex": "5dc68b15a19be937b37327081da016f02de1e288ea3288cb06b00937b7e7ff99",
+    "D:\\javaProject\\GPDFJSS-MENG\\src\\mengxu\\algorithm\\multiobjective\\MPSLGP\\paper-draft\\results\\latest-20261106\\ablation-full-no-transfer\\protocol.json": "7161cfe0d52794a07f9801b951a2d18218ae5e313ba289a842b9d8174f8c492f"
+  }
+}

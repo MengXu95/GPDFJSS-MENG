@@ -1,0 +1,21 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><title>Latest MPSLGP results</title>
+<style>body{max-width:1180px;margin:32px auto;padding:0 24px;color:#008040;font:17px/1.6 Georgia,serif;background:white}h1,h2{line-height:1.25}img{display:block;width:100%;height:auto;margin:24px 0}table{border-collapse:collapse;width:100%}td,th{padding:8px;border-bottom:1px solid #d7e5db;text-align:left}pre{white-space:pre-wrap}a{color:inherit}</style></head><body><h1>Latest MPSLGP results</h1>
+<p>Verified preference-runtime-v2 snapshot, 3 November 2026. 720 training runs, 1,620 task tests and 324,000 preference outcomes. Every seed is retained.</p>
+<h2>Main Comparison</h2><p>Full is compared with published PSLGP-I summaries. Their reference data differ, so this is context rather than a common-reference statistical ranking.</p>
+<img src='main-full-vs-pslgp.png' alt='Full and published PSLGP-I indicators'>
+<h2>Transfer Ablations</h2><p>Full has better mean HV/IGD/GD on 15/14/17 targets against no transfer and 7/7/9 against fixed transfer. No paired comparison survives Holm correction over 108 tests (minimum adjusted p = 0.078797).</p>
+<img src='ablation-joint-quality.png' alt='Three-method common-reference quality'>
+<img src='ablation-effect-map.png' alt='Relative mean differences, not significant wins'>
+<h2>Validity and Preference Response</h2><table><tr><th>Method</th><th>Invalid preferences</th><th>Task runs with invalid preferences</th><th>Single-outcome heuristics</th></tr>
+<tr><td>full</td><td>0 / 108000</td><td>0 / 540</td><td>48 / 540</td></tr>
+<tr><td>no-transfer</td><td>192 / 108000</td><td>5 / 540</td><td>39 / 540</td></tr>
+<tr><td>fixed-transfer</td><td>171 / 108000</td><td>4 / 540</td><td>57 / 540</td></tr>
+</table><p>Control quality metrics are conditional on valid preferences. Invalid outputs are reported separately, not silently discarded. Replication-level failures are not counted here.</p>
+<img src='validity-and-response.png' alt='Validity and responsiveness'>
+<img src='latest-preference-response.png' alt='Fixed-heuristic preference responses'>
+<h2>Training and Raw Attainment</h2><p>Training probabilities change modestly. Full and fixed transfer do not have matched realized mating frequencies. Timing reflects concurrent batch runs.</p>
+<img src='training-transfer-probabilities.png' alt='Training transfer probabilities'>
+<img src='latest-empirical-attainment.png' alt='Raw-objective empirical attainment'>
+<img src='runtime-and-complexity.png' alt='Training cost and rule complexity'>
+<p>Old results are preserved as archives but removed from the active manuscript. The current common-reference ablation scores must not be mixed with Full-only or published scores.</p>
+</body></html>

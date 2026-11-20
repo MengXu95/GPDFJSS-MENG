@@ -1,0 +1,11 @@
+\subsection{\resultrevision{Comparison Design}}
+\begingroup
+\color{resultrevision}
+The main comparison includes MPSLGP, PSLGP and NSGPII. PSLGP denotes the IGD-trained PSLGP-I variant~\cite{xu2026pslgp}. All methods are evaluated using generation-49 outputs on the same held-out scenarios, with test seed 968356 and 30 simulation replications. MPSLGP and PSLGP each supply one fixed conditioned heuristic evaluated across 200 preferences; NSGPII supplies its complete final population Pareto front. The comparison comprises 540 MPSLGP task/run tests and 300 tests for each independent method.
+
+MPSLGP allocates 1,000 individuals across each two- or three-task group; each independent baseline task has 1,000 individuals. MPSLGP and NSGPII run for 50 evaluated generations, while PSLGP's 51-generation training supplies its generation-49 best individual. MPSLGP selects the first training-ranked individual for each task. The comparison assesses the quality and cost of these joint and independent training configurations, retaining their native operators and output representations.
+
+The no-transfer ablation uses the same groups, seeds, task quotas, crossover, IGD aggregation, surrogate procedure and test configuration as Full. Its adaptive transfer is disabled and its cross-task probability and budget are zero. Full and no-transfer are evaluated under common reference fronts pooled over these two profiles.
+
+Quality measures are reported as means and standard deviations calculated over all 30 training runs. For each target and indicator, an exact two-sided Wilcoxon signed-rank test pairs outcomes by training run ID. Zero differences are omitted, absolute ties receive midranks, and raw $p\leq0.05$ defines significance without multiplicity adjustment. The statistical unit is the training seed. Arrows follow the favourable signed-rank direction, while bold entries identify the best means. Inference is per comparison; the no-transfer ablation assesses the combined transfer mechanism rather than its individual components.
+\endgroup
