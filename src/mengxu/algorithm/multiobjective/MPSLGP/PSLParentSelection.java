@@ -6,6 +6,61 @@ import ec.select.TournamentSelection;
 
 public class PSLParentSelection extends TournamentSelection {
     private static final long serialVersionUID = 1L;
+    private Individual[] candidatePopulation;
+    private int[][] candidatesByTask;
+
+    private int[][] taskPools(EvolutionState state, int subpopulation) {
+        GPRuleEvolutionStatePSL multi = (GPRuleEvolutionStatePSL) state;
+        Individual[] individuals = state.population.subpops[subpopulation].individuals;
+        if (candidatePopulation != individuals || candidatesByTask == null || candidatesByTask.length != multi.numTasks) {
+            int[] counts = new int[multi.numTasks];
+            for (Individual individual : individuals) {
+                int task = multi.getTaskIndex(individual);
+                if (task < 0 || task >= counts.length) { throw new IllegalStateException("Invalid parent task " + task); }
+                counts[task]++;
+            }
+            candidatesByTask = new int[counts.length][];
+            for (int task = 0; task < counts.length; task++) { candidatesByTask[task] = new int[counts[task]]; }
+            java.util.Arrays.fill(counts, 0);
+            for (int index = 0; index < individuals.length; index++) {
+                int task = multi.getTaskIndex(individuals[index]);
+                candidatesByTask[task][counts[task]++] = index;
+            }
+            candidatePopulation = individuals;
+        }
+        return candidatesByTask;
+    }
+
+    private int drawTask(EvolutionState state, int subpopulation, int thread, int excludedTask) {
+        int[][] pools = taskPools(state, subpopulation);
+        int total = 0;
+        for (int task = 0; task < pools.length; task++) {
+            if (task != excludedTask) { total += pools[task].length; }
+        }
+        if (total == 0) { throw new IllegalStateException("No eligible parent task"); }
+        int draw = state.random[thread].nextInt(total);
+        for (int task = 0; task < pools.length; task++) {
+            if (task == excludedTask) { continue; }
+            if (draw < pools[task].length) { return task; }
+            draw -= pools[task].length;
+        }
+        throw new IllegalStateException("Parent task allocation failed");
+    }
+
+    private int tournamentFromTask(int start, int subpopulation, EvolutionState state, int thread, int task) {
+        int[] pool = taskPools(state, subpopulation)[task];
+        if (pool.length == 0) { throw new IllegalStateException("No parent candidates in task " + task); }
+        Individual[] individuals = state.population.subpops[subpopulation].individuals;
+        int size = getTournamentSizeToUse(state.random[thread]);
+        int best = pool[state.random[thread].nextInt(pool.length)];
+        for (int trial = 1; trial < size; trial++) {
+            int candidate = pool[state.random[thread].nextInt(pool.length)];
+            boolean better = betterThan(start, individuals[candidate], individuals[best], subpopulation, state, thread);
+            if (pickWorst ? !better : better) { best = candidate; }
+        }
+        ((GPRuleEvolutionStatePSL) state).recordSelectedParent(best);
+        return best;
+    }
 
 	@Override
 	public int produce(final int min, final int max, final int start, final int subpopulation, final Individual[] inds,
@@ -71,6 +126,9 @@ public class PSLParentSelection extends TournamentSelection {
 
 	public int produceMOEADFromDifferentTask(final int start, final int subpopulation, final EvolutionState state,
 										  final int thread, final int excludedTask, final int fallbackIndex) {
+        if (FairComparisonProtocol.enabled(state)) {
+            return tournamentFromTask(start, subpopulation, state, thread, drawTask(state, subpopulation, thread, excludedTask));
+        }
 		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
 		int best = -1;
 		int s = getTournamentSizeToUse(state.random[thread]);
@@ -94,6 +152,9 @@ public class PSLParentSelection extends TournamentSelection {
 
 	public int produceMOEADFromSameTask(final int start, final int subpopulation, final EvolutionState state,
 									  final int thread, final int requiredTask, final int fallbackIndex) {
+        if (FairComparisonProtocol.enabled(state)) {
+            return tournamentFromTask(start, subpopulation, state, thread, requiredTask);
+        }
 		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
 		int best = -1;
 		int tournamentSize = getTournamentSizeToUse(state.random[thread]);
@@ -153,6 +214,10 @@ public class PSLParentSelection extends TournamentSelection {
 
 
 	public int produceMOEAD(final int start, final int subpopulation, final EvolutionState state, final int thread) {
+        if (FairComparisonProtocol.enabled(state)) {
+            int task = ((GPRuleEvolutionStatePSL) state).numTasks == 1 ? 0 : drawTask(state, subpopulation, thread, -1);
+            return tournamentFromTask(start, subpopulation, state, thread, task);
+        }
 		Individual[] oldinds = state.population.subpops[subpopulation].individuals;
 		int best = getRandomIndividual(start, subpopulation, state, thread);
 

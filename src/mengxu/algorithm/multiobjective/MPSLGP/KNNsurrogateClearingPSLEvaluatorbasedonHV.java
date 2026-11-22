@@ -120,8 +120,8 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
     }
 
     void cacheSurrogatePopulation(EvolutionState state, double[][][][] phenotypes, double[][][][] fitnesses) {
-        lastGenPhenotypicOfIntermedidatePopPSL = copySamples(phenotypes);
-        lastGenFitnessOfIntermedidatePopPSL = copySamples(fitnesses);
+        lastGenPhenotypicOfIntermedidatePopPSL = yimei.jss.niching.SurrogateSamples.copy(phenotypes);
+        lastGenFitnessOfIntermedidatePopPSL = yimei.jss.niching.SurrogateSamples.copy(fitnesses);
         lastGenTaskIndices = new int[state.population.subpops.length][];
         for (int subpop = 0; subpop < state.population.subpops.length; subpop++) {
             Individual[] individuals = state.population.subpops[subpop].individuals;
@@ -130,20 +130,6 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
                 lastGenTaskIndices[subpop][index] = ((PSLMultiObjectiveFitness) individuals[index].fitness).getTaskIndex();
             }
         }
-    }
-
-    private double[][][][] copySamples(double[][][][] samples) {
-        double[][][][] copy = new double[samples.length][][][];
-        for (int subpop = 0; subpop < samples.length; subpop++) {
-            copy[subpop] = new double[samples[subpop].length][][];
-            for (int individual = 0; individual < samples[subpop].length; individual++) {
-                copy[subpop][individual] = new double[samples[subpop][individual].length][];
-                for (int preference = 0; preference < samples[subpop][individual].length; preference++) {
-                    copy[subpop][individual][preference] = samples[subpop][individual][preference].clone();
-                }
-            }
-        }
-        return copy;
     }
 
     public void evaluatePopulation(final EvolutionState state)
@@ -395,6 +381,7 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
     }
 
     public void preselectionUsingSurrogate(EvolutionState state){
+        Individual[] protectedElites = FairComparisonProtocol.enabled(state) ? FairComparisonProtocol.detachElites(state) : null;
         //step 1: calculate PC
         int numObjective = ((MultiObjectiveFitness)state.population.subpops[0].individuals[0].fitness).getNumObjectives();
         double[][] preferences = new double[1][numObjective];//todo: need to update this
@@ -452,6 +439,10 @@ public class KNNsurrogateClearingPSLEvaluatorbasedonHV extends PSLEvaluator{
 
         //step 4: resize to the original size
         PopulationUtils.sortForParetoSortLearning(state.population);//todo: double check whether this is using the PSL fitness
+        if (protectedElites != null) {
+            FairComparisonProtocol.retainWithElites(state, protectedElites, originalPopSize[0]);
+            return;
+        }
         for(int subpop=0; subpop<state.population.subpops.length; subpop++){
             if (originalPopSize[subpop] < state.population.subpops[subpop].individuals.length)  // let's resize!
             {

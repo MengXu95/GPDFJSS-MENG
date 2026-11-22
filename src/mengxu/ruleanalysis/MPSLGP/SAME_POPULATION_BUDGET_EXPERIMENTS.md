@@ -1,32 +1,33 @@
-# Matched-Population PSLGP and NSGPII Experiments
+# Aligned Matched-Population MPSLGP, PSLGP and NSGPII Experiments
 
 ## Scope
 
-Run only the independent PSLGP and NSGPII baselines. Reuse the completed MPSLGP `full/IGD` training and generation-49 held-out outcomes in `paper-runs-preference-v2` and `paper-tests-preference-v2`. Do not retrain MPSLGP or change historical experiments. Subsequent manuscript changes belong only in `paper-draft-V2`.
+The corrected `comparison.protocol=aligned-v2-generation50` requires fresh training and held-out testing of all three methods. Each method evaluates generations 0--50 (`generations=51`, including generation 0) and tests the final generation-50 output. Do not reuse the previous MPSLGP trees, SameBudget baselines or aligned-v1 generation-49 results: the source protocol and final generation must match. Existing training/test data and all manuscript Results remain historical records and must not be overwritten or relabelled. Manuscript changes belong only in `paper-draft-V2`; revised method/experiment settings use `\key{}`, while Results await the rerun.
 
-The shared entry point is `mengxu.ruleanalysis.MPSLGP.NSGPIIPaperExperimentMain`; its historical class name is retained for compatibility. `--method PSLGP` selects native independent PSLGP-I; `--method NSGPII` selects native NSGPII. Without `--method`, the original NSGPII behaviour is preserved.
+The independent baseline entry point remains `mengxu.ruleanalysis.MPSLGP.NSGPIIPaperExperimentMain`: `--method PSLGP` selects PSLGP-I and `--method NSGPII` selects NSGPII. MPSLGP uses `mengxu.algorithm.multiobjective.MPSLGP.MPSLGPPaperTrainingMain` and `mengxu.ruleanalysis.MPSLGP.MPSLGPPaperTestMain`. Both builders fingerprint the aligned protocol and use a separate `same-population-budget-aligned-v2-generation50` root. MPSLGP testing refuses training without the current marker; baseline reuse requires the new configuration fingerprint.
 
-This experiment matches the configured population allocation and 50 evaluated generations, not wall time or every underlying simulation call. Brood preselection, phenotype/surrogate work, operators and native selection remain algorithm-specific. The existing Full/no-transfer ablation addresses transfer within MPSLGP; this baseline comparison assesses the complete learning methods under matched population shares.
+All methods use `AllIndexAllSwapCrossoverPipeline`, crossover/mutation/reproduction probabilities 0.80/0.15/0.05, and fixed seven-candidate tournaments sampled with replacement. MPSLGP draws the primary task by its population share before the tournament, then draws all candidates directly from the selected task. The second tournament uses the same task or the selected donor task. Mutation and reproduction follow the primary-task rule. Fitness comparators remain native: PSLGP/MPSLGP retain their IGD-based comparator; NSGPII retains rank/crowding.
+
+The explicit protected elite allowance is ten per group, split 5/5 or rotating 4/3/3 by seed using the same quota rule as the population. MPSLGP takes elites task-wise; independent tasks receive the corresponding share. The elite copies are reserved in the next evaluated population and are re-evaluated on the current instance/preference. In the conditioned learners, only non-elite brood offspring compete for the remaining slots. This avoids unequal elite counts or losing PSLGP/MPSLGP elite copies in surrogate preselection. Smoke runs retain this mechanism; their relatively large elite fraction is not a quality experiment.
+
+PSLGP and MPSLGP share the original objective-specific benchmark mapping: MAX_FLOWTIME -> SPT, MAX_WEIGHTED_FLOWTIME -> WSPT, MAX_TARDINESS -> ATC and MAX_WEIGHTED_TARDINESS -> WATC, all with WIQ routing. NSGPII's crowding normalization and existing non-environmental-selection replacement variant are unchanged. Shared population allocation and 51 evaluated generations do not imply equal wall time or every underlying simulation call; native surrogate/preselection work remains method-specific.
 
 ## IDEA Run Order
 
-The new configurations are in `.idea/runConfigurations`, with names beginning `SameBudget`. In IDEA, use **File > Reload All from Disk** if needed, then **Build > Rebuild Project**. The module is `GPDFJSS-MENG`, and the working directory is the project root. Do not rebuild while workers are running.
+Exactly six shared configurations remain in `.run`. Other project configurations in `.run` and `.idea/runConfigurations`, plus stale workspace RunManager entries, were removed while IDEA was closed. Reopen IDEA, then **Build > Rebuild Project**. The module is `GPDFJSS-MENG`, and the working directory is the project root. Do not rebuild while workers are running.
 
 | Configuration | Purpose |
 |---|---|
-| SameBudget - 00 Self Test | Check quotas, defaults and safe interrupted-job retries using temporary fixtures; no simulations |
-| SameBudget - 01 PSLGP Plan | List all 540 PSLGP jobs; no simulations or output directories |
-| SameBudget - 02 NSGPII Plan | List all 540 NSGPII jobs; no simulations or output directories |
-| SameBudget - 03 PSLGP Smoke Train | R4, seed 0, three small task runs through generation 49 |
-| SameBudget - 04 PSLGP Smoke Test | Test those three saved conditioned heuristics |
-| SameBudget - 05 NSGPII Smoke Train | R4, seed 0, three small task runs through generation 49 |
-| SameBudget - 06 NSGPII Smoke Test | Test those three saved population fronts |
-| SameBudget - 10 PSLGP Train | Formal independent PSLGP training, 540 jobs |
-| SameBudget - 11 PSLGP Test | Formal PSLGP held-out preference sweeps |
-| SameBudget - 20 NSGPII Train | Formal independent NSGPII training, 540 jobs |
-| SameBudget - 21 NSGPII Test | Formal NSGPII final-front held-out testing |
+| MPSLGP Paper Training | Joint full/IGD training, 240 group/seed jobs, final generation 50 |
+| MPSLGP Paper Test | Final task-ranked conditioned heuristics, 540 task jobs |
+| PSLGP Training | Independent matched-budget training, 540 task/seed jobs, final generation 50 |
+| PSLGP Test | Final training-ranked conditioned heuristic, 200 held-out preferences per task |
+| NSGPII Training | Independent matched-budget training, 540 task/seed jobs, final generation 50 |
+| NSGPII Test | All saved final-generation-50 population-front heuristics |
 
-Run 00, 01 and 02 first. Run 03 before 04 and 05 before 06. Once smoke checks complete, run 10 and wait for completion before 11; run 20 and wait for completion before 21. Formal configurations use at most five isolated workers, each with a 2 GB maximum heap, plus a 2 GB coordinator and JVM/native overhead. Avoid running the two formal batches simultaneously unless resources allow it. Changing concurrency does not change each worker's single-threaded algorithm.
+Run each method's Training to completion before its Test. All six configurations set `--parallel 8 --heap 2g` and `-Xmx2g` for the coordinator. Each worker is an isolated JVM with single-threaded algorithm evaluation/breeding. Training schedules up to eight seed runs; MPSLGP held-out testing schedules up to eight task jobs (not necessarily eight distinct seeds). The worker cap is per coordinator, not a machine-wide limit.
+
+The inspected computer has a Core Ultra 9 275HX with 24 physical/logical cores and about 64 GB RAM, with about 26 GB free at inspection. Eight workers allow up to 16 GB worker heaps plus a 2 GB coordinator heap, JVM/native memory and OS/IDE headroom. Eight is feasible for one batch under that snapshot, but smoke tests are not proof of full-size peak memory or linear speedup. Do not launch multiple eight-worker batches simultaneously; if other programs consume the free memory, reduce concurrency to five or four or close them before starting. Fixed heap limits do not cover all native memory.
 
 ## Matched Allocations
 
@@ -41,7 +42,7 @@ Run 00, 01 and 02 first. Run 03 before 04 and 05 before 06. Once smoke checks co
 | H2 | 5, 6 | 500, 500 |
 | H3 | 1, 5, 8 | 334/333/333, rotating by seed |
 
-For seed 0, task 0 receives the extra individual; for seed 1, task 1; for seed 2, task 2. Repeat this cycle for seeds 0--29. Each group/seed sums to 1,000, matching MPSLGP's configured allocation. The 18 group/task targets produce 540 jobs per baseline and 1,080 new training jobs in total. Records remain group-specific even for scenarios repeated across groups; the new results must not be replaced with historical 1,000-per-task results.
+For seed 0, task 0 receives the extra individual and elite; seed 1 gives them to task 1; seed 2 to task 2. Each group/seed sums to 1,000 individuals and ten elites. The 18 group/task targets produce 540 jobs per independent baseline, plus 240 joint MPSLGP jobs: 1,320 new training jobs and 1,620 task tests in total. Records remain group-specific even for repeated scenarios.
 
 ## Native Templates and Protocol
 
@@ -53,27 +54,29 @@ C:/Users/xumen/Desktop/2026Paper/PSLGP/FinalResultsForPaper/FinalResultsForPaper
   fNSGPII/multipletreegp-dynamic/params/multipletreegp-dynamic.params
 ```
 
-Override `--template <absolute-path>` if the archive moves, consistently for training and testing. The plan checks native state, breeder, evaluator and terminal configuration; PSLGP must use the IGD template. Native classes and operators are preserved. Delegating statistics/problem subclasses accumulate individual evaluator calls without changing fitness. The count file is created once at the final evaluated generation, avoiding repeated file replacement on Windows. This counter does not count every setup/manual-rule/phenotypic-characterisation simulation.
+Override `--template <absolute-path>` if the archive moves, consistently for training and testing. Native state/breeder/evaluator classes remain, while the shared operator probabilities and explicit elite handling are aligned as described above. Delegating statistics/problem subclasses accumulate individual evaluator calls without changing fitness. The count file is created once at the final generation, avoiding replacement on Windows. It does not count every setup/manual-rule/phenotype simulation.
 
-Formal jobs use population 500 or 333/334, 50 evaluated generations (0--49), disabled early-success termination, one training replication, simulation seed 0 rotated by generation, 5,000 measured jobs, 1,000 warm-up jobs and the existing ten benchmark scenarios. PSLGP retains its brood/surrogate procedure, 101 training preference entries, elite allowance 10, raw state terminals and the v2 preference encoding with terminal values `100*w_i`.
+Formal independent jobs use population 500 or 333/334; MPSLGP shares 1,000. All evaluate generations 0--50 without early termination, with one training replication, simulation seed 0 rotated by generation, 5,000 measured jobs and 1,000 warm-up jobs. PSLGP/MPSLGP retain 101 cross-preference estimation entries and preference runtime v2 (`100*w_i`). Population and elite quotas are checked separately.
 
 PSLGP saves the native final-generation Top-N list and tests only its first training-ranked individual. This matches the MPSLGP final task-ranked selection convention; it is deliberately not the historical baseline retest's recorded-Best selection. No test score selects the heuristic. The fixed tree pair is swept across 200 preferences, including both endpoints. NSGPII tests every heuristic on the final population Pareto front, without an external archive or a union across generations. Both use held-out seed 968356 and 30 replications; invalid recorded outcomes remain explicit rather than dropping seeds.
 
-Smoke jobs are separate under `smoke/`: at most 24 group individuals (8 per R4 task), 200 training jobs, 50 warm-up jobs, 50 generations, one held-out replication and three PSLGP preferences. They validate generation-49 serialization/testing, not scheduling quality or full-size resource use.
+Smoke runs remain available through command-line arguments, not saved IDEA configurations: use `--smoke --smoke-generations 51` for the baseline runner or `--smoke --generations 51 --preferences 101` for MPSLGP training. They use at most 24 group individuals, 200 measured jobs and 50 warm-up jobs; held-out smoke testing uses one replication and three preferences. They validate generation-50 serialization/testing, not scheduling quality or full-size resource use. A baseline `--self-test` still runs quota/recovery checks without simulations.
 
 ## Outputs and Safe Reuse
 
 ```text
-src/mengxu/ruleanalysis/MPSLGP/same-population-budget/
+src/mengxu/ruleanalysis/MPSLGP/same-population-budget-aligned-v2-generation50/
   PSLGP/matched/<group>/task<index>-S<scenario>/run<seed>/
   NSGPII/matched/<group>/task<index>-S<scenario>/run<seed>/
+  MPSLGP/training/full/IGD/<group>/run<seed>/attempt-<index>/
+  MPSLGP/tests/full/IGD/<group>/run<seed>/task<index>/attempt-<index>/
 ```
 
-Each job has `training/` and `test-generation49/`. Training includes `effective.params`, `experiment.properties`, native statistics, elapsed-time CSVs, logs, evaluation-call metadata and `completed.properties`. The completion record verifies configuration and source hashes. Testing includes `test.properties`, raw `test-results.csv`, logs and a completion marker. PSLGP also writes `test-outcomes.csv` with explicit preference indices/weights; its CSV schemas match the existing held-out evaluator. NSGPII writes one row per selected front member.
+Each independent baseline job has `training/` and `test-generation50/`. Training includes `effective.params`, `experiment.properties`, native statistics, elapsed-time CSVs, logs, evaluation-call metadata and `completed.properties`. The completion record verifies configuration and source hashes. Testing includes `test.properties`, raw `test-results.csv`, logs and a completion marker. PSLGP also writes `test-outcomes.csv` with explicit preference indices/weights; its CSV schemas match the existing held-out evaluator. NSGPII writes one row per selected front member. MPSLGP uses separate joint-training and per-task-test attempts under its two roots.
 
 `--skip-existing` reuses only complete compatible jobs. By itself, it still refuses incomplete training directories, with an explicit recovery message rather than a missing-file exception. Incompatible completed results are always refused.
 
-The four SameBudget training configurations (03, 05, 10 and 20) also enable `--retry-incomplete`. This option requires `--action train --skip-existing`. Before workers start, the coordinator validates all existing jobs. A training directory without `completed.properties` is retryable only when its saved `experiment.properties` and `effective.params` match the current configuration/template fingerprint and no active training worker is detected for its input. Missing metadata or configuration mismatches require manual inspection; they are not automatically replaced.
+The PSLGP and NSGPII Training configurations also enable `--retry-incomplete`. This option requires `--action train --skip-existing`. Before workers start, the coordinator validates all existing jobs. A training directory without `completed.properties` is retryable only when its saved `experiment.properties` and `effective.params` match the current configuration/template fingerprint and no active training worker is detected for its input. Missing metadata or configuration mismatches require manual inspection; they are not automatically replaced. MPSLGP retains its locked, numbered-attempt retry mechanism.
 
 When a retry starts, the entire interrupted `runXX` directory is moved to the sibling `runXX.incomplete-<UUID>`, preserving its logs, partial statistics and any old test output. The original path is then recreated for the same seed and population budget. `[RETRY PRESERVED]` reports the backup path. Checkpoints are disabled, so this restarts the interrupted job from generation 0, not its last recorded generation. Completed compatible jobs are skipped; unstarted jobs run normally. No old results are deleted.
 
@@ -81,9 +84,9 @@ After an interruption, stop the old coordinator/workers, reload the IDEA configu
 
 The original NSGPII configurations and default output root are unchanged. The new formal output directories are ignored by Git; the local IDEA directory is also ignored by the repository's existing policy.
 
-## Completed Analysis
+## Historical Completed Analysis (Before Alignment)
 
-The completed V2 analysis is in [same-population-budget-20261120](../../algorithm/multiobjective/MPSLGP/paper-draft-V2/results/same-population-budget-20261120). From the repository root, using Python with the existing scientific-analysis dependencies (`numpy`, `pandas`, `scipy`, `javaproperties`, `matplotlib`), run:
+The pre-alignment V2 analysis is in [same-population-budget-20261120](../../algorithm/multiobjective/MPSLGP/paper-draft-V2/results/same-population-budget-20261120). It reads only the old generation-49 outputs and is not an analysis of `aligned-v2-generation50`. Do not change its input paths to mix protocols. From the repository root, using the existing scientific-analysis dependencies (`numpy`, `pandas`, `scipy`, `javaproperties`, `matplotlib`), its historical commands are:
 
 ```powershell
 python src\mengxu\algorithm\multiobjective\MPSLGP\paper-draft-V2\results\same-population-budget-20261120\analyze_same_budget.py --self-test

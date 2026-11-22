@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="NSGPII Training" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="mengxu.ruleanalysis.MPSLGP.NSGPIIPaperExperimentMain" />
+    <module name="GPDFJSS-MENG" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="PROGRAM_PARAMETERS" value="--method NSGPII --action train --budget matched --runs 30 --start-run 0 --parallel 8 --heap 2g --population-total 1000 --skip-existing --retry-incomplete --output src\mengxu\ruleanalysis\MPSLGP\same-population-budget-aligned-v2-generation50\NSGPII" />
+    <option name="VM_PARAMETERS" value="--add-opens java.base/java.lang=ALL-UNNAMED -Xmx2g" />
+    <method v="2"><option name="Make" enabled="true" /></method>
+  </configuration>
+</component>

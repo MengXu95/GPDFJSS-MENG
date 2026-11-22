@@ -39,7 +39,7 @@ public final class MPSLGPPaperTrainingMainTest {
             testAmbiguousFinalSelection(temp.resolve("ambiguous"));
             testLock(temp.resolve("lock"));
             testParallel(temp.resolve("parallel-two"), 2);
-            testParallel(temp.resolve("parallel-five"), 5);
+            testParallel(temp.resolve("parallel-eight"), 8);
             System.out.println("PASS: MPSLGPPaperTrainingMainTest (" + assertions + " assertions)");
         } finally {
             try (Stream<Path> paths = Files.walk(temp)) {
@@ -53,9 +53,10 @@ public final class MPSLGPPaperTrainingMainTest {
     private static void testProfiles() throws Exception {
         MPSLGPPaperTrainingMain.Config c = MPSLGPPaperTrainingMain.Config.parse(new String[0]);
         check(c.algorithms.size() == 7 && c.scenarios.size() == 8 && c.runs == 30, "paper matrix");
-        check(c.generations == 50 && c.population == 1000 && c.preferences == 101, "paper budget");
-        check(c.indicators.equals(Arrays.asList("IGD")) && c.parallel == 1, "safe defaults");
-        check(c.results.endsWith("paper-runs-preference-v2"), "corrected training uses a fresh default root");
+        check(c.generations == 51 && c.population == 1000 && c.preferences == 101, "final generation50 paper budget");
+        check(c.indicators.equals(Arrays.asList("IGD")) && c.parallel == 8, "eight-worker defaults");
+        check(c.results.equals(Path.of(FairComparisonProtocol.OUTPUT_ROOT, "MPSLGP", "training").toAbsolutePath().normalize()),
+                "aligned training uses a fresh default root");
         Map<String, String> base = MPSLGPPaperTrainingMain.loadParameters(c.param);
         for (String algorithm : c.algorithms) {
             for (String scenario : Arrays.asList("R1", "H3")) {
@@ -64,11 +65,12 @@ public final class MPSLGPPaperTrainingMainTest {
                 Map<String, String> p = job.settings;
                 check(p.get("compare-criteria").equals("IGD"), "indicator override");
                 check(p.get("mpslgp.preference-runtime-version").equals("2"), "all profiles fingerprint the corrected preference runtime");
-                check(p.get("generations").equals("50") && p.get("pop.subpop.0.size").equals("1000"), "fixed shared budget");
+                check(p.get("generations").equals("51") && p.get("pop.subpop.0.size").equals("1000"), "fixed shared budget");
                 check(p.get("eval.problem.0.eval-model.sim-models.0.min-num-operations").equals("2"), "paper minimum operations");
                 check(p.get("mpslgp.transfer-start-generation").equals("15"), "aligned transfer start");
                 check(p.get("output-top-N").equals("1"), "one heuristic per task");
-                check(p.get("pop.subpop.0.species.pipe.source.0").endsWith("OneTreeCrossoverPipeline"), "matched operator");
+                check(p.get("pop.subpop.0.species.pipe.source.0").equals(FairComparisonProtocol.CROSSOVER)
+                        && p.get(FairComparisonProtocol.PARAMETER).equals(FairComparisonProtocol.VERSION), "aligned operator and protocol");
                 check(p.get("mpslgp.task-allocation-offset").equals(scenario.equals("R1") ? "0" : "2"), "rotated quotas");
                 double budget = Double.parseDouble(p.get("mpslgp.transfer-probability"));
                 if (!algorithm.equals("no-transfer")) {
@@ -121,19 +123,20 @@ public final class MPSLGPPaperTrainingMainTest {
         check(options.containsKey("Make"), "saved training has a build step");
         check(options.get("MAIN_CLASS_NAME").equals(MPSLGPPaperTrainingMain.class.getName()), "saved training main");
         check(options.get("WORKING_DIRECTORY").equals("$PROJECT_DIR$"), "saved training working directory");
-        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED"), "saved training VM access");
+        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED -Xmx2g"), "saved coordinator heap");
         String arguments = options.get("PROGRAM_PARAMETERS");
         for (String algorithm : MPSLGPPaperTrainingMain.ALGORITHMS.keySet()) {
             MPSLGPPaperTrainingMain.Config c = MPSLGPPaperTrainingMain.Config.parse(
-                    arguments.replace("--algorithms full", "--algorithms " + algorithm).split("\\s+"));
+                    arguments.replaceFirst("--algorithms\\s+\\S+", "--algorithms " + algorithm).split("\\s+"));
             check(c.algorithms.equals(Arrays.asList(algorithm)), "saved training algorithm selection " + algorithm);
             check(c.scenarios.equals(new ArrayList<>(MPSLGPPaperTrainingMain.SCENARIOS.keySet()))
                     && c.runs == 30 && c.startRun == 0, "saved training all groups and seeds " + algorithm);
             check(c.scenarios.size() * c.runs == 240, "saved training has 240 jobs per profile");
-            check(c.parallel == 5 && c.heap.equals("2g") && c.skipExisting, "saved training five workers and resume");
+            check(c.parallel == 8 && c.heap.equals("2g") && c.skipExisting, "saved training eight workers and resume");
+            check(c.generations == 51, "saved training final generation50");
             check(!c.smoke && !c.dryRun && c.indicators.equals(Arrays.asList("IGD")), "saved training formal IGD budget");
-            check(c.results.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
-                    "paper-runs-preference-v2").toAbsolutePath().normalize()), "saved training v2 output root");
+            check(c.results.equals(Path.of(FairComparisonProtocol.OUTPUT_ROOT, "MPSLGP", "training").toAbsolutePath().normalize()),
+                    "saved aligned training root");
         }
         try (Stream<Path> files = Files.list(Path.of(".run"))) {
             List<String> names = new ArrayList<>();

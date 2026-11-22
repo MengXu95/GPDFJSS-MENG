@@ -155,7 +155,7 @@ public class PSLEvaluator extends SimpleEvaluator{
             SimpleProblemForm prob = (SimpleProblemForm) (state.evaluator.p_problem.clone());
             AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem)prob).getEvaluationModel();
             SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel)evaluationModel).getSchedulingSet();
-            curSchedulingSet.lowerBoundsFromMPSLGPPaperBenchmarkRule(evaluationModel.getObjectives());
+            updateBenchmarkBounds(state, curSchedulingSet, evaluationModel);
             initializer.curSchedulingSetObjectiveLowerBoundMtx = curSchedulingSet.getObjectiveLowerBoundMtx();
             initializer.taskSchedulingSetObjectiveLowerBoundMtx = null;
             return;
@@ -166,12 +166,17 @@ public class PSLEvaluator extends SimpleEvaluator{
             SimpleProblemForm problem = (SimpleProblemForm) mpslgpProblems[task].clone();
             AbstractEvaluationModel evaluationModel = ((MultipleTreeRuleOptimizationProblem)problem).getEvaluationModel();
             SchedulingSet curSchedulingSet = ((MultipleRuleEvaluationModel)evaluationModel).getSchedulingSet();
-            curSchedulingSet.lowerBoundsFromMPSLGPPaperBenchmarkRule(evaluationModel.getObjectives());
+            updateBenchmarkBounds(state, curSchedulingSet, evaluationModel);
             initializer.taskSchedulingSetObjectiveLowerBoundMtx[task] = curSchedulingSet.getObjectiveLowerBoundMtx();
             if (task == 0) {
                 initializer.curSchedulingSetObjectiveLowerBoundMtx = initializer.taskSchedulingSetObjectiveLowerBoundMtx[task];
             }
         }
+    }
+
+    private void updateBenchmarkBounds(EvolutionState state, SchedulingSet set, AbstractEvaluationModel model) {
+        if (FairComparisonProtocol.enabled(state)) { set.lowerBoundsFromBenchmarkRule(model.getObjectives()); }
+        else { set.lowerBoundsFromMPSLGPPaperBenchmarkRule(model.getObjectives()); }
     }
 
 

@@ -310,7 +310,7 @@ The budgeted softmax gate uses learned directed utility and a no-transfer refere
 The example child retains primary task r0=1; it can instead inherit the secondary task when its node contribution reaches the threshold. Feedback uses final task r and the other contributing task d.
 Each valid cross-task offspring is recorded once; discarded candidates contribute to the denominator and penalty. Survival is assessed after preselection, real evaluation and enabled clearing.
 The scalar improvement baseline uses the same task, generation, preference and simulation seed as the child. Utility is updated by (r,d,k) group, not per individual.
-Only one GP tree undergoes subtree crossover; the other tree remains from the primary parent. No auxiliary transfer-assessment simulations are required.
+One common tree index undergoes subtree crossover; the other complete tree is swapped between the parents. No auxiliary transfer-assessment simulations are required.
 '@
 
     $scale = [math]::Min($slideWidth / $designWidth, $slideHeight / $designHeight)

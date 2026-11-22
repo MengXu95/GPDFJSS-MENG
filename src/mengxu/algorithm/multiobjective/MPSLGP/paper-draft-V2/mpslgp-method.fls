@@ -333,11 +333,11 @@ INPUT ./figures/MPSLGP_Editable_Figures.pdf
 INPUT ./figures/MPSLGP_Editable_Figures.pdf
 INPUT ./figures/MPSLGP_Editable_Figures.pdf
 INPUT ./figures/MPSLGP_Editable_Figures.pdf
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmcsc10.tfm
 INPUT c:/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT c:/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmtt10.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmcsc10.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmr7.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/rm-lmr7.tfm
 INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/lm/rm-lmr5.tfm

@@ -5,6 +5,7 @@ import ec.Individual;
 import ec.multiobjective.MultiObjectiveFitness;
 import ec.util.ParameterDatabase;
 import mengxu.algorithm.multiobjective.MPSLGP.PaperExperimentFiles;
+import mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol;
 import yimei.jss.gp.GPRun;
 import yimei.jss.jobshop.Objective;
 import yimei.jss.jobshop.SchedulingSet;
@@ -88,10 +89,10 @@ public final class NSGPIIPaperExperimentMain {
         String action = "plan", budget = "matched", heap = "2g", method = "NSGPII";
         List<String> groups = new ArrayList<>(GROUPS.keySet());
         List<Integer> scenarios = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        int runs = 30, start = 0, parallel = 10, totalPopulation = 1000, smokeGenerations = 3;
+        int runs = 30, start = 0, parallel = FairComparisonProtocol.RECOMMENDED_PARALLEL, totalPopulation = 1000, smokeGenerations = 3;
         boolean smoke, skipExisting, retryIncomplete;
         Path template = Paths.get("C:/Users/xumen/Desktop/2026Paper/PSLGP/FinalResultsForPaper/FinalResultsForPaper/fNSGPII/multipletreegp-dynamic/params/multipletreegp-dynamic.params");
-        Path output = Paths.get("src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49");
+        Path output = Paths.get(FairComparisonProtocol.OUTPUT_ROOT, "NSGPII");
         Config(String[] arguments) {
             boolean explicitTemplate = false, explicitOutput = false;
             for (int index = 0; index < arguments.length; index++) {
@@ -123,7 +124,8 @@ public final class NSGPIIPaperExperimentMain {
             }
             if (!Arrays.asList("PSLGP", "NSGPII").contains(method)
                     || !Arrays.asList("plan", "train", "test").contains(action) || !Arrays.asList("matched", "independent").contains(budget)
-                    || runs < 1 || start < 0 || parallel < 1 || totalPopulation < 3 || smokeGenerations < 3 || smokeGenerations > 50
+                    || runs < 1 || start < 0 || parallel < 1 || totalPopulation < 3 || smokeGenerations < 3
+                    || smokeGenerations > FairComparisonProtocol.EVALUATED_GENERATIONS
                     || (!smoke && smokeGenerations != 3) || !heap.matches("[1-9][0-9]*[mgMG]")
                     || groups.isEmpty() || groups.stream().anyMatch(group -> !GROUPS.containsKey(group))
                     || scenarios.isEmpty() || scenarios.stream().anyMatch(scenario -> scenario < 1 || scenario > 10)
@@ -134,7 +136,7 @@ public final class NSGPIIPaperExperimentMain {
             }
             if (isPSL()) {
                 if (!explicitTemplate) { template = Paths.get(template.toString().replace("fNSGPII", "PSLIGD_BR")); }
-                if (!explicitOutput) { output = Paths.get("src/mengxu/ruleanalysis/MPSLGP/pslgp-generation49"); }
+                if (!explicitOutput) { output = Paths.get(FairComparisonProtocol.OUTPUT_ROOT, "PSLGP"); }
             }
             template = template.toAbsolutePath().normalize(); output = output.toAbsolutePath().normalize();
             if (smoke) { output = output.resolve("smoke"); }
@@ -142,7 +144,7 @@ public final class NSGPIIPaperExperimentMain {
             if (output.startsWith(template.getParent().getParent().getParent())) { throw new IllegalArgumentException("Output must be outside the historical archive"); }
         }
         boolean isPSL() { return method.equals("PSLGP"); }
-        int generations() { return smoke ? smokeGenerations : 50; }
+        int generations() { return smoke ? smokeGenerations : FairComparisonProtocol.EVALUATED_GENERATIONS; }
         int groupPopulation() { return smoke ? Math.min(totalPopulation, 24) : totalPopulation; }
         int population(String group, int task, int seed) {
             int total = groupPopulation();
@@ -224,10 +226,15 @@ public final class NSGPIIPaperExperimentMain {
             if (config.isPSL()) {
                 put(parameters, "stat", CountingPSLStatistics.class.getName(), "breed.elite.0", config.smoke ? 2 : 10,
                         "output-top-N", 5, "topN-from-pareto-front", false,
-                        "num-preferences-for-HV", 101, "terminal-normalisation", 2,
+                        "num-preferences-for-HV", 101, "terminal-normalisation", 2, "normalisation", 1,
                         yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER, yimei.jss.gp.PreferenceStateAccess.RUNTIME_VERSION);
             }
+            FairComparisonProtocol.configure(parameters, config.groupPopulation(),
+                    config.budget.equals("independent") ? 1 : GROUPS.get(group).length, seed,
+                    config.budget.equals("independent") ? 0 : task);
             put(identity, "method", config.method, "group", group, "task", task, "scenario", scenario,
+                    FairComparisonProtocol.PARAMETER, FairComparisonProtocol.VERSION,
+                    "elite.allowance", parameters.get("breed.elite.0"), "group.elite.total", parameters.get("comparison.elites.total"),
                     "seed", seed, "population", population, "generations", config.generations(),
                     "budget", config.budget, "group.population.total", config.groupPopulation(),
                     "template", config.template, "template.sha256", fileHash(config.template),
@@ -236,7 +243,8 @@ public final class NSGPIIPaperExperimentMain {
                     "smoke", config.smoke);
             fingerprint = sha256((serialize(identity) + serialize(parameters)).getBytes(StandardCharsets.UTF_8));
         }
-        String label() { return config.method + " " + group + " task=" + task + " S" + scenario + " seed=" + seed + " N=" + population; }
+        String label() { return config.method + " " + group + " task=" + task + " S" + scenario + " seed=" + seed
+                + " N=" + population + " E=" + parameters.get("breed.elite.0") + " protocol=" + FairComparisonProtocol.VERSION; }
         List<BaselineGenerationTestMain.Candidate> finalFront() throws IOException {
             Path stats = training.resolve("out.stat");
             List<String> lines = Files.readAllLines(stats, StandardCharsets.UTF_8);
@@ -534,9 +542,11 @@ public final class NSGPIIPaperExperimentMain {
                     throw new AssertionError("Retry did not preserve the whole job or recreate matching inputs");
                 }
                 Path stats = job.training.resolve("out.stat"), counts = job.training.resolve("evaluation-count.properties");
-                Files.writeString(stats, "Generation: 49\n" + (retry.isPSL() ? "Top N individuals:\n" : "Pareto Front of Subpopulation 0\n")
+                Files.writeString(stats, "Generation: " + FairComparisonProtocol.FINAL_GENERATION + "\n"
+                        + (retry.isPSL() ? "Top N individuals:\n" : "Pareto Front of Subpopulation 0\n")
                         + "Evaluated: true\nFitness: [2.0 3.0]\nTree 0:\nPT\nTree 1:\nNIQ\n", StandardCharsets.UTF_8);
-                Files.writeString(counts, "individual.evaluation.calls=123\nactual.generation=49\n", StandardCharsets.UTF_8);
+                Files.writeString(counts, "individual.evaluation.calls=123\nactual.generation="
+                        + FairComparisonProtocol.FINAL_GENERATION + "\n", StandardCharsets.UTF_8);
                 Map<String, String> marker = new TreeMap<>();
                 put(marker, "status", "COMPLETED", "configuration.sha256", job.fingerprint,
                         "stats.sha256", fileHash(stats), "params.sha256", fileHash(input),
@@ -568,14 +578,17 @@ public final class NSGPIIPaperExperimentMain {
                 if (sum != 1000) { throw new AssertionError("Group budget " + group); }
             }
         }
-        if (matched.retryIncomplete || matched.parallel != 10 || matched.generations() != 50 || matched.population("R1", 0, 0) != 500
+        if (matched.retryIncomplete || matched.parallel != FairComparisonProtocol.RECOMMENDED_PARALLEL
+                || matched.generations() != FairComparisonProtocol.EVALUATED_GENERATIONS || matched.population("R1", 0, 0) != 500
                 || matched.population("R4", 0, 0) != 334 || matched.population("R4", 1, 1) != 334
                 || new Config(new String[]{"--budget", "independent"}).population("R4", 0, 0) != 1000) {
             throw new AssertionError("Generation/parallel/quota defaults");
         }
         Config psl = new Config(new String[]{"--method", "PSLGP"});
-        if (!psl.isPSL() || !psl.template.toString().contains("PSLIGD_BR") || !psl.output.toString().contains("pslgp-generation49")
-                || psl.population("R4", 2, 2) != 334 || psl.generations() != 50) { throw new AssertionError("PSLGP matched plan"); }
+        if (!psl.isPSL() || !psl.template.toString().contains("PSLIGD_BR") || !psl.output.toString().contains("same-population-budget-aligned-v2-generation50")
+                || psl.population("R4", 2, 2) != 334 || psl.generations() != FairComparisonProtocol.EVALUATED_GENERATIONS) {
+            throw new AssertionError("PSLGP matched plan");
+        }
         for (int seed = 0; seed < 30; seed++) {
             for (String group : GROUPS.keySet()) {
                 for (int task = 0; task < GROUPS.get(group).length; task++) {
@@ -589,8 +602,8 @@ public final class NSGPIIPaperExperimentMain {
         Path countFile = countDirectory.resolve("evaluation-count.properties");
         try {
             EvolutionState state = new EvolutionState();
-            state.numGenerations = 50;
-            state.generation = 48;
+            state.numGenerations = FairComparisonProtocol.EVALUATED_GENERATIONS;
+            state.generation = FairComparisonProtocol.FINAL_GENERATION - 1;
             state.parameters = new ParameterDatabase();
             state.parameters.set(new ec.util.Parameter("nsgpii.evaluation-count-file"), countFile.toString());
             state.evaluator = new ec.simple.SimpleEvaluator();
@@ -599,11 +612,13 @@ public final class NSGPIIPaperExperimentMain {
             state.evaluator.p_problem = problem;
             recordEvaluationCount(state);
             if (Files.exists(countFile)) { throw new AssertionError("Intermediate generations must not write count metadata"); }
-            state.generation = 49;
+            state.generation = FairComparisonProtocol.FINAL_GENERATION;
             recordEvaluationCount(state);
             Properties counts = readProperties(countFile);
             if (!"123".equals(counts.getProperty("individual.evaluation.calls"))
-                    || !"49".equals(counts.getProperty("actual.generation"))) { throw new AssertionError("Final evaluation count metadata"); }
+                    || !Integer.toString(FairComparisonProtocol.FINAL_GENERATION).equals(counts.getProperty("actual.generation"))) {
+                throw new AssertionError("Final evaluation count metadata");
+            }
             problem.calls.incrementAndGet();
             boolean refusedOverwrite = false;
             try { recordEvaluationCount(state); }
@@ -613,8 +628,8 @@ public final class NSGPIIPaperExperimentMain {
             }
         } finally { Files.deleteIfExists(countFile); Files.deleteIfExists(countDirectory); }
         retrySelfTest();
-        System.out.println("PASS: native NSGPII experiment plan,50 evaluated generations,final49,ten workers,500/500 and rotating334/333/333 budgets.");
-        System.out.println("PASS: PSLGP-I native template, isolated output, matching quotas and generation49 selection.");
+        System.out.println("PASS: native NSGPII experiment plan,51 evaluated generations,final50,eight workers,500/500 and rotating334/333/333 budgets.");
+        System.out.println("PASS: PSLGP-I native template, isolated output, matching quotas and generation50 selection.");
         System.out.println("PASS: evaluation counts are written once at the final generation without replacing an existing file.");
     }
 

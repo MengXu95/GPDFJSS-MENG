@@ -70,91 +70,94 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Task-Local Evaluation and Preselection}{5}{subsection.3.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}1}Task Assignment and Accurate Evaluation}{5}{subsubsection.3.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}2}Task-Local Cross-Preference Estimation}{5}{subsubsection.3.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Task-Local References}{5}{subsubsection.3.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Adaptive Knowledge Transfer}{5}{subsection.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-D}1}Preference Regions}{5}{subsubsection.3.4.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Preference-region-aware transfer and offspring feedback. The primary parent's task and upcoming preference select the utility context; a budgeted gate chooses local or cross-task mating. Feedback follows the child's inherited task and uses real evaluated outcomes. The five displayed preference cells are numbered $1$--$5$ for presentation and correspond to indices $k=0,\ldots  ,4$ in the equations.}}{6}{figure.3}\protected@file@percent }
-\newlabel{fig:adaptive-transfer}{{3}{6}{Preference-region-aware transfer and offspring feedback. The primary parent's task and upcoming preference select the utility context; a budgeted gate chooses local or cross-task mating. Feedback follows the child's inherited task and uses real evaluated outcomes. The five displayed preference cells are numbered $1$--$5$ for presentation and correspond to indices $k=0,\ldots ,4$ in the equations}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Task-Local References}{6}{subsubsection.3.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Adaptive Knowledge Transfer}{6}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-D}1}Preference Regions}{6}{subsubsection.3.4.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-D}2}No-Transfer Gate and Donor Selection}{6}{subsubsection.3.4.2}\protected@file@percent }
 \newlabel{eq:probability}{{10}{6}{No-Transfer Gate and Donor Selection}{equation.10}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-D}3}Crossover and Task Inheritance}{6}{subsubsection.3.4.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Preference-region-aware task transfer in MPSLGP. (a) The main preference determines the transfer region $k$. The learned utility $U(r,d,k)$ estimates the usefulness of donor task $d$ to receiving task $r$ in region $k$, while $U_0$ is the fixed utility reference for local mating. (b)--(c) $S_1$ and $S_2$ represent task-specific exploration in the GP heuristic space $\mathcal  {X}$, with overlap $S_1\cap S_2$. In (b), $U(1,2,3)>U_0$ gives task~2 a larger softmax weight than the local-mating reference for task~1 in region~3; in (c), $U(1,2,1)<U_0$ favours the local reference in region~1. These comparisons modulate the budgeted mating probabilities rather than determine the mating choice. The illustrated child inherits task~1. (d) Offspring survival and improvement over a matched local baseline update the utility indexed by the inherited receiving task, donor task and preference region.}}{7}{figure.4}\protected@file@percent }
-\newlabel{fig:regional-transfer}{{4}{7}{Preference-region-aware task transfer in MPSLGP. (a) The main preference determines the transfer region $k$. The learned utility $U(r,d,k)$ estimates the usefulness of donor task $d$ to receiving task $r$ in region $k$, while $U_0$ is the fixed utility reference for local mating. (b)--(c) $S_1$ and $S_2$ represent task-specific exploration in the GP heuristic space $\mathcal {X}$, with overlap $S_1\cap S_2$. In (b), $U(1,2,3)>U_0$ gives task~2 a larger softmax weight than the local-mating reference for task~1 in region~3; in (c), $U(1,2,1)<U_0$ favours the local reference in region~1. These comparisons modulate the budgeted mating probabilities rather than determine the mating choice. The illustrated child inherits task~1. (d) Offspring survival and improvement over a matched local baseline update the utility indexed by the inherited receiving task, donor task and preference region}{figure.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Offspring-Based Transfer Feedback}{7}{subsection.3.5}\protected@file@percent }
-\newlabel{eq:improvement}{{12}{7}{Offspring-Based Transfer Feedback}{equation.12}{}}
-\newlabel{eq:contribution}{{13}{7}{Offspring-Based Transfer Feedback}{equation.13}{}}
-\newlabel{eq:update}{{14}{7}{Offspring-Based Transfer Feedback}{equation.14}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Transfer-Control Procedure}{7}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Offspring-Based Transfer Feedback}{6}{subsection.3.5}\protected@file@percent }
+\newlabel{eq:improvement}{{12}{6}{Offspring-Based Transfer Feedback}{equation.12}{}}
+\newlabel{eq:contribution}{{13}{6}{Offspring-Based Transfer Feedback}{equation.13}{}}
+\newlabel{eq:update}{{14}{6}{Offspring-Based Transfer Feedback}{equation.14}{}}
 \citation{xu2026pslgp}
 \citation{xu2026pslgp}
 \citation{zhang2019evolving}
 \citation{zimmerman1993relative}
 \citation{xu2026pslgp}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Preference-region-aware transfer and offspring feedback. The primary parent's task and upcoming preference select the utility context; a budgeted gate chooses local or cross-task mating. Feedback follows the child's inherited task and uses real evaluated outcomes. The five displayed preference cells are numbered $1$--$5$ for presentation and correspond to indices $k=0,\ldots  ,4$ in the equations.}}{7}{figure.3}\protected@file@percent }
+\newlabel{fig:adaptive-transfer}{{3}{7}{Preference-region-aware transfer and offspring feedback. The primary parent's task and upcoming preference select the utility context; a budgeted gate chooses local or cross-task mating. Feedback follows the child's inherited task and uses real evaluated outcomes. The five displayed preference cells are numbered $1$--$5$ for presentation and correspond to indices $k=0,\ldots ,4$ in the equations}{figure.3}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces MPSLGP transfer and feedback}}{7}{algorithm.1}\protected@file@percent }
+\newlabel{alg:mpslgp}{{1}{7}{Transfer-Control Procedure}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Transfer-Control Procedure}{7}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experiment Design}{7}{section.4}\protected@file@percent }
+\newlabel{sec:experiment-design}{{IV}{7}{Experiment Design}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Dataset}{7}{subsection.4.1}\protected@file@percent }
 \citation{xu2026pslgp}
 \citation{xu2026pslgp}
 \citation{xu2026pslgp}
-\citation{xu2026pslgp}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces MPSLGP transfer and feedback}}{8}{algorithm.1}\protected@file@percent }
-\newlabel{alg:mpslgp}{{1}{8}{Transfer-Control Procedure}{algorithm.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Preference-region-aware task transfer in MPSLGP. (a) The main preference determines the transfer region $k$. The learned utility $U(r,d,k)$ estimates the usefulness of donor task $d$ to receiving task $r$ in region $k$, while $U_0$ is the fixed utility reference for local mating. (b)--(c) $S_1$ and $S_2$ represent task-specific exploration in the GP heuristic space $\mathcal  {X}$, with overlap $S_1\cap S_2$. In (b), $U(1,2,3)>U_0$ gives task~2 a larger softmax weight than the local-mating reference for task~1 in region~3; in (c), $U(1,2,1)<U_0$ favours the local reference in region~1. These comparisons modulate the budgeted mating probabilities rather than determine the mating choice. The illustrated child inherits task~1. (d) Offspring survival and improvement over a matched local baseline update the utility indexed by the inherited receiving task, donor task and preference region.}}{8}{figure.4}\protected@file@percent }
+\newlabel{fig:regional-transfer}{{4}{8}{Preference-region-aware task transfer in MPSLGP. (a) The main preference determines the transfer region $k$. The learned utility $U(r,d,k)$ estimates the usefulness of donor task $d$ to receiving task $r$ in region $k$, while $U_0$ is the fixed utility reference for local mating. (b)--(c) $S_1$ and $S_2$ represent task-specific exploration in the GP heuristic space $\mathcal {X}$, with overlap $S_1\cap S_2$. In (b), $U(1,2,3)>U_0$ gives task~2 a larger softmax weight than the local-mating reference for task~1 in region~3; in (c), $U(1,2,1)<U_0$ favours the local reference in region~1. These comparisons modulate the budgeted mating probabilities rather than determine the mating choice. The illustrated child inherits task~1. (d) Offspring survival and improvement over a matched local baseline update the utility indexed by the inherited receiving task, donor task and preference region}{figure.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces The ten DFJSS scenarios used in PSLGP~\cite  {xu2026pslgp}}}{8}{table.1}\protected@file@percent }
 \newlabel{tab:pslgp-scenarios}{{I}{8}{The ten DFJSS scenarios used in PSLGP~\cite {xu2026pslgp}}{table.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Experiment Design}{8}{section.4}\protected@file@percent }
-\newlabel{sec:experiment-design}{{IV}{8}{Experiment Design}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Dataset}{8}{subsection.4.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Simulation settings reported for PSLGP~\cite  {xu2026pslgp}}}{8}{table.2}\protected@file@percent }
 \newlabel{tab:simulation-settings}{{II}{8}{Simulation settings reported for PSLGP~\cite {xu2026pslgp}}{table.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces \textcolor {black}{Multitask groups of the scenarios in Table~\ref {tab:pslgp-scenarios}}}}{8}{table.3}\protected@file@percent }
-\newlabel{tab:scenario-plan}{{III}{8}{\revision {Multitask groups of the scenarios in Table~\ref {tab:pslgp-scenarios}}}{table.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Parameter Setting}{8}{subsection.4.2}\protected@file@percent }
 \citation{xu2026pslgp}
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Parameter setting for GP-based methods.}}{9}{table.4}\protected@file@percent }
-\newlabel{tab:common-parameters}{{IV}{9}{Parameter setting for GP-based methods}{table.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces MPSLGP adaptive-transfer settings}}{9}{table.5}\protected@file@percent }
-\newlabel{tab:transfer-parameters}{{V}{9}{MPSLGP adaptive-transfer settings}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces \textcolor {black}{Multitask groups of the scenarios in Table~\ref {tab:pslgp-scenarios}}}}{9}{table.3}\protected@file@percent }
+\newlabel{tab:scenario-plan}{{III}{9}{\revision {Multitask groups of the scenarios in Table~\ref {tab:pslgp-scenarios}}}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Parameter Setting}{9}{subsection.4.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Comparison Metrics}{9}{subsection.4.3}\protected@file@percent }
 \newlabel{eq:descriptive-test-metrics}{{15}{9}{Comparison Metrics}{equation.15}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Results}{9}{section.5}\protected@file@percent }
 \newlabel{sec:results}{{V}{9}{Results}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Test Performance}{9}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Parameter setting for GP-based methods.}}{10}{table.4}\protected@file@percent }
+\newlabel{tab:common-parameters}{{IV}{10}{Parameter setting for GP-based methods}{table.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces MPSLGP adaptive-transfer settings}}{10}{table.5}\protected@file@percent }
+\newlabel{tab:transfer-parameters}{{V}{10}{MPSLGP adaptive-transfer settings}{table.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}\textcolor {red}{Comparison Under Matched Population Budgets}}{10}{subsection.5.2}\protected@file@percent }
 \newlabel{sec:matched-population-budget}{{\mbox  {V-B}}{10}{\mm {Comparison Under Matched Population Budgets}}{subsection.5.2}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces The mean(std) results of HV, IGD and GD comparison of all methods over all 30 runs. Methods share scenario-specific bounds and reference fronts. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the Wilcoxon test at $\alpha =0.05$.}}{11}{table.6}\protected@file@percent }
 \newlabel{tab:latest-main-quality}{{VI}{11}{The mean(std) results of HV, IGD and GD comparison of all methods over all 30 runs. Methods share scenario-specific bounds and reference fronts. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the Wilcoxon test at $\alpha =0.05$}{table.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training Time}{11}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Ablation Study}{11}{subsection.5.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Further Analysis}{11}{section.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Shared and Task-Specific Tree Structure Analyses}{11}{subsection.6.1}\protected@file@percent }
-\newlabel{sec:learned-tree-structures}{{\mbox  {VI-A}}{11}{Shared and Task-Specific Tree Structure Analyses}{subsection.6.1}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces The test performance corresponding to Table~\ref {tab:latest-main-quality}. Points and horizontal bars denote means and standard deviations over all 30 training runs.}}{12}{figure.5}\protected@file@percent }
 \newlabel{fig:latest-main-quality}{{5}{12}{The test performance corresponding to Table~\ref {tab:latest-main-quality}. Points and horizontal bars denote means and standard deviations over all 30 training runs}{figure.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Task-Specific Effects of Preference Inputs}{12}{subsection.6.2}\protected@file@percent }
-\newlabel{sec:tree-preference-effects}{{\mbox  {VI-B}}{12}{Task-Specific Effects of Preference Inputs}{subsection.6.2}{}}
-\newlabel{eq:case-tree-s1}{{16}{12}{Task-Specific Effects of Preference Inputs}{equation.16}{}}
-\newlabel{eq:case-tree-s3}{{17}{12}{Task-Specific Effects of Preference Inputs}{equation.17}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Ablation Study}{12}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Further Analysis}{12}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Shared and Task-Specific Tree Structure Analyses}{12}{subsection.6.1}\protected@file@percent }
+\newlabel{sec:learned-tree-structures}{{\mbox  {VI-A}}{12}{Shared and Task-Specific Tree Structure Analyses}{subsection.6.1}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces \textcolor {red}{Test performance under matched group-level population budgets: mean(std) of HV, IGD and GD over all 30 runs. Each method uses a total population allocation of 1,000 per group and 50 evaluated generations. Bounds and reference fronts are common within this comparison and are recomputed independently of Table~\ref {tab:latest-main-quality}. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold identifies the best unrounded mean. Higher HV and lower IGD/GD are preferable. The 76 invalid PSLGP preference outcomes are excluded; all seeds are retained.}}}{13}{table.7}\protected@file@percent }
 \newlabel{tab:same-budget-quality}{{VII}{13}{\mm {Test performance under matched group-level population budgets: mean(std) of HV, IGD and GD over all 30 runs. Each method uses a total population allocation of 1,000 per group and 50 evaluated generations. Bounds and reference fronts are common within this comparison and are recomputed independently of Table~\ref {tab:latest-main-quality}. At baseline entries, $(\uparrow )$, $(\downarrow )$ and $(=)$ denote MPSLGP's significant advantage, disadvantage and nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold identifies the best unrounded mean. Higher HV and lower IGD/GD are preferable. The 76 invalid PSLGP preference outcomes are excluded; all seeds are retained.}}{table.7}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Training time for the original unequal-allocation comparison: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group.}}{13}{table.8}\protected@file@percent }
 \newlabel{tab:latest-training-time}{{VIII}{13}{Training time for the original unequal-allocation comparison: mean (standard deviation), in minutes, over all 30 runs. MPSLGP is counted once per group, whereas PSLGP and NSGPII sum the independent task times within each group}{table.8}{}}
-\newlabel{eq:case-tree-s5}{{18}{13}{Task-Specific Effects of Preference Inputs}{equation.18}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Preference Response Analysis}{13}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Task-Specific Effects of Preference Inputs}{13}{subsection.6.2}\protected@file@percent }
+\newlabel{sec:tree-preference-effects}{{\mbox  {VI-B}}{13}{Task-Specific Effects of Preference Inputs}{subsection.6.2}{}}
+\newlabel{eq:case-tree-s1}{{16}{13}{Task-Specific Effects of Preference Inputs}{equation.16}{}}
+\newlabel{eq:case-tree-s3}{{17}{13}{Task-Specific Effects of Preference Inputs}{equation.17}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean.}}{14}{table.9}\protected@file@percent }
 \newlabel{tab:latest-ablation-quality}{{IX}{14}{The mean(std) results of HV, IGD and GD comparison of Full and no-transfer variants of MPSLGP over all 30 runs. References are pooled over Full and no-transfer. At no-transfer entries, arrows denote Full's significant advantage or disadvantage, and $(=)$ a nonsignificant difference under the unadjusted paired Wilcoxon test at $\alpha =0.05$. Bold marks the best unrounded mean}{table.9}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Pareto Front Analysis Across Multiple Runs}{14}{subsection.6.4}\protected@file@percent }
-\newlabel{eq:empirical-attainment}{{19}{14}{Pareto Front Analysis Across Multiple Runs}{equation.19}{}}
-\newlabel{eq:attainment-boundary}{{20}{14}{Pareto Front Analysis Across Multiple Runs}{equation.20}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusions}{14}{section.7}\protected@file@percent }
-\newlabel{sec:conclusions}{{VII}{14}{Conclusions}{section.7}{}}
+\newlabel{eq:case-tree-s5}{{18}{14}{Task-Specific Effects of Preference Inputs}{equation.18}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Preference Response Analysis}{14}{subsection.6.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT.}}{15}{figure.6}\protected@file@percent }
+\newlabel{fig:learned-sequencing-trees}{{6}{15}{The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Pareto Front Analysis Across Multiple Runs}{15}{subsection.6.4}\protected@file@percent }
+\newlabel{eq:empirical-attainment}{{19}{15}{Pareto Front Analysis Across Multiple Runs}{equation.19}{}}
+\newlabel{eq:attainment-boundary}{{20}{15}{Pareto Front Analysis Across Multiple Runs}{equation.20}{}}
 \bibstyle{IEEEtran}
 \bibdata{reference}
 \bibcite{xu2025learn}{1}
 \bibcite{zhao2025deep}{2}
 \bibcite{xu2026evospeak}{3}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds.}}{16}{figure.7}\protected@file@percent }
+\newlabel{fig:latest-preference-response}{{7}{16}{Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds}{figure.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusions}{16}{section.7}\protected@file@percent }
+\newlabel{sec:conclusions}{{VII}{16}{Conclusions}{section.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised.}}{16}{figure.8}\protected@file@percent }
+\newlabel{fig:latest-attainment}{{8}{16}{Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised}{figure.8}{}}
+\@writefile{toc}{\contentsline {section}{References}{16}{section*.1}\protected@file@percent }
 \bibcite{xu2023genetic}{4}
 \bibcite{li2025multi}{5}
 \bibcite{xu2026pslgp}{6}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT.}}{15}{figure.6}\protected@file@percent }
-\newlabel{fig:learned-sequencing-trees}{{6}{15}{The learned sequencing trees for R4 from one run. Circles denote operators and boxes denote terminals. Light blue A and light orange B mark shared subtrees; neutral grey U modules mark task-specific examples. Preference inputs $w_1$ and $w_2$ use blue and orange, respectively. WR = WKR and TR = TRANT}{figure.6}{}}
-\@writefile{toc}{\contentsline {section}{References}{15}{section*.1}\protected@file@percent }
 \bibcite{liang2026evoamc}{7}
 \bibcite{yi2025dynamic}{8}
 \bibcite{chen2026reinforcement}{9}
@@ -170,10 +173,6 @@
 \bibcite{lei2018two}{19}
 \bibcite{fuladi2024dynamic}{20}
 \bibcite{mirjalili2018genetic}{21}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds.}}{16}{figure.7}\protected@file@percent }
-\newlabel{fig:latest-preference-response}{{7}{16}{Preference responses of the co-trained R4 and H3 heuristics. Each panel shows the normalised objective outcomes of one fixed sequencing--routing tree pair across 200 preferences. Increasing $w_1$ places greater emphasis on Objective~1. Normalisation uses MPSLGP-only scenario bounds}{figure.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised.}}{16}{figure.8}\protected@file@percent }
-\newlabel{fig:latest-attainment}{{8}{16}{Pareto-front analysis across 30 runs for R4 and H3 on scenarios~1 and~5. Each run contributes the nondominated outcomes of one fixed heuristic evaluated across 200 preferences. Solid lines show 50\% empirical attainment boundaries, and shading spans the 25--75\% boundaries, summarising variability among the run-level fronts. Both objectives are minimised}{figure.8}{}}
 \bibcite{van1987simulated}{22}
 \bibcite{hansen2010variable}{23}
 \bibcite{su2025decentralized}{24}
@@ -194,4 +193,4 @@
 \bibcite{riquelme2015performance}{39}
 \bibcite{zhang2019evolving}{40}
 \bibcite{zimmerman1993relative}{41}
-\gdef \@abspage@last{17}
+\gdef \@abspage@last{18}

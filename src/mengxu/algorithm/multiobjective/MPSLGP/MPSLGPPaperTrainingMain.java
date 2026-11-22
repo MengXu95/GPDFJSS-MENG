@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 public final class MPSLGPPaperTrainingMain {
     static final Path DEFAULT_PARAM = Paths.get("src", "mengxu", "algorithm", "multiobjective",
             "MPSLGP", "multipletreegp-dynamic-MPSLGP-3tasks.params");
-    static final Path DEFAULT_RESULTS = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs-preference-v2");
+    static final Path DEFAULT_RESULTS = Paths.get(FairComparisonProtocol.OUTPUT_ROOT, "MPSLGP", "training");
     private static final String PACKAGE = "mengxu.algorithm.multiobjective.MPSLGP.";
     private static final String FORMAT = "mpslgp-paper-training-v1";
     private static final Set<Process> ACTIVE_PROCESSES = ConcurrentHashMap.newKeySet();
@@ -96,6 +96,8 @@ public final class MPSLGPPaperTrainingMain {
         out.println("Configuration table: " + batch.resolve("algorithm-configurations.csv"));
         out.println("Batch summary: " + batch.resolve("training-summary.csv"));
         out.println("Existing PSLGP results must have compatible budgets, operators and test protocols before comparison.");
+        out.println("Comparison protocol=" + FairComparisonProtocol.VERSION
+                + "; seven task-local tournament candidates; protected group elite total=10; fresh training required.");
 
         ExecutorService executor = Executors.newFixedThreadPool(config.parallel);
         ExecutorCompletionService<Result> completion = new ExecutorCompletionService<>(executor);
@@ -428,7 +430,7 @@ public final class MPSLGPPaperTrainingMain {
                 "gp.koza.half.growp", 0.5, "gp.koza.xover.maxdepth", 8, "gp.koza.mutate.maxdepth", 8,
                 "gp.koza.ns.terminals", 0.1, "gp.koza.ns.nonterminals", 0.9,
                 "pop.subpop.0.species.ind.numtrees", 2, "num-trees", 2,
-                "pop.subpop.0.species.pipe.source.0", "yimei.jss.algorithm.multipletreegp.OneTreeCrossoverPipeline",
+                "pop.subpop.0.species.pipe.source.0", FairComparisonProtocol.CROSSOVER,
                 "pop.subpop.0.species.pipe.source.0.prob", 0.80,
                 "pop.subpop.0.species.pipe.source.1.prob", 0.15,
                 "pop.subpop.0.species.pipe.source.2.prob", 0.05,
@@ -473,6 +475,7 @@ public final class MPSLGPPaperTrainingMain {
         for (int i = 0; i < job.scenario.tasks.length; i++) {
             problem(p, "eval.problem." + i, job.scenario.tasks[i], c);
         }
+        FairComparisonProtocol.configure(p, c.population, job.scenario.tasks.length, job.run, -1);
         return Collections.unmodifiableMap(p);
     }
 
@@ -516,7 +519,8 @@ public final class MPSLGPPaperTrainingMain {
     }
 
     static final class Config {
-        int runs = 30, startRun = 0, parallel = 1, population = 1000, generations = 50;
+        int runs = 30, startRun = 0, parallel = FairComparisonProtocol.RECOMMENDED_PARALLEL, population = 1000,
+                generations = FairComparisonProtocol.EVALUATED_GENERATIONS;
         int jobs = 5000, warmup = 1000, preferences = 101, regions = 5, transferStart = 15;
         double budget = 0.8, learningRate = 0.1, temperature = 1.0, inheritanceThreshold = 0.65;
         Path param = DEFAULT_PARAM, results = DEFAULT_RESULTS;

@@ -20,13 +20,8 @@ import ec.util.Parameter;
  */
 
 /**
- * This SimpleBreeder subclass breeds a set of children from the Population, then
- * joins the original Population with the children in a (mu+mu) fashion.   An NSGA2Breeder
- * may have multiple threads for breeding.
- *
- * <p>NSGA-II has fixed archive size (the population size), and so ignores the 'elites'
- * declaration.  However it will adhere to the 'reevaluate-elites' parameter in SimpleBreeder
- * to determine whether to force fitness reevaluation.
+ * Builds the MPSLGP brood or replacement population, retaining task labels.
+ * Aligned comparisons reserve task-wise elite copies for the next evaluation.
 
  */
 
@@ -38,7 +33,7 @@ public class PSLBreederKeepParetoFront extends SimpleBreeder
         super.setup(state, base);
         // make sure SimpleBreeder's elites facility isn't being used
         for (int i = 0; i < elite.length; i++)  // we use elite.length here instead of pop.subpops.length because the population hasn't been made yet.
-            if (usingElitism(i))
+            if (usingElitism(i) && !FairComparisonProtocol.enabled(state))
                 state.output.warning("You're using elitism with NSGA2Breeder, which is not permitted and will be ignored.  However the reevaluate-elites parameter *will* bre recognized by NSGAEvaluator.",
                     base.push(P_ELITE).push(""+i));
 
@@ -57,13 +52,12 @@ public class PSLBreederKeepParetoFront extends SimpleBreeder
         this.loasParetoFront = state.parameters.getBoolean(loadParetoFrontParam, false); //add by mengxu 2023.01.24
         }
 
-    /**
-     * Override breedPopulation(). We take the result from the super method in
-     * SimpleBreeder and append it to the old population. Hence, after
-     * generation 0, every subsequent call to
-     * <code>NSGA2Evaluator.evaluatePopulation()</code> will be passed a
-     * population of 2x<code>originalPopSize</code> individuals.
-     */
+    @Override
+    protected void loadElites(EvolutionState state, Population newpop) {
+        if (FairComparisonProtocol.enabled(state)) { FairComparisonProtocol.loadElites(state, newpop); }
+        else { super.loadElites(state, newpop); }
+    }
+
     public Population breedPopulation(EvolutionState state)
         {
             Population newpop = null;

@@ -26,6 +26,7 @@
 \definecolor{resultrevision}{RGB}{0,0,0}
 \newcommand{\resultrevision}[1]{\textcolor{resultrevision}{#1}}
 \newcommand{\mm}[1]{\textcolor{red}{#1}}
+\newcommand{\key}[1]{\textcolor{red}{#1}}
 
 % \title{MPSLGP: Multitask Pareto Set Learning Genetic Programming for Dynamic Flexible Job Shop Scheduling}
 \title{Multitask Optimization of Preference-conditioned Heuristics through Genetic Programming for Dynamic Scheduling}
@@ -155,7 +156,7 @@ Existing multitask GP methods share knowledge between tasks, whereas PSLGP learn
 \section{Proposed Method: MPSLGP}
 \label{sec:method}
 \subsection{Overall Framework}
-MPSLGP learns task-specific sequencing--routing tree pairs in a shared population. Each tree pair receives shop-state features and objective preferences. Within each task, learning follows PSLGP's cross-preference fitness aggregation, phenotype-based K-nearest-neighbour (KNN) surrogate \cite{hildebrandt2015using} and brood recombination and preselection~\cite{xu2026pslgp}. Individuals carry task labels that determine their simulation, surrogate and objective-reference contexts. Balanced retention maintains approximately equal task shares. Cross-task crossover exchanges a subtree in one selected tree while preserving the other tree from the primary parent. Directed task-pair utilities are maintained separately for each preference region. They determine the probability of cross-task mating and the choice of donor. Offspring survival and improvement over a same-task, same-generation local baseline update these utilities. Node contributions determine each child's inherited task and the direction of its feedback. Fig.~\ref{fig:overall-framework} shows how they fit into training, and Algorithm~\ref{alg:mpslgp} gives the transfer steps.
+MPSLGP learns task-specific sequencing--routing tree pairs in a shared population. Each tree pair receives shop-state features and objective preferences. Within each task, learning follows PSLGP's cross-preference fitness aggregation, phenotype-based K-nearest-neighbour (KNN) surrogate \cite{hildebrandt2015using} and brood recombination and preselection~\cite{xu2026pslgp}. Individuals carry task labels that determine their simulation, surrogate and objective-reference contexts. Balanced retention maintains approximately equal task shares. \key{The aligned crossover exchanges subtrees at the same selected tree index and swaps the other complete tree between parents, using the same operator for PSLGP, MPSLGP and NSGPII.} Directed task-pair utilities are maintained separately for each preference region. They determine the probability of cross-task mating and the choice of donor. Offspring survival and improvement over a same-task, same-generation local baseline update these utilities. Node contributions determine each child's inherited task and the direction of its feedback. Fig.~\ref{fig:overall-framework} shows how they fit into training, and Algorithm~\ref{alg:mpslgp} gives the transfer steps.
 
 \begin{figure*}[t]
 \centering
@@ -216,7 +217,9 @@ Breeding shares tree structures across tasks; evaluation and surrogate estimatio
 Initial task labels are assigned in balanced round-robin order and inherited through reproduction. Each task has a separate evaluation problem containing its objectives, utilisation level and simulation seed. Training instances are rotated across generations, a widely adopted strategy in this field to improve the generalization capability of the evolved heuristics \cite{xu2023genetic}. In generation $g$, retained individuals are evaluated accurately on their assigned task under $\boldsymbol{\lambda}_{\mathrm{main}}^g$. Task-specific normalisation keeps these observations on the scale of the task being solved.
 
 \subsubsection{Task-Local Cross-Preference Estimation}
-A phenotype records the sequencing and routing decisions made on a subset of fixed decision situations. For each individual, MPSLGP evaluates phenotypes over $\mathcal{L}^g$, which is the ordered list of objective preferences. Its objective vector at every auxiliary-list position is estimated from KNN samples carrying the same task index. Preference diversity describes variation in the same two trees' behaviour across $\mathcal{L}^g$. Task-specific ranks, indicators, and scalar values are supplied to the inherited multi-criteria comparator. Brood recombination and preselection follow PSLGP. The candidate pool exceeds the target population size, and candidates are estimated from the previous generation's same-task surrogate pool. Phenotypic duplicate clearing compares individuals within each task. After surrogate ranking and clearing, balanced survival divides the shared population of size $N$ approximately equally among tasks, subject to candidate availability.
+A phenotype records the sequencing and routing decisions made on a subset of fixed decision situations. For each individual, MPSLGP evaluates phenotypes over $\mathcal{L}^g$, which is the ordered list of objective preferences. Its objective vector at every auxiliary-list position is estimated from KNN samples carrying the same task index. Preference diversity describes variation in the same two trees' behaviour across $\mathcal{L}^g$. Task-specific ranks, indicators, and scalar values are supplied to the inherited multi-criteria comparator. Brood recombination and preselection follow PSLGP. \key{For both conditioned learners, phenotype and fitness samples are deep-copied together before sorting, preventing subsequent population reordering from changing the correspondence between cached samples and labels. The $5N$ candidate pool contains $E$ protected elite copies and $5N-E$ newly generated offspring. Only the offspring compete in surrogate ranking and duplicate clearing; $N-E$ are retained with task-specific quotas and joined with the protected copies. All $N$ individuals are evaluated again on the current training instance and preference. Insufficient task candidates cause an explicit failure rather than silently reallocating the population.}
+
+\key{Parent selection uses a fixed seven-candidate tournament with sampling with replacement. MPSLGP first draws the primary task in proportion to its current population share and then draws all seven candidates directly from that task. The second parent is selected through another seven-candidate tournament within the same task or the chosen donor task. Mutation and reproduction use the same primary-task rule. Independent PSLGP and NSGPII draw all seven candidates from their single-task populations. Thus, task filtering does not reduce the effective tournament size, and a task's sampling probability is not determined by cross-task fitness competition. Each method retains its own fitness comparator.}
 
 %%%%%%%%%%%%%%revised here%%%%%%%%%%%%%%%%%%%%%
 
@@ -263,7 +266,7 @@ The total cross-task mating probability is $\sum_{d\ne r_0}p_{r_0,d,k}\leq B$. T
 The local-mating reference regulates transfer frequency even when a receiving task has a single donor. With more tasks, the same gate also allocates probability among donors. An initial local-mating phase precedes transfer, and donor-count scaling sets $B=B_{\max}/(T-1)$.
 
 \subsubsection{Crossover and Task Inheritance}
-The crossover operator selects one of the individual's two trees for subtree exchange and keeps the other from the primary parent, limiting the scope of each structural exchange. The operator counts the GP nodes contributed by both parents to each child. Let $c_p$ and $c_d$ be the node contributions of the primary and secondary parents. The secondary contribution share is
+\key{All three methods use \texttt{AllIndexAllSwapCrossoverPipeline}: one common tree index is selected for subtree crossover, and the other complete tree is exchanged between the parents. The same node-selection probabilities and depth limits apply to every method. For MPSLGP, the contribution counts include both the exchanged subtree and the swapped complete tree.} The operator counts the GP nodes contributed by both parents to each child. Let $c_p$ and $c_d$ be the node contributions of the primary and secondary parents. The secondary contribution share is
 \begin{equation}
     q_d=\frac{c_d}{c_p+c_d}.
 \end{equation}
@@ -308,11 +311,12 @@ Algorithm~\ref{alg:mpslgp} presents the transfer cycle. Utilities are initialise
 \REQUIRE Evaluated population, main preference, utilities $U$
 \STATE Locate preference region $k$ for offspring evaluation
 \FOR{each crossover request}
-    \STATE Select parent on task $r_0$; gate mating by \eqref{eq:probability}
-    \STATE Crossover; inherit task $r$ by node contribution
+    \STATE \key{Draw task $r_0$ by its population share; select its primary parent with a seven-candidate tournament}
+    \STATE \key{Gate mating by \eqref{eq:probability}; select the secondary parent with seven candidates within the selected task}
+    \STATE \key{Subtree crossover and complete-tree swap; inherit task $r$ by node contribution}
     \STATE Record each actual cross-task child's ID and $(r,d,k)$
 \ENDFOR
-\STATE Run task-local MPSLGP preselection and evaluation
+\STATE \key{Reserve task-wise elites; preselect the remaining offspring and re-evaluate the complete retained population}
 \FOR{each recorded group $(r,d,k)$ with $n>0$}
     \STATE Compare survivors with the matched local baseline
     \STATE Update $U_{r,d,k}$ using offspring feedback \eqref{eq:improvement}--\eqref{eq:update}
@@ -408,6 +412,7 @@ After training, the learned heuristics are evaluated on 30 distinct DFJSS instan
 
 \subsection{Parameter Setting}
 Table~\ref{tab:common-parameters} lists the GP-based methods settings and population allocation. 
+\key{The following settings define the corrected aligned rerun protocol. The Results section is deliberately left unchanged and still reports earlier experiments; those numerical findings are not outputs of this revised protocol. All three methods require fresh training and held-out testing before the results are updated.}
 The terminal set includes \texttt{NIQ}, \texttt{WIQ}, \texttt{MWT}, \texttt{PT}, \texttt{NPT}, \texttt{OWT}, \texttt{WKR}, \texttt{NOR}, \texttt{rDD}, \texttt{SL}, \texttt{W}, \texttt{TIS}, and \texttt{TRANT}. The function set includes $+$, $-$, $\times$, protected division, $\max$, and $\min$; division is protected and returns 1 when its denominator is zero. Both PSLGP and MPSLGP receive the preference terminals \texttt{$w_1$} and \texttt{$w_2$}.
 
 \begin{table*}[t]
@@ -420,21 +425,21 @@ The terminal set includes \texttt{NIQ}, \texttt{WIQ}, \texttt{MWT}, \texttt{PT},
 \toprule
 Parameter & Setting \\
 \midrule
-Population allocation & MPSLGP: 1,000 per group; PSLGP and NSGPII: 1,000 per task \\
-Number of evaluated generations & MPSLGP and NSGPII: 50; PSLGP: 51; all test outputs selected at generation 49 \\
+Population allocation & \key{1,000 per group for all methods; independent task populations 500/500 or rotating 334/333/333} \\
+Number of evaluated generations & \key{51 for all methods (0--50, including generation 0); test outputs selected at generation 50} \\
 Population initialisation & Ramped half-and-half \\
 Initial minimum / maximum depth & 2 / 6 \\
 Maximum tree depth & 8 \\
-Elite allowance (PSLGP/MPSLGP) & 10 \\
-Crossover / mutation / reproduction & PSLGP/MPSLGP: 0.80 / 0.15 / 0.05; NSGPII: 0.85 / 0.15 / 0 \\
+\key{Protected elite copies (all methods)} & \key{10 per group: 5/5 or rotating 4/3/3; copies are re-evaluated} \\
+Crossover / mutation / reproduction & \key{0.80 / 0.15 / 0.05 for all methods; common subtree-plus-tree-swap crossover} \\
 Terminal / nonterminal node selection & 0.10 / 0.90 \\
-Parent selection & Tournament selection, size 7 \\
+Parent selection & \key{Exactly 7 candidates sampled with replacement within the selected task} \\
 \midrule
-Brood candidate pool & Five times the retained population \\
+Brood candidate pool & \key{PSLGP/MPSLGP: $5N$ including $E$ protected elites; NSGPII: $N-E$ offspring plus $E$ protected elites} \\
 Clearing radius / niche capacity & 0 / 1 \\
 Phenotypic characterisation & 20 sequencing and 20 routing situations; 7 candidates per situation \\
-Surrogate prediction & Nearest phenotype by Euclidean distance \\
-Scalar-score normalisation & Manual-rule normalisation \\
+Surrogate prediction & \key{Nearest same-task phenotype by Euclidean distance; independent phenotype/fitness snapshots} \\
+Scalar-score normalisation & \key{PSLGP/MPSLGP share SPT/WSPT for flow-time objectives and ATC/WATC for tardiness objectives; routing uses WIQ} \\
 Training preference list & 101 entries: 1 main preference and 100 auxiliary preferences \\
 Main preference and training instance & Rotated between generations \\
 \midrule
@@ -447,7 +452,11 @@ Reported quality measures & HV, IGD and GD \\
 \end{tabular}
 \end{table*}
 
-MPSLGP divides its 1,000 individuals approximately equally among tasks: 500/500 for two-task groups and 334/333/333 for three-task groups, with integer remainders rotated across seeds. Its brood recombination pool has size $5N$ and the elite allowance is 10. Each independent baseline task uses 1,000 individuals. PSLGP uses IGD-based fitness aggregation, since it ss the strongest overall PSLGP variant in the reference study~\cite{xu2026pslgp}. MPSLGP uses the same aggregation strategy. The transfer settings are listed in Table~\ref{tab:transfer-parameters}. Donor-count scaling gives an effective budget of 0.8 for two tasks and 0.4 for three tasks. Conditioned heuristics are tested at $\boldsymbol{\lambda}_i=(i/199,1-i/199)$ for $i=0,\ldots,199$. Training uses the 101-entry preference list in Table~\ref{tab:common-parameters}. 
+\key{For seed $r$ in a group of $T$ tasks, task $t$ receives $\lfloor1000/T\rfloor$ individuals plus one when $(t-r)\bmod T < 1000\bmod T$. The same allocation rule distributes the group elite allowance $E=10$, giving 5/5 or rotating 4/3/3. MPSLGP selects elites separately within each task; each independent PSLGP/NSGPII task reserves the corresponding number. This avoids giving each independent task ten elites while sharing only ten across MPSLGP tasks. Protected copies occupy reserved evaluation slots rather than competing with the brood for survival.}
+
+\key{PSLGP and MPSLGP both retain IGD-based cross-preference fitness aggregation and use identical objective-specific manual-rule denominators: SPT for maximum flow time, WSPT for maximum weighted flow time, ATC for maximum tardiness, and WATC for maximum weighted tardiness, paired with WIQ routing. NSGPII retains Pareto-rank/crowding comparison and objective-range-normalised crowding, not the conditioned learners' scalar-score normalization. Its existing offspring-replacement variant is retained; this protocol does not introduce standard NSGA-II parent--offspring environmental selection.}
+
+The transfer settings are listed in Table~\ref{tab:transfer-parameters}. Donor-count scaling gives an effective budget of 0.8 for two tasks and 0.4 for three tasks. Conditioned heuristics are tested at $\boldsymbol{\lambda}_i=(i/199,1-i/199)$ for $i=0,\ldots,199$. Training uses the 101-entry preference list in Table~\ref{tab:common-parameters}.
 
 % The preference terminals supply $100\lambda_1$ and $100\lambda_2$ to reduce the numerical scale mismatch between preference inputs and raw scheduling attributes, such as processing times, waiting times and workloads. Without scaling, preferences in $[0,1]$ can be numerically negligible in additive expressions or masked by larger operands in minimum and maximum operations. The fixed scaling makes preference--state interactions more readily expressible by GP while preserving the relative objective weights. The same encoding is used during training and testing.
 

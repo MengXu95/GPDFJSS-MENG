@@ -49,6 +49,7 @@ pop.subpop.0 = ec.Subpopulation
 pop.subpop.0.size =	1000
 
 breed.elite.0 = 10
+comparison.protocol = aligned-v2-generation50
 
 # ==============================
 # MPSLGP paper-version task-indexed adaptive transfer
@@ -151,7 +152,7 @@ pop.subpop.0.species.pipe.num-sources = 3
 
 # one tree subtree crossover; keep the unselected tree from the primary parent
 #pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.AllIndexAllSwapCrossoverPipeline
-pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.OneTreeCrossoverPipeline
+pop.subpop.0.species.pipe.source.0 = yimei.jss.algorithm.multipletreegp.AllIndexAllSwapCrossoverPipeline
 
 pop.subpop.0.species.pipe.source.0.prob = 0.80
 pop.subpop.0.species.pipe.source.1 = ec.gp.koza.MutationPipeline
@@ -407,5 +408,3 @@ compare-criteria = HV
 # IGD, GD
 
 use-multi-criteria-selection = true
-
-

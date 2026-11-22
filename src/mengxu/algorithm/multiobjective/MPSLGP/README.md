@@ -2,6 +2,18 @@
 
 This package contains an isolated implementation of multitask Pareto set learning GP (MPSLGP) based on the original single-task PSLGP package.
 
+## Aligned comparison protocol
+
+The corrected training/test builders now use `comparison.protocol=aligned-v2-generation50` and fresh roots under `src\mengxu\ruleanalysis\MPSLGP\same-population-budget-aligned-v2-generation50`. All three methods finish at generation 50: `generations=51` includes generation 0, and tests select the final generation-50 outputs. Joint runs use `MPSLGP\training` and task tests use `MPSLGP\tests`. All methods must be retrained; existing preference-v2, SameBudget and aligned-v1 generation-49 results remain historical and are not relabelled.
+
+PSLGP, MPSLGP and NSGPII share `AllIndexAllSwapCrossoverPipeline`, probabilities 0.80/0.15/0.05, and seven-candidate sampling-with-replacement tournaments. MPSLGP selects the task by its population share before drawing all seven candidates inside that task; local or donor mating also draws seven candidates inside the selected task. Each method retains its own fitness comparator. The group elite total is ten, split 5/5 or rotating 4/3/3, selected task-wise and protected in the next evaluated population. The conditioned learners preselect only the other offspring; elite copies are re-evaluated on the current instance/preference.
+
+MPSLGP now uses the original PSLGP objective-specific manual bounds (SPT/WSPT, ATC/WATC, WIQ) in aligned mode. Native PSLGP caches independent phenotype/fitness snapshots, fixing label misalignment after sorting. The marker gates revised selection, normalization and protected elitism; older unmarked parameter snapshots are legacy mechanics, not eligible corrected test inputs.
+
+IDEA now retains exactly six shared configurations in `.run`: Training and Test for MPSLGP, PSLGP and NSGPII. MPSLGP defaults to `full/IGD`. Every configuration uses `--parallel 8 --heap 2g`, with a 2 GB coordinator heap. On the inspected 24-core, approximately 64 GB machine, eight workers per batch fit the CPU/memory budget (about 26 GB RAM was available); this is not a guarantee of eightfold speedup or full-size peak memory usage. Do not start multiple eight-worker batches at once. Training runs eight seeds concurrently; held-out testing runs eight task jobs concurrently. Run each method's Test only after its Training completes, and do not rebuild while workers are running.
+
+See [SAME_POPULATION_BUDGET_EXPERIMENTS.md](../../../ruleanalysis/MPSLGP/SAME_POPULATION_BUDGET_EXPERIMENTS.md) for the six configurations and recovery details. The preference-runtime history below remains relevant, but its old output roots, configuration inventory and experiment claims are superseded by this protocol. No Results numbers are updated before the rerun.
+
 Main entry points:
 
 - `GPRuleEvolutionStatePSL`: MPSLGP evolution state with task-indexed individuals, preference-region adaptive transfer utilities, and transfer diagnostics.

@@ -322,7 +322,7 @@ def draw_framework(deck):
                      "C2  Actual-offspring feedback", ORANGE, 17)
     line(slide, "Quality into feedback", (0, 0), (0, 0), ORANGE, 1.9,
          source=quality, target=feedback, source_site=2, target_site=0)
-    label(slide, "Variation operator", 0.63, 7.50, 2.87, 0.34, "One-tree crossover", 17)
+    label(slide, "Variation operator", 0.63, 7.50, 2.87, 0.34, "All-swap crossover", 17)
     miniature_tree(slide, "Primary tree", 0.77, 8.00, 0.77, 0.62)
     miniature_tree(slide, "Donor tree", 2.47, 8.00, 0.77, 0.62, ORANGE)
     line(slide, "Subtree transfer", (1.64, 8.31), (2.34, 8.31), ORANGE, 2.0)
@@ -427,7 +427,7 @@ def draw_transfer(deck):
     route(slide, "Donor into crossover", ((10.02, 5.26), (10.02, 5.44),
                                           (8.78, 5.44)), ORANGE, arrow=False)
     label(slide, "Crossover operation", 6.47, 5.50, 2.12, 0.57,
-          "One-tree\ncrossover", 14.5, bold=True)
+          "All-swap\ncrossover", 14.5, bold=True)
     miniature_tree(slide, "Primary contributor", 6.77, 6.17, 0.82, 0.71)
     miniature_tree(slide, "Donor contributor", 9.89, 6.17, 0.82, 0.71, ORANGE)
     block(slide, "Crossover child", 8.13, 6.10, 1.30, 0.86, "child", size=17)

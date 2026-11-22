@@ -1,5 +1,7 @@
 # NSGPII: 50 Evaluated Generations and Generation-49 Testing
 
+The corrected runner now defaults to `comparison.protocol=aligned-v2-generation50`: 51 evaluated generations (0--50), generation-50 testing, shared all-swap crossover, 0.80/0.15/0.05 operator probabilities, seven-candidate tournaments, and protected task-wise shares of ten group elites. Use the updated [SameBudget protocol](SAME_POPULATION_BUDGET_EXPERIMENTS.md) and its fresh `same-population-budget-aligned-v2-generation50` outputs for new comparisons. Only six shared Training/Test configurations remain, with eight workers per batch. The configurations/results described below are historical and their IDEA entries were removed; do not reuse their completion records for the current protocol or update manuscript Results before rerunning all methods.
+
 ## IDEA Run Configurations
 
 The configurations are in `.idea/runConfigurations`. Use **File > Reload All from Disk** if they are not visible, and **Build > Rebuild Project** before starting. Do not rebuild while workers are running.

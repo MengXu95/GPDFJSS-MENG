@@ -150,6 +150,8 @@ public final class MPSLGPPaperTestMain {
                         require(completed, "sha256.effective.params", fileHash(parameterFile));
                         require(completed, "sha256." + stats.getFileName(), fileHash(stats));
                         Properties parameters = readProperties(parameterFile);
+                        require(parameters, mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.PARAMETER,
+                                mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.VERSION);
                         require(parameters, "seed.0", Integer.toString(run));
                         require(parameters, "compare-criteria", indicator);
                         require(parameters, "terminal-normalisation", "2");
@@ -215,6 +217,8 @@ public final class MPSLGPPaperTestMain {
             spec.put("source.configuration.sha256", required(metadata, "configuration.sha256"));
             spec.put("training.population.total", required(parameters, "pop.subpop.0.size"));
             spec.put("training.generations", required(parameters, "generations"));
+            spec.put("training.comparison.protocol", required(parameters,
+                    mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.PARAMETER));
             String runtimeVersion = parameters.getProperty(yimei.jss.gp.PreferenceStateAccess.RUNTIME_PARAMETER);
             if (runtimeVersion != null) {
                 spec.put("training.preference.runtime.version", runtimeVersion);
@@ -361,6 +365,7 @@ public final class MPSLGPPaperTestMain {
         require(input, "test.seed", Long.toString(MPSLGPTaskEvaluator.simSeed));
         require(input, "test.scenario", "dynamic-job-shop");
         require(input, "terminal.normalisation", "2");
+        require(input, "training.comparison.protocol", mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.VERSION);
         Map<String, String> spec = new TreeMap<>();
         for (String key : input.stringPropertyNames()) { spec.put(key, input.getProperty(key)); }
         if (!FORMAT.equals(spec.get("format"))) { throw new IOException("Unsupported test configuration format."); }
@@ -473,11 +478,12 @@ public final class MPSLGPPaperTestMain {
     }
 
     static final class Config {
-        Path training = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-runs-preference-v2");
-        Path output = Paths.get("src", "mengxu", "ruleanalysis", "MPSLGP", "paper-tests-preference-v2");
+        Path training = Paths.get(mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.OUTPUT_ROOT, "MPSLGP", "training");
+        Path output = Paths.get(mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.OUTPUT_ROOT, "MPSLGP", "tests");
         List<String> algorithms = Arrays.asList("full"), indicators = Arrays.asList("IGD"), scenarios = Arrays.asList("R1", "H3");
         Set<Integer> tasks = new LinkedHashSet<>();
-        int runs = 5, startRun = 0, preferences = 200, replications = 30, parallel = 1;
+        int runs = 5, startRun = 0, preferences = 200, replications = 30,
+                parallel = mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.RECOMMENDED_PARALLEL;
         String heap = "2g";
         boolean skipExisting, dryRun, smoke, help;
 

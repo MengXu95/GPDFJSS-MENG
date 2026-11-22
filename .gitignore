@@ -24,6 +24,9 @@ src/mengxu/ruleanalysis/MPSLGP/baseline-tests-generation49/
 src/mengxu/ruleanalysis/MPSLGP/nsgpii-generation49/
 src/mengxu/ruleanalysis/MPSLGP/pslgp-generation49/
 src/mengxu/ruleanalysis/MPSLGP/same-population-budget/
+src/mengxu/ruleanalysis/MPSLGP/same-population-budget-aligned-v1/
+src/mengxu/ruleanalysis/MPSLGP/same-population-budget-aligned-v2-generation50/
+!test/mengxu/algorithm/multiobjective/MPSLGP/FairComparisonProtocolTest.java
 *.csv
 *.stat
 *.pdf

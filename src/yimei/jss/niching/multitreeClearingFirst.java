@@ -109,8 +109,8 @@ public class multitreeClearingFirst {
 //        double[][][][] fitnessOfIntermedidatePopPSL = fitnessPopulationPreferenceFixedDecisions(state, preferences, phenotypicOfIntermedidatePopPSL);
         double[][][][] fitnessOfIntermedidatePopPSL = fitnessPopulationPreferenceFixedDecisionsConsiderAverageRank(state, preferences, phenotypicOfIntermedidatePopPSL);
         if(((GPRuleEvolutionStatePSL)state).useBroodRecombination){
-            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).lastGenPhenotypicOfIntermedidatePopPSL = phenotypicOfIntermedidatePopPSL;
-            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).lastGenFitnessOfIntermedidatePopPSL = fitnessOfIntermedidatePopPSL;
+            ((KNNsurrogateClearingPSLEvaluatorbasedonHV)state.evaluator).cacheSurrogatePopulation(
+                    phenotypicOfIntermedidatePopPSL, fitnessOfIntermedidatePopPSL);
         }
         String compareCriteria = ((ClearingPSLMultiObjectiveFitness)state.population.subpops[0].individuals[0].fitness).compareCriteria;
 

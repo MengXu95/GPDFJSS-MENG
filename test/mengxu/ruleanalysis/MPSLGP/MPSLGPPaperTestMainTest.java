@@ -73,9 +73,10 @@ public final class MPSLGPPaperTestMainTest {
         MPSLGPPaperTestMain.Config c = MPSLGPPaperTestMain.Config.parse(new String[0]);
         check(c.preferences == 200 && c.replications == 30 && c.runs == 5, "formal testing defaults");
         check(c.scenarios.equals(Arrays.asList("R1", "H3")) && c.algorithms.equals(Arrays.asList("full")), "requested selection");
-        check(c.parallel == 1 && c.indicators.equals(Arrays.asList("IGD")), "safe indicator and parallel defaults");
-        check(c.training.endsWith("paper-runs-preference-v2") && c.output.endsWith("paper-tests-preference-v2"),
-                "corrected testing uses fresh default roots");
+        check(c.parallel == 8 && c.indicators.equals(Arrays.asList("IGD")), "eight-worker parallel defaults");
+        check(c.training.endsWith(Path.of("same-population-budget-aligned-v2-generation50", "MPSLGP", "training"))
+                        && c.output.endsWith(Path.of("same-population-budget-aligned-v2-generation50", "MPSLGP", "tests")),
+                "aligned testing uses fresh default roots");
         c = MPSLGPPaperTestMain.Config.parse(new String[]{"--smoke", "--skip", "existing"});
         check(c.preferences == 3 && c.replications == 1 && c.output.endsWith("smoke") && c.skipExisting, "isolated smoke and skip alias");
         for (int workers : new int[]{5, 8}) {
@@ -113,23 +114,23 @@ public final class MPSLGPPaperTestMainTest {
         check(options.containsKey("Make"), "saved testing has a build step");
         check(options.get("MAIN_CLASS_NAME").equals(MPSLGPPaperTestMain.class.getName()), "saved testing main");
         check(options.get("WORKING_DIRECTORY").equals("$PROJECT_DIR$"), "saved testing working directory");
-        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED"), "saved testing VM access");
+        check(options.get("VM_PARAMETERS").equals("--add-opens java.base/java.lang=ALL-UNNAMED -Xmx2g"), "saved coordinator heap");
         String arguments = options.get("PROGRAM_PARAMETERS");
         for (String algorithm : Arrays.asList("full", "no-transfer", "fixed-transfer", "task-pair",
                 "survival-only", "no-gate", "primary-task")) {
             MPSLGPPaperTestMain.Config c = MPSLGPPaperTestMain.Config.parse(
-                    arguments.replace("--algorithms full", "--algorithms " + algorithm).split("\\s+"));
+                    arguments.replaceFirst("--algorithms\\s+\\S+", "--algorithms " + algorithm).split("\\s+"));
             check(c.algorithms.equals(Arrays.asList(algorithm)), "saved testing algorithm selection " + algorithm);
             check(c.scenarios.equals(Arrays.asList("R1", "R2", "R3", "R4", "R5", "H1", "H2", "H3"))
                     && c.runs == 30 && c.startRun == 0 && c.tasks.isEmpty(), "saved testing all groups/seeds/tasks " + algorithm);
             check(c.preferences == 200 && c.replications == 30 && !c.smoke && !c.dryRun,
                     "saved testing formal protocol " + algorithm);
-            check(c.parallel == 5 && c.heap.equals("2g") && c.skipExisting, "saved testing five workers and resume");
+            check(c.parallel == 8 && c.heap.equals("2g") && c.skipExisting, "saved testing eight workers and resume");
             check(c.indicators.equals(Arrays.asList("IGD")), "saved testing IGD selection");
-            check(c.training.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
-                    "paper-runs-preference-v2").toAbsolutePath().normalize()), "saved testing reads corrected training");
-            check(c.output.equals(Path.of("src", "mengxu", "ruleanalysis", "MPSLGP",
-                    "paper-tests-preference-v2").toAbsolutePath().normalize()), "saved testing separate v2 output");
+            check(c.training.equals(Path.of(mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.OUTPUT_ROOT,
+                    "MPSLGP", "training").toAbsolutePath().normalize()), "saved testing reads aligned training");
+            check(c.output.equals(Path.of(mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.OUTPUT_ROOT,
+                    "MPSLGP", "tests").toAbsolutePath().normalize()), "saved testing separate aligned output");
         }
     }
 
@@ -479,6 +480,8 @@ public final class MPSLGPPaperTestMainTest {
         p.put("seed.0", "0"); p.put("compare-criteria", "IGD"); p.put("terminal-normalisation", "2");
         p.put("num-trees", "2"); p.put("generations", "3"); p.put("pop.subpop.0.size", "24");
         p.put("mpslgp.num-tasks", Integer.toString(benchmarks.length));
+        p.put(mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.PARAMETER,
+                mengxu.algorithm.multiobjective.MPSLGP.FairComparisonProtocol.VERSION);
         if (correctedRuntime) { p.put("mpslgp.preference-runtime-version", "2"); }
         StringBuilder stats = new StringBuilder("Generation: 2\nTop N individuals by MPSLGP Task:\n\n");
         for (int task = 0; task < benchmarks.length; task++) {
